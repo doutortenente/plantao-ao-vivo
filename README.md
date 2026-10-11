@@ -11,8 +11,8 @@ correções listadas em `docs/DECISOES.md`.
 
 | Entra | Sai |
 |---|---|
-| Evoluções anteriores (docx/txt) | `DD-MM-AA-utiN-evolucoes.docx` (ex.: `11-10-26-uti2-evolucoes.docx`) — por leito, só os 7 blocos que mudam |
-| Folhas de controle (scan PDF) | `DD-MM-AA-utiN-ficha-cola.docx` — 1 folha paisagem por leito |
+| Evoluções anteriores (docx/txt) | `DD-MM-AA-utiN-evolucoes-<turno>.docx` (ex.: `11-10-26-uti2-evolucoes-diurno.docx`) — por leito, só os 7 blocos que mudam |
+| Folhas de controle (scan PDF) | `DD-MM-AA-utiN-ficha-cola-<turno>.docx` — 1 folha paisagem por leito |
 | Prescrições do dia (scan PDF) | Rodapé "Conferir" (ilegíveis e divergências) — no chat, fora do bloco |
 | Laudos de laboratório (PDF) | Alertas e bloco final de conduta — no chat |
 

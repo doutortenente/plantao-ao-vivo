@@ -11,7 +11,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
   "meta": {
     "unidade": "UTI 2",          // nome do arquivo: uti2
     "data": "11/10/2026",        // nome do arquivo: 11-10-26
-    "turno": "diurno",
+    "turno": "diurno",           // nome do arquivo: ...-evolucoes-diurno
     "janela": "24 h",            // padrão; um leito pode sobrescrever
     "data_prescricao": "11/10"
   },

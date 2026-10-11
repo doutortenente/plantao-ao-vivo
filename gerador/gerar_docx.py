@@ -3,9 +3,9 @@
 """
 gerar_docx.py — gera os dois Word do plantão a partir de UM arquivo JSON.
 
-  1. DD-MM-AA-utiN-evolucoes.docx   (retrato, 1 leito por página)
+  1. DD-MM-AA-utiN-evolucoes-<turno>.docx   (retrato, 1 leito por página)
      Só os blocos que mudam no dia, na ordem do docs/BRIEFING.md.
-  2. DD-MM-AA-utiN-ficha-cola.docx  (paisagem, 1 FOLHA por leito)
+  2. DD-MM-AA-utiN-ficha-cola-<turno>.docx  (paisagem, 1 FOLHA por leito)
      Esquerda: sinais vitais + balanço + laboratório. Direita: prescrição por
      classe, uma droga por linha ("Nome (genérico) dose => horários").
      Embaixo: linhas para anotação. Nunca passa de uma folha por leito.
@@ -421,7 +421,7 @@ def ajustar_linhas(plantao):
 
 
 def nome_arquivo(meta, classe, tipo):
-    """Padrão DD-MM-AA-utiN-<classe>.<tipo>, ex.: 11-10-26-uti2-ficha-cola.docx"""
+    """Padrão DD-MM-AA-utiN-<classe>.<tipo>, ex.: 11-10-26-uti2-ficha-cola-diurno.docx"""
     d = re.match(r"(\d{1,2})/(\d{1,2})/(\d{2,4})", meta.get("data", ""))
     data = f"{int(d.group(1)):02d}-{int(d.group(2)):02d}-{d.group(3)[-2:]}" if d else "sem-data"
     uti = re.sub(r"\s+", "", meta.get("unidade", "uti")).lower()
@@ -437,8 +437,10 @@ def main():
     plantao = json.loads(Path(a.json).read_text(encoding="utf-8"))
     meta = plantao.get("meta", {})
     pasta = Path(a.saida); pasta.mkdir(parents=True, exist_ok=True)
-    evo = pasta / nome_arquivo(meta, "evolucoes", "docx")
-    cola = pasta / nome_arquivo(meta, "ficha-cola", "docx")
+    turno = re.sub(r"\s+", "-", meta.get("turno", "").strip().lower())
+    sufixo = f"-{turno}" if turno else ""
+    evo = pasta / nome_arquivo(meta, "evolucoes" + sufixo, "docx")
+    cola = pasta / nome_arquivo(meta, "ficha-cola" + sufixo, "docx")
     gerar_evolucoes(plantao, evo)
     linhas = {} if a.sem_ajuste else ajustar_linhas(plantao)
     gerar_ficha(plantao, cola, linhas)
