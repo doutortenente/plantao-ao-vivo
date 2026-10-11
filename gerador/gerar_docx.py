@@ -10,7 +10,7 @@ gerar_docx.py — gera os dois Word do plantão a partir de UM arquivo JSON.
      classe, uma droga por linha ("Nome (genérico) dose => horários").
      Embaixo: linhas para anotação. Nunca passa de uma folha por leito.
 
-Fonte Times New Roman 10, negrito nos rótulos, flags em vermelho.
+Fonte Times New Roman 10 em tudo; destaque só por negrito (rótulos, flags, alertas). Sem cor.
 Toda conta (Máx - Mín, flags, balanço) vem do motor:
 skills/sasi-ingest-export/scripts/build_passagem.py
 
