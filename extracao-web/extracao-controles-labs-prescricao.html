@@ -1,0 +1,1007 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Extração do plantão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --paper:#F4F6F5; --sheet:#FFFFFF; --ink:#17283A; --ink2:#4A5B6C; --rule:#D3DCE1; --grid:rgba(23,40,58,.07);
+  --accent:#0E6E62; --accent-on:#FFFFFF; --accent-bg:#DDF0EC;
+  --warn:#6E4A00; --warn-line:#B98400; --warn-bg:#FFEDB5;
+  --crit:#B3261E; --crit-bg:#FBE3E1;
+  --focus:#2B57A8;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1B26; --sheet:#15232F; --ink:#E6EDF2; --ink2:#A9B7C3; --rule:#2A3C4B; --grid:rgba(230,237,242,.05);
+    --accent:#4FD1B9; --accent-on:#0F1B26; --accent-bg:rgba(79,209,185,.14);
+    --warn:#FFD466; --warn-line:#FFD466; --warn-bg:rgba(255,212,102,.15);
+    --crit:#FF8A80; --crit-bg:rgba(255,138,128,.15);
+    --focus:#8FB3F5;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1B26; --sheet:#15232F; --ink:#E6EDF2; --ink2:#A9B7C3; --rule:#2A3C4B; --grid:rgba(230,237,242,.05);
+  --accent:#4FD1B9; --accent-on:#0F1B26; --accent-bg:rgba(79,209,185,.14);
+  --warn:#FFD466; --warn-line:#FFD466; --warn-bg:rgba(255,212,102,.15);
+  --crit:#FF8A80; --crit-bg:rgba(255,138,128,.15);
+  --focus:#8FB3F5;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{background:var(--paper);scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px;line-height:1.55}
+.wrap{max-width:780px;margin:0 auto;padding-left:18px;padding-right:18px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+button{font:inherit}
+
+header.band{background-color:var(--sheet);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:22px 22px;border-bottom:1.5px solid var(--ink)}
+.hero{padding-top:24px;padding-bottom:20px}
+h1{font-size:clamp(1.6rem,1.2rem + 2vw,2.2rem);line-height:1.15;margin:0 0 8px;font-weight:700}
+.lede{margin:0;color:var(--ink2);max-width:60ch}
+h2{font-size:1.2rem;line-height:1.3;margin:0 0 8px}
+h3{font-size:1.05rem;line-height:1.3;margin:0}
+.hint{color:var(--ink2);margin:0 0 10px;max-width:62ch}
+section.blk{padding:20px 0;border-bottom:1px solid var(--rule)}
+
+.gate{margin:16px 0 0;padding:12px 14px;border-radius:10px;background:var(--warn-bg);color:var(--warn);border:1.5px solid var(--warn-line);font-weight:700}
+.gate[hidden]{display:none}
+
+.drop{display:grid;place-items:center;text-align:center;gap:6px;min-height:150px;padding:20px;border:2px dashed var(--ink2);border-radius:14px;background:var(--sheet);cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--accent-bg)}
+.drop strong{font-size:1.1rem}
+.drop span{color:var(--ink2);font-size:.95rem}
+.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.files{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.files li{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px}
+.files .fn{flex:1;min-width:0;overflow-wrap:anywhere}
+.files .fp{color:var(--ink2);font-size:.9rem;white-space:nowrap}
+.x{border:0;background:none;color:var(--ink2);min-width:44px;min-height:44px;cursor:pointer;font-size:1.3rem;line-height:1}
+
+.seg{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;padding:0;border:0}
+.seg legend{font-weight:700;margin-bottom:6px;padding:0}
+.seg label{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border:1.5px solid var(--ink);border-radius:10px;background:var(--sheet);cursor:pointer}
+.seg input{accent-color:var(--accent);width:18px;height:18px;margin:0}
+.seg label:has(input:checked){background:var(--ink);color:var(--paper)}
+
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:18px 0 4px}
+.btn{min-height:48px;padding:10px 18px;border-radius:12px;border:1.5px solid var(--ink);background:var(--sheet);color:var(--ink);cursor:pointer;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-on)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn[hidden]{display:none}
+.status{margin:10px 0 0;font-weight:700}
+
+.prog{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.prog li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;font-size:.95rem}
+.prog .pn{flex:1;min-width:0;overflow-wrap:anywhere}
+.chip{display:inline-block;border-radius:999px;padding:1px 10px;font-size:.84rem;font-weight:700;border:1.5px solid var(--ink2);color:var(--ink2);white-space:nowrap}
+.chip.ok{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.chip.run{border-color:var(--warn-line);color:var(--warn);background:var(--warn-bg)}
+.chip.err{border-color:var(--crit);color:var(--crit);background:var(--crit-bg)}
+
+.res-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sitrep{margin:0;font-weight:700}
+.bed{margin:18px 0 0;padding:14px;background:var(--sheet);border:1px solid var(--rule);border-left:4px solid var(--ink);border-radius:12px}
+.bed.crit{border-left-color:var(--crit)}
+.bed-top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.flags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;padding:0;list-style:none}
+.flags li{border-radius:8px;padding:3px 10px;font-size:.9rem;font-weight:700;background:var(--crit-bg);color:var(--crit);border:1.5px solid var(--crit)}
+textarea.block{width:100%;min-height:200px;resize:vertical;padding:12px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:.98rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+details.pend{margin-top:10px}
+details.pend summary{cursor:pointer;font-weight:700;color:var(--warn);min-height:40px;display:flex;align-items:center}
+details.pend ul{margin:4px 0 0;padding-left:1.2em;color:var(--ink2)}
+.conduta{margin-top:22px}
+.global-pend{margin-top:18px;padding:12px 14px;border:1.5px solid var(--warn-line);background:var(--warn-bg);color:var(--warn);border-radius:10px}
+.global-pend ul{margin:6px 0 0;padding-left:1.2em}
+footer{padding-top:20px;padding-bottom:34px;color:var(--ink2);font-size:.92rem}
+footer p{margin:0 0 8px;max-width:66ch}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="band">
+  <div class="wrap hero">
+    <h1>Extração do plantão</h1>
+    <p class="lede">Folhas de controles, prescrições e labs anotados à mão viram o controles-labs-prescrição: um bloco por leito, pronto para colar.</p>
+    <p class="gate" id="gate" hidden></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="blk" aria-labelledby="h-arq">
+    <h2 id="h-arq">Arquivos do plantão</h2>
+    <label class="drop" id="drop" for="file">
+      <strong>Toque para escolher ou arraste aqui</strong>
+      <span>PDF escaneado ou foto (JPG, PNG, WEBP). Pode misturar controles, prescrições e labs.</span>
+      <input type="file" id="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp">
+    </label>
+    <ul class="files" id="files"></ul>
+  </section>
+
+  <section class="blk" aria-labelledby="h-aj">
+    <h2 id="h-aj">Ajustes</h2>
+    <fieldset class="seg">
+      <legend>Janela dos sinais vitais</legend>
+      <label><input type="radio" name="jan" value="24" checked> 24 h</label>
+      <label><input type="radio" name="jan" value="d"> 12 h diurno</label>
+      <label><input type="radio" name="jan" value="n"> 12 h noturno</label>
+    </fieldset>
+    <fieldset class="seg">
+      <legend>Leitura</legend>
+      <label><input type="radio" name="tier" value="complex" checked> Precisão máxima</label>
+      <label><input type="radio" name="tier" value="default"> Padrão, mais rápida</label>
+    </fieldset>
+    <div class="actions">
+      <button type="button" class="btn primary" id="go" disabled>Extrair</button>
+      <button type="button" class="btn" id="stop" hidden>Parar</button>
+      <button type="button" class="btn" id="retry" hidden>Tentar de novo as que falharam</button>
+      <button type="button" class="btn" id="clear" hidden>Limpar tudo</button>
+    </div>
+    <p class="status" id="status" aria-live="polite"></p>
+    <ul class="prog" id="prog"></ul>
+  </section>
+
+  <section class="blk" id="res" hidden aria-labelledby="h-res">
+    <h2 id="h-res">Resultado</h2>
+    <div class="res-head">
+      <p class="sitrep" id="sitrep"></p>
+      <button type="button" class="btn" id="copyall">Copiar todos os leitos</button>
+    </div>
+    <p class="hint">Os blocos são editáveis: corrija um <b>?</b> antes de copiar, se precisar.</p>
+    <div id="beds"></div>
+    <div id="gpend"></div>
+    <div class="conduta" id="conduta"></div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>Regras: modelo da controles-vitais-janela (exemplo resolvido) e prescrição em 7 blocos do modo D. Ilegível vira <b>?</b>, ausente é omitido. Máx–Mín, contagens e somas são feitas pela página, não pelo modelo.</p>
+  <p>Flags críticos fora do bloco: PAM &lt; 65 em 3 ou mais aferições ou PAM ≤ 55; FC &gt; 100 em 3 ou mais com PAM &lt; 65; SpO2 &lt; 92 em 2 ou mais com O2; Dx &gt; 250 em 2 ou mais; BIC compatível com vasoativa. Oligúria por mL/kg/h não é calculada porque a folha não traz peso.</p>
+  <p>Cada página lida usa o seu limite de uso do Claude.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ------------------------------------------------------------------ estado */
+var S = {
+  sample: null, limits: null,
+  files: [],          // {id, file, kind:'pdf'|'img', pages, doc}
+  pages: [],          // {id, fileId, n, label, status, err, data}
+  running: false, ctrl: null, results: null
+};
+var uid = 0;
+var $ = function(id){ return document.getElementById(id); };
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+  });
+}
+function setStatus(t){ $("status").textContent = t || ""; }
+function gate(msg){ var g = $("gate"); g.textContent = msg; g.hidden = !msg; }
+
+/* ------------------------------------------------------------- conexão */
+(async function init(){
+  if (!window.claude || typeof window.claude.use !== "function"){
+    gate("Abra esta página dentro do Claude para extrair.");
+    return;
+  }
+  setStatus("Conectando ao Claude…");
+  var s = null;
+  try { s = await window.claude.use("sample"); } catch(e){ s = null; }
+  setStatus("");
+  if (!s){ gate("O Claude não está disponível nesta visualização. Abra a página pelo link do Claude."); return; }
+  var lim = null;
+  try { lim = await s.limits(); } catch(e){ lim = null; }
+  if (!lim || !lim.images){ gate("Sua conta não permite enviar imagens por esta página, então a leitura não roda aqui."); return; }
+  S.sample = s; S.limits = lim;
+  refreshButtons();
+})();
+
+/* -------------------------------------------------------------- arquivos */
+var drop = $("drop"), input = $("file");
+input.addEventListener("change", function(){ addFiles(input.files); input.value = ""; });
+["dragenter","dragover"].forEach(function(ev){
+  drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add("over"); });
+});
+["dragleave","drop"].forEach(function(ev){
+  drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove("over"); });
+});
+drop.addEventListener("drop", function(e){ if (e.dataTransfer) addFiles(e.dataTransfer.files); });
+
+async function addFiles(list){
+  var arr = Array.prototype.slice.call(list || []);
+  for (var i = 0; i < arr.length; i++){
+    var f = arr[i];
+    var isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+    var isImg = /^image\/(jpeg|png|webp)$/.test(f.type);
+    if (!isPdf && !isImg){ setStatus("Arquivo ignorado (tipo não aceito): " + f.name); continue; }
+    var rec = {id: ++uid, file: f, kind: isPdf ? "pdf" : "img", pages: 1, doc: null};
+    if (isPdf){
+      try {
+        rec.doc = await loadPdf(f);
+        rec.pages = rec.doc.numPages;
+      } catch(e){
+        setStatus("Não consegui abrir o PDF " + f.name + ".");
+        continue;
+      }
+    }
+    S.files.push(rec);
+    for (var p = 1; p <= rec.pages; p++){
+      S.pages.push({id: ++uid, fileId: rec.id, n: p, label: f.name + (rec.kind === "pdf" ? ", página " + p : ""), status: "fila", err: "", data: null});
+    }
+  }
+  renderFiles(); renderProg(); refreshButtons();
+}
+
+function loadPdf(file){
+  if (!window.pdfjsLib) return Promise.reject(new Error("pdf.js indisponível"));
+  try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; } catch(e){}
+  return file.arrayBuffer().then(function(buf){
+    return window.pdfjsLib.getDocument({data: new Uint8Array(buf)}).promise;
+  });
+}
+
+function renderFiles(){
+  $("files").innerHTML = S.files.map(function(r){
+    return '<li><span class="fn">' + esc(r.file.name) + '</span><span class="fp">' + (r.kind === "pdf" ? r.pages + (r.pages === 1 ? " página" : " páginas") : "foto") +
+      '</span><button type="button" class="x" data-rm="' + r.id + '" aria-label="Remover ' + esc(r.file.name) + '">×</button></li>';
+  }).join("");
+}
+$("files").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-rm]");
+  if (!b || S.running) return;
+  var id = Number(b.getAttribute("data-rm"));
+  S.files = S.files.filter(function(r){ return r.id !== id; });
+  S.pages = S.pages.filter(function(p){ return p.fileId !== id; });
+  renderFiles(); renderProg(); refreshButtons();
+});
+
+/* --------------------------------------------------------------- imagens */
+var LONG_SIDE = 2400, OVERVIEW_SIDE = 1300, OVERLAP = 0.03;
+
+async function pageCanvas(pg){
+  var rec = S.files.filter(function(r){ return r.id === pg.fileId; })[0];
+  if (rec.kind === "pdf"){
+    var page = await rec.doc.getPage(pg.n);
+    var vp1 = page.getViewport({scale: 1});
+    var scale = LONG_SIDE / Math.max(vp1.width, vp1.height);
+    var vp = page.getViewport({scale: scale});
+    var c = document.createElement("canvas");
+    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+    await page.render({canvasContext: ctx, viewport: vp}).promise;
+    return c;
+  }
+  var url = URL.createObjectURL(rec.file);
+  try {
+    var img = await new Promise(function(res, rej){
+      var im = new Image(); im.onload = function(){ res(im); }; im.onerror = function(){ rej(new Error("imagem ilegível")); }; im.src = url;
+    });
+    var k = Math.min(1, LONG_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+    var c2 = document.createElement("canvas");
+    c2.width = Math.round(img.naturalWidth * k); c2.height = Math.round(img.naturalHeight * k);
+    var ctx2 = c2.getContext("2d");
+    ctx2.fillStyle = "#ffffff"; ctx2.fillRect(0, 0, c2.width, c2.height);
+    ctx2.drawImage(img, 0, 0, c2.width, c2.height);
+    return c2;
+  } finally { URL.revokeObjectURL(url); }
+}
+
+function crop(src, x, y, w, h, maxSide){
+  var k = maxSide ? Math.min(1, maxSide / Math.max(w, h)) : 1;
+  var c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+  c.getContext("2d").drawImage(src, x, y, w, h, 0, 0, c.width, c.height);
+  return c;
+}
+
+function mediaType(){
+  var types = (S.limits && S.limits.images && S.limits.images.mediaTypes) || ["image/jpeg"];
+  if (types.indexOf("image/jpeg") !== -1) return "image/jpeg";
+  if (types.indexOf("image/webp") !== -1) return "image/webp";
+  return types[0] || "image/png";
+}
+
+async function toBlob(canvas){
+  var mt = mediaType(), maxB = (S.limits.images.maxInputBytes || 5000000);
+  var qs = [0.88, 0.8, 0.7, 0.6];
+  for (var i = 0; i < qs.length; i++){
+    var b = await new Promise(function(res){ canvas.toBlob(res, mt, qs[i]); });
+    if (b && b.size <= maxB) return b;
+  }
+  throw new Error("imagem grande demais mesmo comprimida");
+}
+
+/* Divide a página para driblar a redução a ~1,2 MP por imagem. */
+async function pageImages(pg){
+  var c = await pageCanvas(pg);
+  var W = c.width, H = c.height;
+  var maxCount = (S.limits.images.maxCount || 1);
+  var canv = [], desc;
+  if (maxCount >= 4){
+    var tw = Math.ceil(W / 2 + W * OVERLAP), th = Math.ceil(H / 2 + H * OVERLAP);
+    var tiles = [crop(c, 0, 0, tw, th), crop(c, W - tw, 0, tw, th), crop(c, 0, H - th, tw, th), crop(c, W - tw, H - th, tw, th)];
+    if (maxCount >= 5){
+      canv = [crop(c, 0, 0, W, H, OVERVIEW_SIDE)].concat(tiles);
+      desc = "A imagem 1 é a página inteira em resolução baixa, só para você se orientar no layout. As imagens 2 a 5 são a MESMA página em alta resolução, cortada em 4 partes com pequena sobreposição: 2 = superior esquerda, 3 = superior direita, 4 = inferior esquerda, 5 = inferior direita. Leia os valores nas imagens 2 a 5.";
+    } else {
+      canv = tiles;
+      desc = "As imagens 1 a 4 são a MESMA página em alta resolução, cortada em 4 partes com pequena sobreposição: 1 = superior esquerda, 2 = superior direita, 3 = inferior esquerda, 4 = inferior direita.";
+    }
+  } else if (maxCount >= 2){
+    if (H >= W){
+      var hh = Math.ceil(H / 2 + H * OVERLAP);
+      canv = [crop(c, 0, 0, W, hh), crop(c, 0, H - hh, W, hh)];
+      desc = "As imagens 1 e 2 são a MESMA página cortada em duas metades com pequena sobreposição: 1 = metade de cima, 2 = metade de baixo.";
+    } else {
+      var hw = Math.ceil(W / 2 + W * OVERLAP);
+      canv = [crop(c, 0, 0, hw, H), crop(c, W - hw, 0, hw, H)];
+      desc = "As imagens 1 e 2 são a MESMA página cortada em duas metades com pequena sobreposição: 1 = metade esquerda, 2 = metade direita.";
+    }
+  } else {
+    canv = [c];
+    desc = "A imagem é a página inteira.";
+  }
+  var blobs = [];
+  for (var i = 0; i < canv.length; i++) blobs.push(await toBlob(canv[i]));
+  return {blobs: blobs, desc: desc};
+}
+
+/* ---------------------------------------------------------------- prompt */
+var BLOCOS = ["Cardiovascular e Hemodinâmica","SNC e Psiquiatria","Gastrointestinal e Endócrino","Infeccioso e Respiratório","Hematológico e Profilaxias","Nutrição, Eletrólitos e Soluções","Sintomáticos e Se Necessário (SN)"];
+
+function buildPrompt(desc){
+  return [
+"Você transcreve documentos de UTI adulto (modelo Beneficência Portuguesa) para dados estruturados. As imagens são de UMA página escaneada.",
+desc,
+"",
+"DOUTRINA ZERO ALUCINAÇÃO (obrigatória):",
+"1. Transcreva só o que está escrito. Valor ilegível ou duvidoso = \"?\". Campo vazio ou inexistente = null. Nunca estime, nunca complete por inferência, nunca calcule, nunca some.",
+"2. Copie cada número exatamente como escrito, com a vírgula ou o ponto decimal da folha.",
+"3. Fonte digitada vale mais que manuscrita. Se conflitarem, use a digitada e descreva o conflito em \"pendencias\".",
+"4. Carimbos e assinaturas não são dados.",
+"5. Na sobreposição entre recortes, a mesma informação aparece duas vezes: registre uma vez só.",
+"",
+"PASSO 1. Classifique a página em \"tipo\":",
+"- \"sv\": cabeçalho PLANEJAMENTO ASSISTENCIAL TERAPIA INTENSIVA ADULTO, grade horária com T, FR, FC, PA, Glicemia, Saturação.",
+"- \"balanco\": Controle de dor / GANHOS / PERDAS.",
+"- \"prescricao\": prescrição médica.",
+"- \"labs\": resultados de exames ou anotação de exames feita à mão.",
+"- \"outro\": qualquer outra coisa.",
+"",
+"PASSO 2. Identifique cada paciente pela etiqueta ou cabeçalho: leito, nome como escrito, idade, sexo (M ou F), unidade (ex.: UTI ADULTO 2), data da folha (dd/mm/aaaa). Uma página pode ter mais de um paciente, o que é comum em anotação de labs.",
+"",
+"REGRAS DO TIPO sv:",
+"- Uma entrada em \"afericoes\" por linha de hora preenchida (q2h: 7, 9, 11, 13, 15, 17, 19, 21, 23, 1, 3, 5; linhas pares só se preenchidas).",
+"- Colunas da esquerda para a direita: Hora, T, FR, FC, Pressão Arterial (:00h e :30h, formato Sist/Diast (Méd)), Glicemia, Saturação, Dor, PVC, RASS, Suporte (Cateter O2, Nebulização, Modalidade, Peep, FiO2).",
+"- FR e FC podem estar trocadas na caligrafia: número entre 60 e 140 é FC, entre 8 e 35 é FR. Decida pela fisiologia, não pela posição, e registre em \"pendencias\" quando trocar.",
+"- Cada leitura de PA vira {\"pas\",\"pad\",\"pam\"}. A PAM entre parênteses é a mais confiável: se Sist/Diast estiver ilegível e a PAM legível, mantenha a PAM.",
+"- suporte: \"AA\" para ar ambiente; \"1L\", \"2L\" viram \"O2 cateter 1 L/min\", \"O2 cateter 2 L/min\"; o resto, literal.",
+"",
+"REGRAS DO TIPO balanco:",
+"- dieta: tipo de nutrição pelas colunas de ganhos (ex.: VO, SNE, VO + SNE).",
+"- Rodapés (só para conferência; a diurese é somada pelas células): ganhos_6_18 (Ganhos 6h-18h), ganhos_19_6 (Ganhos 19h-6h), balanco_6_18 (Balanço 6h-18h), balanco_19_6 (Balanço 19h-6h), diurese_24h (D:), bh_24h (BH:). Mantenha o sinal.",
+"- diurese_registros: cada valor da coluna Diurese com a hora.",
+"- evacuacao: episódios + quantidade + qualidade, ex.: 1x (++, pastosa). Legenda: P pastosa, L líquida, E endurecida, ME melena, SC sangue/coágulos; + pequena, ++ média, +++ grande. Sem registro legível: \"s/ registro legível\".",
+"- residuo_gastrico e drenos: valor e descrição, se houver.",
+"- infusoes: cada rótulo de bomba (BIC) da coluna Endovenoso. Rótulo ilegível = \"BIC ilegível\". confirmar = true se o nome for compatível mas incerto (ex.: NORA = noradrenalina). vasoativa = true se o rótulo for compatível com droga vasoativa.",
+"",
+"REGRAS DO TIPO prescricao:",
+"- diagnostico, alergias, dieta_prescrita: como escritos; null se não constam.",
+"- itens: uma entrada por droga ATIVA. texto no formato \"Nome [se comercial, (genérico) ao lado] — dose — via — frequência/horário\". Vias: VO, EV, SNE, SNG, SC, IM, VR. Unidades: mg, mcg, g, mL, gts. Mantenha a vírgula decimal.",
+"- bloco: exatamente um destes nomes: " + BLOCOS.map(function(b){ return "\"" + b + "\""; }).join(", ") + ".",
+"  Cardiovascular e Hemodinâmica: anti-HAS, vasopressor, inotrópico, antiarrítmico, diurético. SNC e Psiquiatria: sedativo, opioide, anticonvulsivante, antipsicótico, antidepressivo. Gastrointestinal e Endócrino: procinético, laxante, antiemético, insulina, hormônio tireoidiano, hipoglicemiante. Infeccioso e Respiratório: ATB, antifúngico, antiviral, broncodilatador, corticoide, VNI. Hematológico e Profilaxias: antitrombótico, anticoagulante, antiagregante, protetor gástrico. Nutrição, Eletrólitos e Soluções: dieta enteral/parenteral, vitamina, soroterapia, reposição de eletrólito. Sintomáticos e Se Necessário (SN): analgésico simples, antitérmico, qualquer droga ACM ou SN.",
+"- revisar_ocr = true para dose absurda ou leitura incerta.",
+"- Anotação à mão de suspender, riscado ou X: a droga sai de itens e entra em suspensos. \"Modificado para\": use a versão modificada.",
+"- procedimentos e recomendacoes: como escritos.",
+"- safety: aponte só contraindicação clássica e rastreável entre as drogas e o diagnóstico (ex.: betabloqueador em choque cardiogênico; laxante em obstrução intestinal; AINE em IRA; duas drogas que prolongam QT). Sem achado assim, escreva exatamente: \"Nenhum risco imediato detectado com base nos dados fornecidos.\"",
+"",
+"REGRAS DO TIPO labs:",
+"- exames: um por parâmetro, com o nome em abreviatura: HB, HT, PLAQ, LEUCO, SEG, BAST, UR, CR, MG, NA, CAI, K, P, PCR, PH, PCO2, PO2, HCO3, BE, SATO2, LACTATO. Outros exames pelo nome usual em maiúsculas.",
+"- serie: valores em ordem cronológica, o mais antigo primeiro, cada um com a data se houver.",
+"",
+"RESPONDA SOMENTE COM UM JSON. Formato (texto = string; inclua só os campos do tipo da página, mais identificação e pendencias):",
+"{\"tipo\": \"sv|balanco|prescricao|labs|outro\", \"pacientes\": [{",
+"  \"leito\": texto|null, \"nome\": texto|null, \"idade\": texto|null, \"sexo\": \"M\"|\"F\"|null, \"unidade\": texto|null, \"data_folha\": texto|null,",
+"  \"afericoes\": [{\"hora\": texto, \"t\": texto|null, \"fr\": texto|null, \"fc\": texto|null, \"pa\": [{\"pas\": texto|null, \"pad\": texto|null, \"pam\": texto|null}], \"dx\": texto|null, \"spo2\": texto|null, \"suporte\": texto|null}],",
+"  \"dieta\": texto|null, \"ganhos_6_18\": texto|null, \"ganhos_19_6\": texto|null, \"balanco_6_18\": texto|null, \"balanco_19_6\": texto|null, \"diurese_24h\": texto|null, \"bh_24h\": texto|null,",
+"  \"diurese_registros\": [{\"hora\": texto, \"ml\": texto}], \"evacuacao\": texto|null, \"residuo_gastrico\": texto|null, \"drenos\": [texto], \"infusoes\": [{\"rotulo\": texto, \"confirmar\": booleano, \"vasoativa\": booleano}],",
+"  \"diagnostico\": texto|null, \"alergias\": texto|null, \"dieta_prescrita\": texto|null, \"itens\": [{\"texto\": texto, \"bloco\": texto, \"revisar_ocr\": booleano}], \"suspensos\": [texto], \"procedimentos\": [texto], \"recomendacoes\": [texto], \"safety\": texto|null,",
+"  \"exames\": [{\"nome\": texto, \"unidade\": texto|null, \"serie\": [{\"data\": texto|null, \"valor\": texto}]}],",
+"  \"pendencias\": [texto]",
+"}]}"
+  ].join("\n");
+}
+
+/* --------------------------------------------------------------- execução */
+function refreshButtons(){
+  var ready = !!S.sample && S.pages.length > 0;
+  $("go").disabled = !ready || S.running;
+  $("stop").hidden = !S.running;
+  $("retry").hidden = S.running || !S.pages.some(function(p){ return p.status === "falhou"; });
+  $("clear").hidden = S.running || S.pages.length === 0;
+  input.disabled = S.running;
+}
+
+var STATUS_TXT = {fila:"Na fila", prep:"Preparando imagem", lendo:"Lendo", ok:"Pronto", falhou:"Falhou", parado:"Parado"};
+function renderProg(){
+  $("prog").innerHTML = S.pages.map(function(p){
+    var cls = p.status === "ok" ? "ok" : (p.status === "falhou" ? "err" : (p.status === "lendo" || p.status === "prep" ? "run" : ""));
+    var extra = p.status === "ok" && p.data ? " (" + tipoTxt(p.data.tipo) + ")" : "";
+    return '<li><span class="pn">' + esc(p.label) + '</span><span class="chip ' + cls + '">' + esc(STATUS_TXT[p.status] + extra) + "</span>" +
+      (p.err ? '<span class="pn" style="flex-basis:100%;color:var(--crit)">' + esc(p.err) + "</span>" : "") + "</li>";
+  }).join("");
+}
+function tipoTxt(t){
+  return {sv:"sinais vitais", balanco:"balanço", prescricao:"prescrição", labs:"labs", outro:"outro"}[t] || "não identificado";
+}
+
+$("go").addEventListener("click", function(){ run(S.pages.filter(function(p){ return p.status !== "ok"; })); });
+$("retry").addEventListener("click", function(){ run(S.pages.filter(function(p){ return p.status === "falhou" || p.status === "parado"; })); });
+$("stop").addEventListener("click", function(){ if (S.ctrl) S.ctrl.abort(); });
+$("clear").addEventListener("click", function(){
+  if (S.running) return;
+  S.files = []; S.pages = []; S.results = null;
+  renderFiles(); renderProg(); refreshButtons(); setStatus("");
+  $("res").hidden = true;
+});
+
+function sleep(ms, signal){
+  return new Promise(function(res, rej){
+    var t = setTimeout(res, ms);
+    if (signal) signal.addEventListener("abort", function(){ clearTimeout(t); rej({code:"cancelled"}); }, {once:true});
+  });
+}
+
+async function run(queue){
+  if (!S.sample || !queue.length) return;
+  S.running = true; S.ctrl = new AbortController();
+  var fatal = null;
+  queue.forEach(function(p){ p.status = "fila"; p.err = ""; });
+  renderProg(); refreshButtons();
+  var tier = document.querySelector('input[name="tier"]:checked').value;
+  var idx = 0, done = 0;
+  setStatus("Lendo 0 de " + queue.length + " páginas…");
+
+  async function worker(){
+    while (idx < queue.length && !fatal && !S.ctrl.signal.aborted){
+      var p = queue[idx++];
+      await readPage(p, tier).catch(function(e){
+        if (e && (e.code === "not_granted" || e.code === "images_unavailable")) fatal = e;
+      });
+      done++;
+      setStatus("Lendo " + done + " de " + queue.length + " páginas…");
+      renderProg();
+    }
+  }
+  await Promise.all([worker(), worker()]);
+
+  queue.forEach(function(p){ if (p.status === "fila" || p.status === "lendo" || p.status === "prep") p.status = "parado"; });
+  S.running = false;
+  renderProg(); refreshButtons();
+  if (fatal){
+    setStatus(fatal.code === "not_granted" ? "O acesso ao Claude foi recusado nesta página. Recarregue para tentar de novo." : "Sua conta não permite enviar imagens por esta página.");
+  } else if (S.ctrl.signal.aborted){
+    setStatus("Parado. As páginas prontas já estão no resultado.");
+  } else {
+    var nf = S.pages.filter(function(p){ return p.status === "falhou"; }).length;
+    setStatus(nf ? "Terminou com " + nf + " página(s) com falha." : "Pronto.");
+  }
+  assembleAndRender();
+}
+
+async function readPage(p, tier){
+  var signal = S.ctrl.signal;
+  p.status = "prep"; renderProg();
+  var imgs;
+  try { imgs = await pageImages(p); }
+  catch(e){ p.status = "falhou"; p.err = "Não consegui preparar a imagem: " + (e && e.message ? e.message : "erro"); return; }
+  if (signal.aborted){ p.status = "parado"; return; }
+  p.status = "lendo"; renderProg();
+  var prompt = buildPrompt(imgs.desc);
+  for (var attempt = 0; attempt < 3; attempt++){
+    try {
+      var data = await S.sample.json(prompt, {images: imgs.blobs, modelTier: tier, signal: signal});
+      if (!data || typeof data !== "object" || !Array.isArray(data.pacientes)){
+        p.status = "falhou"; p.err = "Resposta sem a lista de pacientes."; return;
+      }
+      p.data = data; p.status = "ok"; return;
+    } catch(e){
+      var code = e && e.code;
+      if (code === "cancelled"){ p.status = "parado"; return; }
+      if (code === "rate_limited" && attempt < 2){
+        p.err = "Limite de uso momentâneo; aguardando para tentar de novo.";
+        renderProg();
+        try { await sleep(20000 * (attempt + 1), signal); } catch(_){ p.status = "parado"; p.err = ""; return; }
+        p.err = ""; continue;
+      }
+      p.status = "falhou";
+      p.err = ({
+        invalid_json: "A resposta veio fora do formato. Tente de novo.",
+        image_rejected: "A imagem foi recusada (tipo ou tamanho).",
+        rate_limited: "Limite de uso atingido. Tente de novo mais tarde.",
+        not_granted: "Acesso ao Claude recusado.",
+        images_unavailable: "Envio de imagem indisponível."
+      })[code] || ("Erro na leitura" + (e && e.message ? ": " + e.message : "."));
+      if (code === "not_granted" || code === "images_unavailable") throw e;
+      return;
+    }
+  }
+}
+
+/* --------------------------------------------------------------- montagem */
+function num(raw){
+  if (raw === null || raw === undefined) return null;
+  var s = String(raw).trim();
+  if (!s) return null;
+  if (s === "?") return {ok:false, raw:s, why:"ilegível"};
+  var c = s.replace(/\u2212/g, "-").replace(/\s+/g, "").replace(",", ".");
+  if (/^[-+]?\d+(\.\d+)?$/.test(c)) return {ok:true, v:parseFloat(c), raw:s.replace(/\u2212/g, "-")};
+  return {ok:false, raw:s, why:"caractere misturado"};
+}
+function horaNum(h){ var n = num(h); if (!n || !n.ok) return null; var v = Math.round(n.v); return v === 24 ? 0 : v; }
+function horaOrd(h){ var v = horaNum(h); return v === null ? 99 : (v < 7 ? v + 24 : v); }
+function naJanela(h, jan){
+  if (jan === "24") return true;
+  var v = horaNum(h); if (v === null) return false;
+  return jan === "d" ? (v >= 7 && v <= 18) : (v >= 19 || v <= 6);
+}
+function fmtNum(v){ return (Math.round(v * 100) / 100).toString().replace(".", ","); }
+function normLeito(x){
+  if (x === null || x === undefined) return null;
+  var m = String(x).match(/\d+/);
+  return m ? (m[0].length < 2 ? "0" + m[0] : m[0]) : (String(x).trim() || null);
+}
+function normNome(x){ return x ? String(x).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "") : ""; }
+function arr(x){ return Array.isArray(x) ? x : []; }
+function firstVal(list, key){
+  var v = null, conflito = null;
+  list.forEach(function(o){
+    var x = o[key];
+    if (x === null || x === undefined || x === "") return;
+    if (v === null) v = x;
+    else if (String(x).trim() !== String(v).trim()) conflito = [v, x];
+  });
+  return {v: v, conflito: conflito};
+}
+
+var VP = [
+  {k:"pas", lab:"PAS",  unit:"mmHg", op:"<", t:90,   abs:[50,260]},
+  {k:"pad", lab:"PAD",  unit:"mmHg", op:"<", t:50,   abs:null},
+  {k:"pam", lab:"PAM",  unit:"mmHg", op:"<", t:65,   abs:[30,200]},
+  {k:"fc",  lab:"FC",   unit:"bpm",  op:">", t:100,  abs:[20,250]},
+  {k:"fr",  lab:"FR",   unit:"rpm",  op:">", t:20,   abs:[4,80]},
+  {k:"spo2",lab:"SpO2", unit:"%",    op:"<", t:92,   abs:[50,100]},
+  {k:"t",   lab:"TAX",  unit:"°C",   op:"<", t:35.5, abs:[30,43]}
+];
+function passa(v, op, t){ return op === "<" ? v < t : v > t; }
+
+function coleta(afs, k){
+  var out = [];
+  afs.forEach(function(a){
+    if (k === "pas" || k === "pad" || k === "pam"){
+      arr(a.pa).forEach(function(p){ var n = num(p && p[k]); if (n) out.push({n:n, hora:a.hora, a:a}); });
+    } else {
+      var n = num(a[k]); if (n) out.push({n:n, hora:a.hora, a:a});
+    }
+  });
+  return out;
+}
+function revisar(v, abs){ return abs && (v < abs[0] || v > abs[1]) ? " (revisar)" : ""; }
+function horasTxt(list){
+  var hs = list.map(function(x){ return x.hora ? x.hora + " h" : "hora ?"; });
+  return hs.join(", ");
+}
+
+function linhaVital(p, vals, pend){
+  if (!vals.length) return null;
+  var leg = vals.filter(function(x){ return x.n.ok; });
+  var ileg = vals.filter(function(x){ return !x.n.ok; });
+  if (ileg.length){
+    var mist = ileg.filter(function(x){ return x.n.why !== "ilegível"; }).map(function(x){ return "\"" + x.n.raw + "\""; });
+    pend.push(p.lab + ": " + ileg.length + " leitura(s) sem número legível (" + horasTxt(ileg) + ")" + (mist.length ? ", lido " + mist.join(", ") : "") + "; ficou fora do Máx–Mín.");
+  }
+  if (!leg.length) return {s: p.lab + ": ? " + p.unit, cnt:0, leg:[]};
+  var mx = leg[0], mn = leg[0];
+  leg.forEach(function(x){ if (x.n.v > mx.n.v) mx = x; if (x.n.v < mn.n.v) mn = x; });
+  var cnt = leg.filter(function(x){ return passa(x.n.v, p.op, p.t); }).length;
+  var s = p.lab + ": " + mx.n.raw + revisar(mx.n.v, p.abs) + " - " + mn.n.raw + revisar(mn.n.v, p.abs) + " " + p.unit;
+  if (cnt > 0) s += " [" + cnt + "x " + p.op + " " + p.t + "]";
+  return {s:s, cnt:cnt, leg:leg};
+}
+
+function somaCampos(vals, rotulos, pend, oque){
+  var present = [], faltando = [];
+  vals.forEach(function(v, i){
+    var n = num(v);
+    if (!n) faltando.push(rotulos[i] + " sem registro");
+    else if (!n.ok) faltando.push(rotulos[i] + " ilegível");
+    else present.push(n.v);
+  });
+  if (!present.length && faltando.length === vals.length && faltando.every(function(f){ return /sem registro/.test(f); })) return null;
+  if (faltando.length){ pend.push(oque + ": " + faltando.join("; ") + "."); return "?"; }
+  return fmtNum(present.reduce(function(a, b){ return a + b; }, 0));
+}
+
+function fmtBH(raw, pend){
+  var n = num(raw);
+  if (!n) return null;
+  if (!n.ok){ pend.push("BH ilegível (\"" + n.raw + "\")."); return "?"; }
+  var abs = n.raw.replace(/^[-+]\s*/, "");
+  var sign = n.v < 0 ? "- " : (n.v > 0 ? "+ " : "");
+  return sign + abs + revisar(n.v, [-5000, 5000]);
+}
+
+var LAB_ALIAS = {HGB:"HB",HEMOGLOBINA:"HB",HEMATOCRITO:"HT",PLAQUETAS:"PLAQ",PLT:"PLAQ",LEUCOCITOS:"LEUCO",LEUC:"LEUCO",SEGMENTADOS:"SEG",BASTONETES:"BAST",UREIA:"UR",CREATININA:"CR",CREAT:"CR",MAGNESIO:"MG",SODIO:"NA",POTASSIO:"K",FOSFORO:"P",CALCIOIONICO:"CAI",CAIONICO:"CAI",LACTATO:"LACTATO",LAC:"LACTATO",PCO2:"PCO2",PO2:"PO2",HCO3:"HCO3",BE:"BE",SBE:"BE",SATO2:"SATO2",PH:"PH"};
+var LAB_UNIT = {HB:"g/dl",HT:"%",PLAQ:"/mm3",LEUCO:"/mm3",UR:"mg/dl",CR:"mg/dl",MG:"mg/dl",NA:"mEq/L",CAI:"mmol/L",K:"mEq/L",P:"mg/dl"};
+function labKey(nome){
+  var k = String(nome || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
+  return LAB_ALIAS[k] || k;
+}
+function dataOrd(d){
+  var m = String(d || "").match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+  if (!m) return null;
+  var y = m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : 0;
+  return y * 10000 + Number(m[2]) * 100 + Number(m[1]);
+}
+
+function montaLabs(exList){
+  var map = {}, ordem = [];
+  exList.forEach(function(e){
+    var k = labKey(e.nome);
+    if (!k) return;
+    if (!map[k]){ map[k] = {nome:k, unidade:e.unidade || null, serie:[]}; ordem.push(k); }
+    if (!map[k].unidade && e.unidade) map[k].unidade = e.unidade;
+    arr(e.serie).forEach(function(s, i){
+      if (s && s.valor !== null && s.valor !== undefined && String(s.valor).trim() !== "") map[k].serie.push({data:s.data, valor:String(s.valor).trim(), o:map[k].serie.length});
+    });
+  });
+  ordem.forEach(function(k){
+    var s = map[k].serie;
+    if (s.every(function(x){ return dataOrd(x.data) !== null; })){
+      s.sort(function(a, b){ return (dataOrd(a.data) - dataOrd(b.data)) || (a.o - b.o); });
+    }
+    var seen = {}, uniq = [];
+    s.forEach(function(x){ var key = (x.data || "") + "|" + x.valor; if (!seen[key]){ seen[key] = 1; uniq.push(x); } });
+    map[k].serie = uniq;
+  });
+  function serie(k){
+    var e = map[k]; if (!e || !e.serie.length) return null;
+    var u = e.unidade || LAB_UNIT[k] || "";
+    return (k + ": " + e.serie.map(function(x){ return x.valor; }).join(" -> ") + (u ? " " + u : "")).trim();
+  }
+  var usados = {}, linhas = [];
+  function grupo(keys, sep){
+    var parts = keys.map(function(k){ usados[k] = 1; return serie(k); }).filter(Boolean);
+    if (parts.length) linhas.push(parts.join(sep));
+  }
+  grupo(["HB","HT","PLAQ"], " | ");
+  usados.LEUCO = usados.SEG = usados.BAST = 1;
+  var leuco = serie("LEUCO");
+  if (leuco){
+    var seg = map.SEG && map.SEG.serie.length ? map.SEG.serie[map.SEG.serie.length - 1].valor : null;
+    var bast = map.BAST && map.BAST.serie.length ? map.BAST.serie[map.BAST.serie.length - 1].valor : null;
+    linhas.push(leuco + (seg || bast ? " ( " + (seg || "?") + "/" + (bast || "?") + " )" : ""));
+  } else {
+    ["SEG","BAST"].forEach(function(k){ var s = serie(k); if (s) linhas.push(s); });
+  }
+  grupo(["UR"], ""); grupo(["CR"], "");
+  grupo(["MG","NA","CAI","K","P"], " | ");
+  grupo(["PH","PCO2","PO2","HCO3","BE","SATO2","LACTATO"], " | ");
+  ordem.forEach(function(k){ if (!usados[k]){ var s = serie(k); if (s) linhas.push(s); } });
+  return linhas;
+}
+
+function assemble(){
+  var jan = document.querySelector('input[name="jan"]:checked').value;
+  var janTxt = {"24":"24 h", d:"12 h diurno", n:"12 h noturno"}[jan];
+  var pts = {}, ordem = [], gpend = [];
+  S.pages.forEach(function(pg){
+    if (pg.status === "falhou") gpend.push(pg.label + ": falhou na leitura (" + pg.err + ")");
+    if (pg.status !== "ok" || !pg.data) return;
+    var tipo = pg.data.tipo;
+    if (tipo === "outro"){ gpend.push(pg.label + ": página não reconhecida como controles, prescrição ou labs."); return; }
+    arr(pg.data.pacientes).forEach(function(pc, i){
+      var leito = normLeito(pc.leito), nome = pc.nome ? String(pc.nome).trim() : null;
+      var key = leito ? "L" + leito : (nome ? "N" + normNome(nome) : "P" + pg.id + "_" + i);
+      if (!pts[key]){
+        pts[key] = {key:key, leito:leito, nomes:[], idade:[], sexo:[], unidade:[], datasSV:[], sv:[], bal:[], presc:[], labs:[], pend:[], src:[]};
+        ordem.push(key);
+      }
+      var P = pts[key];
+      if (!leito) P.pend.push(pg.label + ": paciente sem leito legível na etiqueta.");
+      if (nome) P.nomes.push(nome);
+      if (pc.idade) P.idade.push(String(pc.idade).trim());
+      if (pc.sexo) P.sexo.push(String(pc.sexo).trim().toUpperCase());
+      if (pc.unidade) P.unidade.push(String(pc.unidade).trim());
+      arr(pc.pendencias).forEach(function(t){ if (t) P.pend.push(pg.label + ": " + t); });
+      P.src.push(pg.label);
+      if (tipo === "sv"){ P.sv.push(pc); if (pc.data_folha) P.datasSV.push(String(pc.data_folha).trim()); }
+      else if (tipo === "balanco") P.bal.push(pc);
+      else if (tipo === "prescricao") P.presc.push(pc);
+      else if (tipo === "labs") P.labs = P.labs.concat(arr(pc.exames));
+    });
+  });
+
+  var beds = ordem.map(function(k){ return buildBed(pts[k], jan, janTxt); });
+  beds.sort(function(a, b){
+    var la = a.P.leito && /^\d+$/.test(a.P.leito) ? Number(a.P.leito) : 9999;
+    var lb = b.P.leito && /^\d+$/.test(b.P.leito) ? Number(b.P.leito) : 9999;
+    return la - lb;
+  });
+
+  function moda(list){
+    var c = {}, best = null;
+    list.forEach(function(x){ c[x] = (c[x] || 0) + 1; if (best === null || c[x] > c[best]) best = x; });
+    return best;
+  }
+  var unidades = [], datas = [];
+  ordem.forEach(function(k){ unidades = unidades.concat(pts[k].unidade); datas = datas.concat(pts[k].datasSV); });
+  var sitrep = "SITREP — " + (moda(unidades) || "unidade ?") + " — " + (moda(datas) || "data ?") + " — " + beds.length + (beds.length === 1 ? " LEITO" : " LEITOS") + " — janela " + janTxt;
+  return {beds:beds, gpend:gpend, sitrep:sitrep};
+}
+
+function buildBed(P, jan, janTxt){
+  var pend = P.pend.slice(), flags = [], L = [];
+  function uniq(list){ var o = []; list.forEach(function(x){ if (o.indexOf(x) === -1) o.push(x); }); return o; }
+  var nomes = uniq(P.nomes);
+  if (nomes.length > 1 && uniq(nomes.map(normNome)).length > 1) pend.push("Nome diferente entre páginas: " + nomes.join(" / ") + ".");
+  var idade = uniq(P.idade)[0] || "", sexo = uniq(P.sexo)[0] || "";
+  var titulo = "LEITO " + (P.leito || "?") + " — " + (nomes[0] || "?") + (idade || sexo ? ", " + idade + sexo : "");
+  L.push(titulo, "");
+
+  /* sinais vitais */
+  var dsv = uniq(P.datasSV);
+  if (dsv.length > 1) pend.push("Folhas de sinais vitais com datas diferentes (" + dsv.join(", ") + ") entraram na mesma janela. Confira.");
+  var afsAll = [];
+  P.sv.forEach(function(pc){ afsAll = afsAll.concat(arr(pc.afericoes)); });
+  var semHora = afsAll.filter(function(a){ return horaNum(a.hora) === null; });
+  if (jan !== "24" && semHora.length) pend.push(semHora.length + " linha(s) sem hora legível ficaram fora da janela de 12 h.");
+  var afs = afsAll.filter(function(a){ return naJanela(a.hora, jan); }).sort(function(a, b){ return horaOrd(a.hora) - horaOrd(b.hora); });
+
+  var vit = {}, linhasV = [], supVM = null;
+  VP.forEach(function(p){
+    var r = linhaVital(p, coleta(afs, p.k), pend);
+    vit[p.k] = r;
+    if (!r) return;
+    var s = r.s;
+    if (p.k === "spo2"){
+      var sups = [], supIleg = 0;
+      afs.forEach(function(a){
+        var t = a.suporte === null || a.suporte === undefined ? "" : String(a.suporte).trim();
+        if (!t) return;
+        if (t === "?"){ supIleg++; return; }
+        if (!sups.some(function(x){ return x.toLowerCase() === t.toLowerCase(); })) sups.push(t);
+      });
+      /* 11/10/2026: AA/cateter entre parênteses no SpO2; VM em linha própria depois do Dx (BRIEFING §2) */
+      var ehVM = sups.some(function(x){ return /PCV|VCV|PSV|PEEP|FiO2|VM|IOT|TQT/i.test(x); });
+      if (sups.length && !ehVM) s += " (" + sups.join(" -> ") + ")";
+      else if (sups.length && ehVM) supVM = "Sup O2: " + sups.join(" -> ");
+      else if (supIleg) pend.push("Sup O2 ilegível.");
+    }
+    linhasV.push(s);
+  });
+
+  var dxv = coleta(afs, "dx"), linhaDx = null, dxCnt250 = 0;
+  if (dxv.length){
+    var leg = dxv.filter(function(x){ return x.n.ok; }).sort(function(a, b){ return b.n.v - a.n.v; });
+    var ileg = dxv.filter(function(x){ return !x.n.ok; });
+    var partes = leg.map(function(x){ return x.n.raw + revisar(x.n.v, [20, 800]); }).concat(ileg.map(function(){ return "?"; }));
+    var c180 = leg.filter(function(x){ return x.n.v > 180; }).length;
+    dxCnt250 = leg.filter(function(x){ return x.n.v > 250; }).length;
+    linhaDx = "Dx: " + partes.join(" / ") + " mg/dl" + (c180 ? " [" + c180 + "x > 180]" : "");
+    if (ileg.length) pend.push("Dx: " + ileg.length + " valor(es) ilegível(is) (" + horasTxt(ileg) + ").");
+  }
+
+  /* balanço */
+  function bf(key){
+    var r = firstVal(P.bal, key);
+    if (r.conflito) pend.push("Balanço: valores diferentes entre páginas para " + key.replace(/_/g, " ") + " (" + r.conflito.join(" / ") + ").");
+    return r.v;
+  }
+  var linhasB = [];
+  if (P.bal.length){
+    var dieta = bf("dieta");
+    var ingesta = jan === "24" ? somaCampos([bf("ganhos_6_18"), bf("ganhos_19_6")], ["Ganhos 6h-18h", "Ganhos 19h-6h"], pend, "Ingesta")
+                : (jan === "d" ? somaCampos([bf("ganhos_6_18")], ["Ganhos 6h-18h"], pend, "Ingesta") : somaCampos([bf("ganhos_19_6")], ["Ganhos 19h-6h"], pend, "Ingesta"));
+    var di = [];
+    if (dieta) di.push("Dieta: " + dieta);
+    if (ingesta !== null) di.push("Ingesta: " + ingesta + " ml");
+    if (di.length) linhasB.push(di.join(" | "));
+    var evac = bf("evacuacao");
+    if (evac) linhasB.push("Evacuação: " + evac);
+
+    var regs = [];
+    P.bal.forEach(function(pc){ regs = regs.concat(arr(pc.diurese_registros)); });
+    var regsJan = regs.filter(function(r){ return naJanela(r.hora, jan); });
+    var diurese = null;
+    function somaRegs(list, motivo){
+      if (!list.length) return null;
+      var ns = list.map(function(r){ return num(r.ml); });
+      if (ns.some(function(n){ return !n || !n.ok; })){ pend.push("Diurese: " + motivo + " e há registro ilegível na coluna."); return "?"; }
+      pend.push("Diurese: " + motivo + "; somada da coluna pela página.");
+      return fmtNum(ns.reduce(function(a, n){ return a + n.v; }, 0));
+    }
+    if (jan === "24"){
+      /* 11/10/2026: diurese = soma das células (BRIEFING §4); o "D:" escrito à mão só confere */
+      var d24 = num(bf("diurese_24h"));
+      diurese = somaRegs(regs, "24 h");
+      if (diurese === null && d24 && d24.ok){ diurese = d24.raw; pend.push("Diurese: sem células legíveis; usado o D: da folha."); }
+      else if (diurese !== null && diurese !== "?" && d24 && d24.ok && Math.abs(num(diurese).v - d24.v) > 0.5)
+        pend.push("Diurese: células somam " + diurese + " ml; D: da folha diz " + d24.raw + " ml.");
+    } else {
+      diurese = somaRegs(regsJan, "janela de 12 h");
+    }
+    if (diurese !== null) linhasB.push("Diurese: " + diurese + " ml");
+
+    var bhRaw = jan === "24" ? bf("bh_24h") : (jan === "d" ? bf("balanco_6_18") : bf("balanco_19_6"));
+    var bh = fmtBH(bhRaw, pend);
+    if (bh !== null) linhasB.push("BH: " + bh + " ml");
+  }
+
+  var outros = [], dvaLinhas = [], dvaNomes = [];
+  var res = firstVal(P.bal, "residuo_gastrico").v;
+  if (res) outros.push("Resíduo gástrico: " + res);
+  P.bal.forEach(function(pc){
+    arr(pc.drenos).forEach(function(d){ if (d) outros.push(String(d)); });
+    arr(pc.infusoes).forEach(function(b){
+      if (!b || !b.rotulo) return;
+      if (b.vasoativa){ dvaLinhas.push("⚠ BIC c/ rótulo compatível com " + b.rotulo + " (CONFIRMAR)"); dvaNomes.push(b.rotulo); }
+      else outros.push("BIC: " + b.rotulo + (b.confirmar ? " (CONFIRMAR)" : ""));
+    });
+  });
+
+  if (linhasV.length || linhaDx || linhasB.length || outros.length || dvaLinhas.length){
+    L.push("Sinais vitais + balanço " + janTxt + ":");
+    linhasV.forEach(function(s){ L.push(s); });
+    if (linhaDx) L.push(linhaDx);
+    if (supVM) L.push(supVM);
+    linhasB.forEach(function(s){ L.push(s); });
+    if (outros.length || dvaLinhas.length){
+      L.push("");
+      if (outros.length) L.push("Drenos/Resíduo gástrico/Infusões: " + outros.join("; "));
+      dvaLinhas.forEach(function(s){ L.push(s); });
+    }
+    L.push("");
+  }
+  if (P.sv.length && !P.bal.length) pend.push("Sem folha de balanço pareada para este leito.");
+  if (P.bal.length && !P.sv.length) pend.push("Sem folha de sinais vitais pareada para este leito.");
+
+  /* laboratório */
+  var labs = montaLabs(P.labs);
+  if (labs.length){ L.push("Laboratório:"); labs.forEach(function(s){ L.push(s); }); L.push(""); }
+
+  /* prescrição */
+  if (P.presc.length){
+    function pf(key, rot){
+      var r = firstVal(P.presc, key);
+      if (r.conflito) pend.push("Prescrição: " + rot + " diferente entre páginas (" + r.conflito.join(" / ") + ").");
+      return r.v;
+    }
+    L.push("Prescrição do dia:");
+    L.push("DIAGNÓSTICO IDENTIFICADO: " + (pf("diagnostico", "diagnóstico") || "(não consta na imagem)"));
+    L.push("ALERGIAS: " + (pf("alergias", "alergias") || "(não consta)"));
+    L.push("DIETA: " + (pf("dieta_prescrita", "dieta") || "(não consta)"));
+    var porBloco = {}, semBloco = [], susp = [], proc = [], rec = [], safety = [];
+    BLOCOS.forEach(function(b){ porBloco[b] = []; });
+    P.presc.forEach(function(pc){
+      arr(pc.itens).forEach(function(it){
+        if (!it || !it.texto) return;
+        var t = String(it.texto).trim() + (it.revisar_ocr ? " (REVISAR OCR)" : "");
+        if (porBloco[it.bloco]) porBloco[it.bloco].push(t); else semBloco.push(t);
+      });
+      arr(pc.suspensos).forEach(function(x){ if (x) susp.push(String(x)); });
+      arr(pc.procedimentos).forEach(function(x){ if (x) proc.push(String(x)); });
+      arr(pc.recomendacoes).forEach(function(x){ if (x) rec.push(String(x)); });
+      if (pc.safety) safety.push(String(pc.safety));
+    });
+    function bloco(nome, itens){ if (!itens.length) return; L.push(""); L.push(nome + ":"); itens.forEach(function(t){ L.push("- " + t); }); }
+    BLOCOS.forEach(function(b){ bloco(b, porBloco[b]); });
+    bloco("Não classificado (conferir)", semBloco);
+    bloco("Suspensos à mão", susp);
+    bloco("Procedimentos", proc);
+    bloco("Recomendações", rec);
+    L.push("");
+    uniq(safety).forEach(function(s){ if (s !== "Nenhum risco imediato detectado com base nos dados fornecidos.") flags.push("Safety check: " + s); });
+  }
+
+  while (L.length && L[L.length - 1] === "") L.pop();
+
+  /* flags críticos (fora do bloco) */
+  var pamLeg = vit.pam ? vit.pam.leg : [];
+  var pam65 = pamLeg.filter(function(x){ return x.n.v < 65; }).length;
+  var pam55 = pamLeg.filter(function(x){ return x.n.v <= 55; });
+  if (pam65 >= 3) flags.push("PAM < 65 em " + pam65 + "x");
+  if (pam55.length){ var mnp = Math.min.apply(null, pam55.map(function(x){ return x.n.v; })); flags.push("PAM ≤ 55 (mín " + fmtNum(mnp) + ")"); }
+  var fc100 = vit.fc ? vit.fc.leg.filter(function(x){ return x.n.v > 100; }).length : 0;
+  if (fc100 >= 3 && pam65 >= 1) flags.push("FC > 100 em " + fc100 + "x com PAM < 65");
+  var spo2O2 = vit.spo2 ? vit.spo2.leg.filter(function(x){
+    var sup = x.a && x.a.suporte ? String(x.a.suporte).trim().toUpperCase() : "";
+    return x.n.v < 92 && sup && sup !== "AA" && sup !== "?";
+  }).length : 0;
+  if (spo2O2 >= 2) flags.push("SpO2 < 92 em " + spo2O2 + "x com O2");
+  if (dxCnt250 >= 2) flags.push("Dx > 250 em " + dxCnt250 + "x");
+  uniq(dvaNomes).forEach(function(n){ flags.push("BIC compatível com vasoativa: " + n); });
+
+  return {P:P, titulo:titulo, texto:L.join("\n"), pend:uniq(pend), flags:flags};
+}
+
+/* --------------------------------------------------------------- saída */
+function assembleAndRender(){
+  if (!S.pages.some(function(p){ return p.status === "ok"; })){ return; }
+  var R = assemble(); S.results = R;
+  $("res").hidden = false;
+  $("sitrep").textContent = R.sitrep;
+  var beds = $("beds"); beds.innerHTML = "";
+  R.beds.forEach(function(b, i){
+    var d = document.createElement("article");
+    d.className = "bed" + (b.flags.length ? " crit" : "");
+    d.innerHTML =
+      '<div class="bed-top"><h3>' + esc(b.titulo) + '</h3><button type="button" class="btn" data-copy="' + i + '">Copiar leito</button></div>' +
+      (b.flags.length ? '<ul class="flags">' + b.flags.map(function(f){ return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>" : "") +
+      '<label class="sr" for="blk' + i + '">Bloco do ' + esc(b.titulo) + '</label><textarea class="block" id="blk' + i + '" spellcheck="false"></textarea>' +
+      (b.pend.length ? '<details class="pend"><summary>Pendências (' + b.pend.length + ')</summary><ul>' + b.pend.map(function(p){ return "<li>" + esc(p) + "</li>"; }).join("") + "</ul></details>" : "");
+    beds.appendChild(d);
+    var ta = d.querySelector("textarea");
+    ta.value = b.texto;
+    fit(ta);
+    ta.addEventListener("input", function(){ fit(ta); });
+  });
+  $("gpend").innerHTML = R.gpend.length ? '<div class="global-pend"><strong>Páginas com problema</strong><ul>' + R.gpend.map(function(p){ return "<li>" + esc(p) + "</li>"; }).join("") + "</ul></div>" : "";
+
+  var crit = R.beds.filter(function(b){ return b.flags.length; });
+  var cf = ["CONDUTA FINAL:"];
+  if (crit.length) crit.forEach(function(b){ cf.push("- Leito " + (b.P.leito || "?") + ": reavaliar agora — " + b.flags.join("; ") + "."); });
+  else cf.push("- Nenhum leito com flag crítico na janela.");
+  cf.push("Metas: PAM ≥ 65 · SpO2 ≥ 94% · Glicemia 140–180 · Diurese ≥ 0,5 mL/kg/h.");
+  cf.push("Doses: só com fonte legível na folha ou na prescrição.");
+  $("conduta").innerHTML = '<div class="bed-top"><h3>Conduta final</h3><button type="button" class="btn" id="copycf">Copiar</button></div><textarea class="block" id="cf" spellcheck="false"></textarea>';
+  $("cf").value = cf.join("\n"); fit($("cf"));
+}
+function fit(ta){ ta.style.height = "auto"; ta.style.height = (ta.scrollHeight + 4) + "px"; }
+
+async function copyText(text, btn){
+  var old = btn.textContent, ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; }
+  catch(e){
+    var t = document.createElement("textarea");
+    t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select();
+    try { ok = document.execCommand("copy"); } catch(_){ ok = false; }
+    t.remove();
+  }
+  btn.textContent = ok ? "Copiado" : "Selecione e copie";
+  setTimeout(function(){ btn.textContent = old; }, 2000);
+}
+document.addEventListener("click", function(e){
+  var b = e.target.closest("button[data-copy]");
+  if (b){ var ta = $("blk" + b.getAttribute("data-copy")); if (ta) copyText(ta.value, b); return; }
+  if (e.target.id === "copycf"){ copyText($("cf").value, e.target); return; }
+  if (e.target.id === "copyall" && S.results){
+    var all = S.results.beds.map(function(bd, i){ var ta = $("blk" + i); return ta ? ta.value : bd.texto; }).join("\n\n");
+    copyText(all, e.target);
+  }
+});
+document.querySelectorAll('input[name="jan"]').forEach(function(r){
+  r.addEventListener("change", function(){ if (S.results) assembleAndRender(); });
+});
+})();
+</script>
+</body>
+</html>

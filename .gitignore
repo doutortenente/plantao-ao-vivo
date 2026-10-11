@@ -1,0 +1,11 @@
+saida/
+entrada/
+*.plantao.json
+*.docx
+*.pdf
+!gerador/exemplo/*.json
+__pycache__/
+*.pyc
+.env
+.env.*
+.DS_Store

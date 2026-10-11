@@ -1,0 +1,79 @@
+# Teste 1 da esteira do plantão: prova a corrente, sem IA e sem arquivo.
+# Entrada: ID de uma linha da tabela "Plantão × Leito" do Airtable.
+# Faz: marca Status "lendo", roda o caso de demonstração do motor, marca "pronto" ou "falhou".
+# Precisa do segredo AIRTABLE_TOKEN no repositório.
+name: plantao-processar
+
+on:
+  workflow_dispatch:
+    inputs:
+      record_id:
+        description: "ID da linha na tabela Plantão × Leito do Airtable"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plantao-${{ inputs.record_id }}
+  cancel-in-progress: false
+
+jobs:
+  processar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RECORD_ID: ${{ inputs.record_id }}
+      AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+      AIRTABLE_BASE: apppxhq0Qx7nqm14E
+      AIRTABLE_TABLE: tblgiiRmOyXmSLWu1
+      CAMPO_STATUS: fldMKAeMcwDEIYrWP
+    steps:
+      - name: Validar entrada
+        run: |
+          [[ "$RECORD_ID" =~ ^rec[A-Za-z0-9]{14}$ ]] || { echo "record_id invalido"; exit 1; }
+          [ -n "$AIRTABLE_TOKEN" ] || { echo "falta o segredo AIRTABLE_TOKEN"; exit 1; }
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Status lendo
+        env:
+          NOVO_STATUS: lendo
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          e = os.environ
+          url = f"https://api.airtable.com/v0/{e['AIRTABLE_BASE']}/{e['AIRTABLE_TABLE']}/{e['RECORD_ID']}"
+          body = json.dumps({"fields": {e["CAMPO_STATUS"]: e["NOVO_STATUS"]}}).encode()
+          req = urllib.request.Request(url, data=body, method="PATCH", headers={
+              "Authorization": "Bearer " + e["AIRTABLE_TOKEN"],
+              "Content-Type": "application/json"})
+          print(urllib.request.urlopen(req).status)
+          PY
+
+      - name: Motor (caso de demonstracao)
+        run: |
+          python skills/sasi-ingest-export/scripts/build_passagem.py --demo > saida.md
+          wc -c saida.md
+
+      - name: Status final
+        if: always()
+        env:
+          RESULTADO: ${{ job.status }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          e = os.environ
+          status = "pronto" if e["RESULTADO"] == "success" else "falhou"
+          url = f"https://api.airtable.com/v0/{e['AIRTABLE_BASE']}/{e['AIRTABLE_TABLE']}/{e['RECORD_ID']}"
+          body = json.dumps({"fields": {e["CAMPO_STATUS"]: status}}).encode()
+          req = urllib.request.Request(url, data=body, method="PATCH", headers={
+              "Authorization": "Bearer " + e["AIRTABLE_TOKEN"],
+              "Content-Type": "application/json"})
+          print(urllib.request.urlopen(req).status)
+          PY

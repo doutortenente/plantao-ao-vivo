@@ -1,0 +1,41 @@
+# Esteira do plantão — casca fixa.
+# Toda a lógica mora em esteira/processar.py.
+# Segredo necessário no repositório: AIRTABLE_TOKEN (só ele é exposto ao job).
+# Entrada: ID de uma linha da tabela "Plantão × Leito" do Airtable.
+name: plantao
+
+on:
+  workflow_dispatch:
+    inputs:
+      record_id:
+        description: "ID da linha na tabela Plantão × Leito do Airtable"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plantao-${{ inputs.record_id }}
+  cancel-in-progress: false
+
+jobs:
+  processar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RECORD_ID: ${{ inputs.record_id }}
+      AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+    steps:
+      - name: Validar entrada
+        run: |
+          [[ "$RECORD_ID" =~ ^rec[A-Za-z0-9]{14}$ ]] || { echo "record_id invalido"; exit 1; }
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Processar a linha
+        run: python esteira/processar.py

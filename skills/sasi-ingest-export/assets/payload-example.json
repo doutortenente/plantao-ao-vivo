@@ -1,0 +1,254 @@
+{
+  "$schema": "sasi-ocr-ingest/v1",
+  "extracted_at": "2026-04-24T14:32:18-03:00",
+  "source": {
+    "type": "folha_enfermagem",
+    "fonte": "claude_ocr",
+    "confidence_overall": 0.91,
+    "warnings": [
+      "Plaquetas 180 sem unidade explícita — assumido ×10³/µL com alta probabilidade",
+      "Timestamp da coluna das 06h inferido — dia da folha confirmado pelo cabeçalho"
+    ]
+  },
+  "target": {
+    "uti": "UTI3",
+    "leito": "7",
+    "paciente_id": null,
+    "nota": "paciente_id null → MCP sasi_deploy_ingest busca por (uti, leito, status_leito=ativo); se achar usa, senão exige paciente_upsert preenchido"
+  },
+  "paciente_upsert": null,
+  "evolucao_snapshot": {
+    "data_evolucao": "2026-04-24T06:00:00-03:00",
+    "plantao": "manha",
+    "neuro": {
+      "sedacao": "Fentanil 50 mcg/h + Midaz 4 mg/h",
+      "rass": "-2",
+      "gcs_pre_sedacao": "10 (O3V3M4)",
+      "pupilas": "isocóricas fotorreagentes 3mm"
+    },
+    "resp": {
+      "suporte": "IOT + VM",
+      "modo": "PSV",
+      "peep": "8",
+      "ps": "12",
+      "fr": "18",
+      "spo2": "96",
+      "fio2O2": null,
+      "vmFio2": "0.35",
+      "pao2": "102",
+      "ausculta": "MV+ bilateral, crepitantes em bases",
+      "secrecao": "moderada, amarelada"
+    },
+    "hemo": {
+      "pa_sys_min": "88",
+      "pa_sys_max": "135",
+      "pa_dia_min": "52",
+      "pa_dia_max": "82",
+      "pam1": "62",
+      "pam2": "95",
+      "fc_min": "78",
+      "fc_max": "112",
+      "perfusao": "fria mas pulsos cheios"
+    },
+    "renal": {
+      "diurese": "1100",
+      "diureseHoras": "24",
+      "bh": "-450",
+      "cr1": "1.8",
+      "cr2": "1.6",
+      "ur": "82",
+      "trrc": false
+    },
+    "hemato": {
+      "hb": "9.2",
+      "ht": "28",
+      "leuco": "14.5",
+      "plaq1": "180",
+      "plaqUnit": "×10³/µL",
+      "inr": "1.4"
+    },
+    "infecto": {
+      "atbs_ativas": [
+        {
+          "droga": "Meropenem",
+          "dose": "1g",
+          "via": "EV",
+          "freq": "8/8h",
+          "dia_terapia": 3,
+          "intencao": "empirica"
+        }
+      ]
+    },
+    "dvas": [
+      {
+        "id": "auto",
+        "droga": "Noradrenalina",
+        "diluicao_mg": 16,
+        "diluicao_ml": 250,
+        "vazao_ml_h": 8,
+        "started_at": "2026-04-22T14:00:00-03:00"
+      },
+      {
+        "id": "auto",
+        "droga": "Vasopressina",
+        "diluicao_UI": 20,
+        "diluicao_ml": 100,
+        "vazao_ml_h": 2.4,
+        "started_at": "2026-04-23T02:00:00-03:00"
+      }
+    ],
+    "sedativos": [
+      {
+        "id": "auto",
+        "droga": "Fentanil",
+        "vazao_mcg_h": 50,
+        "started_at": "2026-04-22T14:00:00-03:00"
+      },
+      {
+        "id": "auto",
+        "droga": "Midazolam",
+        "vazao_mg_h": 4,
+        "started_at": "2026-04-22T14:00:00-03:00"
+      }
+    ],
+    "impressao": [],
+    "conduta": []
+  },
+  "eventos_clinicos": [
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "pam_min",
+      "valor_num": 62,
+      "unidade": "mmHg",
+      "confidence": 0.95,
+      "source_text": "PAM 62",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "pam",
+      "valor_num": 78,
+      "unidade": "mmHg",
+      "confidence": 0.92,
+      "source_text": "PAM média 78",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "fc",
+      "valor_num": 112,
+      "unidade": "bpm",
+      "confidence": 0.95,
+      "source_text": "FC max 112",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "spo2",
+      "valor_num": 96,
+      "unidade": "%",
+      "confidence": 0.98,
+      "source_text": "SpO2 96",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "pf_ratio",
+      "valor_num": 291,
+      "unidade": "mmHg",
+      "confidence": 0.88,
+      "source_text": "PaO2 102 / FiO2 35% calc",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "diurese_h",
+      "valor_num": 0.64,
+      "unidade": "mL/kg/h",
+      "confidence": 0.90,
+      "source_text": "1100mL/24h / 72kg",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "bh_h",
+      "valor_num": -450,
+      "unidade": "mL",
+      "confidence": 0.85,
+      "source_text": "BH -450",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "cr",
+      "valor_num": 1.8,
+      "unidade": "mg/dL",
+      "confidence": 0.93,
+      "source_text": "Cr 1,8",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "hb",
+      "valor_num": 9.2,
+      "unidade": "g/dL",
+      "confidence": 0.96,
+      "source_text": "Hb 9,2",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "plaq",
+      "valor_num": 180,
+      "unidade": "×10³/µL",
+      "confidence": 0.80,
+      "source_text": "Plaq 180",
+      "requires_review": true
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "leuco",
+      "valor_num": 14.5,
+      "unidade": "×10³/µL",
+      "confidence": 0.95,
+      "source_text": "Leuco 14.5",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "inr",
+      "valor_num": 1.4,
+      "unidade": "",
+      "confidence": 0.94,
+      "source_text": "INR 1,4",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "nor_dose",
+      "valor_num": 0.20,
+      "unidade": "mcg/kg/min",
+      "confidence": 0.93,
+      "source_text": "Nor 8ml/h x 16mg/250ml / 72kg",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "vaso_dose",
+      "valor_num": 0.04,
+      "unidade": "UI/min",
+      "confidence": 0.90,
+      "source_text": "Vaso 2.4ml/h x 20UI/100ml",
+      "requires_review": false
+    },
+    {
+      "ts": "2026-04-24T06:00:00-03:00",
+      "tipo": "rass",
+      "valor_num": -2,
+      "unidade": "",
+      "confidence": 0.90,
+      "source_text": "RASS -2",
+      "requires_review": false
+    }
+  ]
+}
