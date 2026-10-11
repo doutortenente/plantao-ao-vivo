@@ -45,7 +45,7 @@ from docx.shared import Cm, Pt, RGBColor  # noqa: E402
 
 FONTE = "Times New Roman"
 TAM = 10
-RED = RGBColor(0xC0, 0x00, 0x00)
+RED = None  # sem cor: destaque só por negrito (pedido de 11/10/2026)
 FLAG = re.compile(r"(\[[^\]]*x [<>][^\]]*\])")
 VITAIS = ("PAS", "PAD", "PAM", "FC", "FR", "SpO2", "Sup O2", "TAX", "Dx")
 
@@ -121,8 +121,8 @@ def gerar_evolucoes(plantao, caminho):
         p = doc.add_paragraph()
         if i:
             p.paragraph_format.page_break_before = True
-        T(p, f"LEITO {leito['leito']}  ", True, tam=13)
-        T(p, leito.get("nome", ""), True, tam=12)
+        T(p, f"LEITO {leito['leito']}  ", True, tam=TAM)
+        T(p, leito.get("nome", ""), True, tam=TAM)
         p2 = doc.add_paragraph()
         info = [leito.get("idade_sexo"), leito.get("dia_uti"),
                 f"Evolução {meta.get('turno', '')} {meta.get('unidade', '')}".strip(), meta.get("data")]
@@ -132,7 +132,7 @@ def gerar_evolucoes(plantao, caminho):
             h = doc.add_paragraph()
             h.paragraph_format.space_before = Pt(9); h.paragraph_format.space_after = Pt(3)
             h.paragraph_format.keep_with_next = True
-            T(h, titulo, True, tam=10.5); filete(h, 4, "808080")
+            T(h, titulo, True, tam=TAM); filete(h, 4, "808080")
             plano = titulo.startswith("Plano")
             for l in linhas:
                 if not l.strip():
@@ -200,7 +200,7 @@ def _titulo_col(cell, texto, primeiro=False):
     if not primeiro:
         p.paragraph_format.space_before = Pt(6)
     p.paragraph_format.space_after = Pt(2)
-    T(p, texto, True, tam=_ATUAL['tam'] + 0.5); filete(p, 4)
+    T(p, texto, True, tam=TAM); filete(p, 4)
 
 
 def _kv(cell, linha, tab):
@@ -223,7 +223,7 @@ def _item_rx(cell, texto, largura):
     q.paragraph_format.left_indent = Cm(0.8); q.paragraph_format.first_line_indent = Cm(-0.4)
     q.paragraph_format.space_after = Pt(1)
     alerta = bool(re.search(r"SUSPENSO|duplicidade", texto))
-    cor = RED if alerta else None
+    cor = None
     droga, _, hora = texto.partition("=>")
     droga = droga.rstrip()
     m = re.match(r"^([^(]+?)(\s\(.*?\))(.*)$", droga)
@@ -319,25 +319,25 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
         p = doc.add_paragraph()
         if i:
             p.paragraph_format.page_break_before = True
-        T(p, f"LEITO {leito['leito']}   ", True, tam=16)
-        T(p, f"{leito.get('nome', '')}, {leito.get('idade_sexo', '')}".strip(", "), True, tam=14)
+        T(p, f"LEITO {leito['leito']}   ", True, tam=TAM)
+        T(p, f"{leito.get('nome', '')}, {leito.get('idade_sexo', '')}".strip(", "), True, tam=TAM)
         extra = [x for x in (leito.get("dia_uti"), f"{meta.get('data', '')} {meta.get('turno', '')}".strip()) if x]
-        T(p, "   ·   " + "   ·   ".join(extra), tam=11)
+        T(p, "   ·   " + "   ·   ".join(extra), tam=TAM)
         if leito.get("diagnostico"):
-            T(doc.add_paragraph(), leito["diagnostico"], tam=11)
+            T(doc.add_paragraph(), leito["diagnostico"], tam=TAM)
         p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(2)
         alergia = leito.get("alergia", "?")
-        T(p, "Alergia: ", True, tam=10.5)
-        T(p, alergia, True, None if alergia.lower().startswith("nega") else RED, 10.5)
+        T(p, "Alergia: ", True, tam=TAM)
+        T(p, alergia, True, None, TAM)
         dieta = leito.get("dieta_ficha") or leito.get("dieta")
         if dieta:
-            T(p, "      Dieta: ", True, tam=10.5); T(p, dieta, tam=10.5)
+            T(p, "      Dieta: ", True, tam=TAM); T(p, dieta, tam=TAM)
         alertas = leito.get("alertas", [])
         if alertas:
             for a in alertas:
                 q = doc.add_paragraph(); q.paragraph_format.left_indent = Cm(0.35)
                 q.paragraph_format.first_line_indent = Cm(-0.35); q.paragraph_format.space_before = Pt(1)
-                T(q, "! ", True, RED); T(q, a, False, RED)
+                T(q, "! ", True); T(q, a, True)
             p = doc.paragraphs[-1]
         p.paragraph_format.space_after = Pt(3)
         filete(p, 8)
@@ -365,7 +365,7 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
         n_rx = 0
         for bloco in leito.get("prescricao", []):
             q = _par(D); q.paragraph_format.space_before = Pt(5); q.paragraph_format.space_after = Pt(1)
-            T(q, bloco["classe"].upper(), True, tam=_ATUAL['tam'] - 0.5)
+            T(q, bloco["classe"].upper(), True, tam=TAM)
             for item in bloco["itens"]:
                 for x in item.split(" | "):
                     _item_rx(D, x, wr); n_rx += 1
@@ -373,7 +373,7 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
         n = n_notas
         if n:
             p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(8)
-            T(p, "Anotações", True, tam=10.5)
+            T(p, "Anotações", True, tam=TAM)
             for k in range(n):
                 q = doc.add_paragraph(); q.paragraph_format.space_before = Pt(12)
                 T(q, " ", tam=8); filete(q, 4, "9A9A9A")
@@ -405,7 +405,7 @@ def ajustar_linhas(plantao):
             um = {"meta": plantao.get("meta", {}), "leitos": [leito]}
             res[leito["leito"]] = (0, 9)
             achou = False
-            for tam in (TAM, TAM - 0.5, TAM - 1):
+            for tam in (TAM,):
                 for n in range(8, -1, -1):
                     f = Path(tmp) / "x.docx"
                     gerar_ficha(um, f, {leito["leito"]: (n, tam)})

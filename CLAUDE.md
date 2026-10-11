@@ -18,7 +18,8 @@ Instruções para o Claude quando o Dr. Nicolas manda o material do plantão ("n
 - **Balanço = soma das células.** Rodapé da folha só confere; divergência no rodapé "Conferir".
 - **Ficha-cola**: 1 folha paisagem por leito, com TODOS os sinais vitais e o balanço, prescrição por classe, uma
   droga por linha ("Nome (genérico) dose => horários"), linhas para anotar. Sem caixas coloridas.
-- **Fonte**: Times New Roman 10, negrito nos rótulos, flags em vermelho. Nada de layout "inventado".
+- **Fonte**: Times New Roman 10 em tudo; destaque só por negrito (rótulos, flags, alertas). Sem vermelho, sem cor.
+  Nada de layout "inventado".
 - **Zero alucinação**: ilegível vira `?` e vai para o rodapé; dose só com fonte legível; separar medido de inferido.
 - **Nada de `(revisar)` dentro do bloco colável.**
 - **Conta é do motor** (`skills/sasi-ingest-export/scripts/build_passagem.py`), nunca do LLM.

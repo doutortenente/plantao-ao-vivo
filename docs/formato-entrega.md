@@ -6,7 +6,8 @@ Gerador: `gerador/gerar_docx.py`. Texto clínico: `docs/BRIEFING.md`.
 
 ## Comum aos dois
 
-- Times New Roman 10. Rótulos em negrito (`PAS:`, `HB:`, títulos de seção). Flags `[Nx < 50]` em vermelho.
+- Times New Roman 10 em TUDO (inclusive cabeçalho e títulos). Rótulos, títulos, flags `[Nx < 50]` e alertas em
+  negrito. Sem cor nenhuma — nada de vermelho (pedido de 11/10/2026).
 - Sem caixas coloridas, sem faixas, sem ícone. Preto no branco, filete fino sob títulos.
 - Impressora do plantão não faz frente e verso: cada página é uma folha.
 - Nome do arquivo: `DD-MM-AA-utiN-<classe-do-documento>.<tipo>` — ex.: `11-10-26-uti2-evolucoes-diurno.docx` e
@@ -32,15 +33,15 @@ Uma página por leito não é obrigatória na evolução (a regra de 1 folha é 
 
 Modelo: a cola que o Dr. faz à mão. 6 leitos = 6 folhas, sem segunda página quase vazia.
 
-- Topo: `LEITO XX  NOME, idade/sexo · dia de UTI · data turno`; diagnóstico; `Alergia:` (vermelho se houver) e
+- Topo: `LEITO XX  NOME, idade/sexo · dia de UTI · data turno`; diagnóstico; `Alergia:` e
   `Dieta:`.
 - Coluna esquerda: TODOS os sinais vitais da janela (Máx - Mín + flags), o balanço completo e o laboratório.
 - Coluna direita: prescrição por classe (ATB, DVA, SEDAÇÃO/ANALGESIA, CV, HPB, TGI...), uma droga por linha:
   `Nome (genérico) dose via frequência ........ horários h` — nome em negrito, horário alinhado à direita.
-  Item suspenso ou duplicado em vermelho.
-- ATENÇÃO: até 3 alertas, em vermelho, na coluna que tiver espaço.
+  Item suspenso ou duplicado em negrito.
+- Alertas: até 3, em negrito, logo abaixo do cabeçalho.
 - Embaixo: linhas para anotação — quantas couberem.
-- Se o leito não cabe: o gerador reduz as linhas de anotação, depois a fonte em 0,5 pt (até 9). Se ainda assim não
+- Se o leito não cabe: o gerador reduz as linhas de anotação, e a fonte fica em 10. Se não
   couber, avisa — aí encurtar a prescrição juntando itens na mesma linha com "; ".
 
 ## Conferência antes de entregar
