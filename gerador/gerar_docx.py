@@ -231,7 +231,65 @@ def _item_rx(cell, texto, largura):
             T(q, droga, alerta, cor)
     if hora.strip():
         q.paragraph_format.tab_stops.add_tab_stop(largura - Cm(0.45), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS)
-        T(q, "\t"); T(q, hora.strip() + " h", True)
+        hm = re.match(r"^([\d\-:h ]+?)(\s*\(.*\))?$", hora.strip())
+        if hm:
+            T(q, "\t"); T(q, hm.group(1).strip() + " h", True); T(q, hm.group(2) or "")
+        else:
+            T(q, "\t"); T(q, hora.strip(), True)
+
+
+# ── grade compacta (rótulo | valor | rótulo | valor) para a coluna esquerda ─
+CINZA = "BFBFBF"
+
+
+def _grade(cell, itens, largura):
+    """itens: lista de (rótulo, valor). Valor longo ocupa a linha inteira."""
+    if not itens:
+        return
+    wl = Cm(2.1); wv = Cm((largura.cm - 2 * 2.1) / 2)
+    linhas, par = [], []
+    for rot, val in itens:
+        longo = len(rot) > 9 or len(val) > 30
+        if longo:
+            if par: linhas.append(par); par = []
+            linhas.append([(rot, val, True)])
+        else:
+            par.append((rot, val, False))
+            if len(par) == 2: linhas.append(par); par = []
+    if par: linhas.append(par)
+    t = cell.add_table(rows=len(linhas), cols=4)
+    tblPr = t._tbl.tblPr; b = OxmlElement("w:tblBorders")
+    for e in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        el = OxmlElement("w:" + e)
+        if e in ("insideH", "bottom", "top"):
+            el.set(qn("w:val"), "single"); el.set(qn("w:sz"), "4"); el.set(qn("w:color"), CINZA)
+        else:
+            el.set(qn("w:val"), "nil")
+        b.append(el)
+    tblPr.append(b)
+    _larguras(t, [wl, wv, wl, wv])
+    for r_i, linha in enumerate(linhas):
+        cells = t.rows[r_i].cells
+        for c in cells: _margens(c, 40, 40)
+        if linha[0][2]:  # linha inteira
+            m = cells[0].merge(cells[3])
+            p = m.paragraphs[0]; p.paragraph_format.space_before = Pt(1); p.paragraph_format.space_after = Pt(1)
+            T(p, linha[0][0] + ": ", True); com_flags(p, linha[0][1])
+            continue
+        for k, (rot, val, _) in enumerate(linha):
+            pr = cells[2 * k].paragraphs[0]; pv = cells[2 * k + 1].paragraphs[0]
+            for p in (pr, pv): p.paragraph_format.space_before = Pt(1); p.paragraph_format.space_after = Pt(1)
+            T(pr, rot, True); com_flags(pv, val)
+    # parágrafo depois da tabela aninhada (exigência do Word) — mínimo
+    q = cell.add_paragraph(); q.paragraph_format.line_spacing = Pt(2); T(q, "", tam=2)
+
+
+def _pares(linhas):
+    out = []
+    for l in linhas:
+        m = re.match(r"^(Gaso[^)]*\)|[^:]{1,40}):\s*(.*)$", l)
+        out.append((m.group(1), m.group(2)) if m else ("", l))
+    return out
 
 
 def gerar_ficha(plantao, caminho, linhas_notas=None):
@@ -263,6 +321,14 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
         dieta = leito.get("dieta_ficha") or leito.get("dieta")
         if dieta:
             T(p, "      Dieta: ", True, tam=10.5); T(p, dieta, tam=10.5)
+        alertas = leito.get("alertas", [])
+        if alertas:
+            for a in alertas:
+                q = doc.add_paragraph(); q.paragraph_format.left_indent = Cm(0.35)
+                q.paragraph_format.first_line_indent = Cm(-0.35); q.paragraph_format.space_before = Pt(1)
+                T(q, "! ", True, RED); T(q, a, False, RED)
+            p = doc.paragraphs[-1]
+        p.paragraph_format.space_after = Pt(3)
         filete(p, 8)
 
         t = doc.add_table(rows=1, cols=2); _tabela_lisa(t)
@@ -274,14 +340,15 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
         vit = [l for l in todas if l.split(":")[0] in VITAIS]
         bal = [l for l in todas if l not in vit]
         janela = leito.get("janela") or meta.get("janela", "24 h")
+        larg_e = Cm(11.3 - 0.4)
         _titulo_col(E, f"SINAIS VITAIS {janela}", primeiro=True)
-        for l in vit: _kv(E, l, Cm(1.5))
+        _grade(E, _pares(vit), larg_e)
         _titulo_col(E, f"BALANÇO {janela}")
-        for l in bal: _kv(E, l, Cm(2.0))
+        _grade(E, _pares(bal), larg_e)
         lab = secoes.get("Laboratório:", [])
         if lab:
             _titulo_col(E, "LABORATÓRIO")
-            for l in separar_pipes(lab): _kv(E, l, Cm(1.5))
+            _grade(E, _pares(separar_pipes(lab)), larg_e)
 
         _titulo_col(D, f"PRESCRIÇÃO {meta.get('data_prescricao', meta.get('data', ''))}".strip(), primeiro=True)
         n_rx = 0
@@ -292,15 +359,6 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
                 for x in item.split(" | "):
                     _item_rx(D, x, wr); n_rx += 1
             n_rx += 2
-        alertas = leito.get("alertas", [])
-        if alertas:
-            n_esq = len(vit) + len(bal) + len(lab) + 6
-            A = E if n_esq + 4 < n_rx else D
-            _titulo_col(A, "ATENÇÃO")
-            for a in alertas:
-                q = _par(A); q.paragraph_format.left_indent = Cm(0.4); q.paragraph_format.first_line_indent = Cm(-0.4)
-                T(q, "• " + a, False, RED)
-
         n = n_notas
         if n:
             p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(8)
