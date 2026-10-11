@@ -1,6 +1,11 @@
 {
- "meta": {"unidade": "UTI 2", "data": "01/01/2026", "turno": "diurno",
-          "janela": "24 h", "data_prescricao": "01/01"},
+ "meta": {
+  "unidade": "UTI 2",
+  "data": "01/01/2026",
+  "turno": "diurno",
+  "janela": "24 h",
+  "data_prescricao": "01/01"
+ },
  "leitos": [
   {
    "leito": "99",
@@ -12,28 +17,178 @@
    "dieta_ficha": "Enteral 50 ml/h SNE",
    "dieta": "enteral 50 ml/h",
    "vitais": {
-    "PAS": [132, 128, 118, 110, 96, 88, 101, 120, 125, 130, 128, 122],
-    "PAD": [70, 66, 60, 55, 49, 47, 52, 61, 64, 68, 66, 60],
-    "PAM": [90, 86, 79, 73, 64, 60, 68, 80, 84, 88, 86, 80],
-    "FC": [96, 98, 104, 108, 112, 110, 102, 96, 92, 90, 88, 90],
-    "FR": [22, 22, 24, 21, 20, 19, 18, 18, 20, 19, 18, 18],
-    "SpO2": [94, 93, 92, 91, 93, 94, 95, 96, "?", 95, 96, 96],
-    "TAX": [37.9, 38.2, 37.6, 37.1, 36.8, 36.6, 36.5, 36.7, 36.9, 36.6, 36.4, 36.5],
-    "Dx": [212, 168, 154, 140]
+    "PAS": [
+     132,
+     128,
+     118,
+     110,
+     96,
+     88,
+     101,
+     120,
+     125,
+     130,
+     128,
+     122
+    ],
+    "PAD": [
+     70,
+     66,
+     60,
+     55,
+     49,
+     47,
+     52,
+     61,
+     64,
+     68,
+     66,
+     60
+    ],
+    "PAM": [
+     90,
+     86,
+     79,
+     73,
+     64,
+     60,
+     68,
+     80,
+     84,
+     88,
+     86,
+     80
+    ],
+    "FC": [
+     96,
+     98,
+     104,
+     108,
+     112,
+     110,
+     102,
+     96,
+     92,
+     90,
+     88,
+     90
+    ],
+    "FR": [
+     22,
+     22,
+     24,
+     21,
+     20,
+     19,
+     18,
+     18,
+     20,
+     19,
+     18,
+     18
+    ],
+    "SpO2": [
+     94,
+     93,
+     92,
+     91,
+     93,
+     94,
+     95,
+     96,
+     "?",
+     95,
+     96,
+     96
+    ],
+    "TAX": [
+     37.9,
+     38.2,
+     37.6,
+     37.1,
+     36.8,
+     36.6,
+     36.5,
+     36.7,
+     36.9,
+     36.6,
+     36.4,
+     36.5
+    ],
+    "Dx": [
+     212,
+     168,
+     154,
+     140
+    ]
    },
    "sup_o2": "cateter O2 3 L/min",
    "ganhos": [
-    {"nome": "dieta SNE", "serie": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]},
-    {"nome": "soro EV", "ml": 500},
-    {"nome": "diluição", "serie": [50, 50, 50, 50]}
+    {
+     "nome": "dieta SNE",
+     "serie": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+     ]
+    },
+    {
+     "nome": "soro EV",
+     "ml": 500
+    },
+    {
+     "nome": "diluição",
+     "serie": [
+      50,
+      50,
+      50,
+      50
+     ]
+    }
    ],
    "perdas": [
-    {"nome": "diurese (SVD)", "serie": [150, 100, 80, 60, 40, 60, 120, 150, 150, 200, 180, 160]},
-    {"nome": "resíduo gástrico", "serie": [50]}
+    {
+     "nome": "diurese (SVD)",
+     "serie": [
+      150,
+      100,
+      80,
+      60,
+      40,
+      60,
+      120,
+      150,
+      150,
+      200,
+      180,
+      160
+     ]
+    },
+    {
+     "nome": "resíduo gástrico",
+     "serie": [
+      50
+     ]
+    }
    ],
-   "conferencia_enfermagem": {"ganhos": 1900, "perdas": 1500, "bh": 400},
+   "conferencia_enfermagem": {
+    "ganhos": 1900,
+    "perdas": 1500,
+    "bh": 400
+   },
    "evacuacao": "ausente (última 30/12)",
-   "outros_balanco": ["Noradrenalina: 0 -> 5 -> 3 ml/h (iniciada às 13 h)"],
+   "outros_balanco": [
+    "Noradrenalina: 0 -> 5 -> 3 ml/h (iniciada às 13 h)"
+   ],
    "avisos": [],
    "laboratorio": [
     "HB: 11,2 -> 10,8 g/dl | HT: 33 -> 32 % | PLAQ: 210.000 -> 180.000 /mm3",
@@ -73,13 +228,42 @@
     "4. Profilaxias: TEV: Enoxaparina 40 mg/dia; LAMG: Pantoprazol 40 mg; cabeceira 30º."
    ],
    "prescricao": [
-    {"classe": "ATB", "itens": ["Tazocin (piperacilina/tazobactam) 4,5 g EV 6/6h — I: 30/12 (D3) => 12-18-24-06",
-                                "Azitromicina 500 mg EV 1x/dia — I: 30/12 (D3) => 10"]},
-    {"classe": "DVA", "itens": ["Noradrenalina 16 mg + SG 5% 234 ml — BIC 3 ml/h"]},
-    {"classe": "HPB", "itens": ["Clexane (enoxaparina) 40 mg SC 1x/dia => 18"]},
-    {"classe": "TGI", "itens": ["Pantozol (pantoprazol) 40 mg EV jejum => 06"]}
+    {
+     "classe": "ATB",
+     "itens": [
+      "Tazocin (piperacilina/tazobactam) 4,5 g EV 6/6h — I: 30/12 (D3) => 12-18-24-06",
+      "Azitromicina 500 mg EV 1x/dia — I: 30/12 (D3) => 10"
+     ]
+    },
+    {
+     "classe": "DVA",
+     "itens": [
+      "Noradrenalina 16 mg + SG 5% 234 ml — BIC 3 ml/h"
+     ]
+    },
+    {
+     "classe": "HPB",
+     "itens": [
+      "Clexane (enoxaparina) 40 mg SC 1x/dia => 18"
+     ]
+    },
+    {
+     "classe": "TGI",
+     "itens": [
+      "Pantozol (pantoprazol) 40 mg EV jejum => 06"
+     ]
+    }
    ],
-   "alertas": ["Alergia a dipirona — conferir analgésicos SN", "PAM 60 às 17 h; lactato 3,1"]
+   "alertas": [
+    "Alergia a dipirona — conferir analgésicos SN",
+    "PAM 60 às 17 h; lactato 3,1"
+   ],
+   "dispositivos": "SVD (30/12) · AVP · Tazocin D3 + Azitromicina D3 (I: 30/12)",
+   "checklist": [
+    "Colher hemoculturas 2 amostras",
+    "Lactato de controle em 6 h",
+    "Titular noradrenalina para PAM >= 65"
+   ]
   }
  ]
 }

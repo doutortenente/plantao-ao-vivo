@@ -49,7 +49,10 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "impressao": ["Problema, tendência - leitura de 1 linha"],
     "conduta": ["1. Respiratório:", "- ação;", "2. Profilaxias: TEV ...; LAMG ...; cabeceira 30º."],
 
-    "prescricao": [                          // só para a ficha-cola
+    "dispositivos": "TQT (06/10) · PICC MSD (15/09) · SVD (22/09) · Meronem D2 (I: 09/10)",  // ficha-cola, 1 linha
+    "checklist": ["Colher HB/HT pós-CH", "Cobrar Cirurgia Geral"],    // ficha-cola, 3-5 tarefas do plantão
+
+    "prescricao": [                          // só para a ficha-cola (filtrada: ver CLASSES_OMITIR/ITENS_OMITIR)
       {"classe": "ATB", "itens": ["Rocefin (ceftriaxona) 1 g EV 12/12h — I: 08/10 (D4) => 10-22"]}
     ],
     "alertas": ["até 3 frases curtas"]

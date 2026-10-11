@@ -39,7 +39,11 @@ Modelo: a cola que o Dr. faz à mão. 6 leitos = 6 folhas, sem segunda página q
 - Coluna direita: prescrição por classe (ATB, DVA, SEDAÇÃO/ANALGESIA, CV, HPB, TGI...), uma droga por linha:
   `Nome (genérico) dose via frequência ........ horários h` — nome em negrito, horário alinhado à direita.
   Item suspenso ou duplicado em negrito.
+- Linha `Dispositivos/ATB:` logo abaixo de Alergia/Dieta: dispositivo com data de inserção e ATB com dia e início.
 - Alertas: até 3, em negrito, logo abaixo do cabeçalho.
+- CHECKLIST DO PLANTÃO: 3 a 5 tarefas com caixinha (☐), tiradas do plano — na coluna que tiver espaço.
+- Prescrição enxuta: a ficha não mostra classe SN, colírios, lágrima artificial, cremes/tópicos de pele, simeticona,
+  módulos de proteína/fibra, água de SNE e complexo B (lista em `gerador/gerar_docx.py`, `ITENS_OMITIR`).
 - Embaixo: linhas para anotação — quantas couberem.
 - Se o leito não cabe: o gerador reduz as linhas de anotação, e a fonte fica em 10. Se não
   couber, avisa — aí encurtar a prescrição juntando itens na mesma linha com "; ".

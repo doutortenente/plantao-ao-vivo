@@ -282,7 +282,9 @@ def _grade(cell, itens, largura):
         if linha[0][2]:  # linha inteira
             m = cells[0].merge(cells[3])
             p = m.paragraphs[0]; p.paragraph_format.space_before = Pt(1); p.paragraph_format.space_after = Pt(1)
-            T(p, linha[0][0] + ": ", True); com_flags(p, linha[0][1])
+            if linha[0][0]:
+                T(p, linha[0][0] + ": ", True)
+            com_flags(p, linha[0][1])
             continue
         for k, (rot, val, _) in enumerate(linha):
             pr = cells[2 * k].paragraphs[0]; pv = cells[2 * k + 1].paragraphs[0]
@@ -303,6 +305,32 @@ def _pares(linhas):
     return out
 
 
+# Item 4 (11/10/2026): a ficha-cola mostra só o que muda decisão. Saem tópicos de pele, colírios,
+# lágrima artificial, simeticona e a classe SN. A evolução e a prescrição real não são afetadas.
+CLASSES_OMITIR = {"SN", "SINTOMÁTICOS", "OFTALMO", "PELE", "TÓPICOS"}
+ITENS_OMITIR = re.compile(
+    r"\b(col[íi]rio|lacrima|lumigan|brixag|ephynal|hirudoid|brava|comfeel|com feel|primoderm|primo derme|"
+    r"rio ?hex|riohex|luftal|simeticona|dersani|fresubin creme|fresubin protein|resource fiber|complexo b|"
+    r"shilley heparinizado|água( mineral)? \d+ ?ml)\b", re.I)
+
+
+def filtrar_prescricao(prescricao):
+    out = []
+    for bloco in prescricao:
+        if bloco["classe"].strip().upper() in CLASSES_OMITIR:
+            continue
+        itens = []
+        for item in bloco["itens"]:
+            partes = [x for x in item.split(" | ") if not ITENS_OMITIR.search(x)]
+            partes = ["; ".join(p for p in x.split("; ") if not ITENS_OMITIR.search(p)) for x in partes]
+            partes = [x for x in partes if x.strip()]
+            if partes:
+                itens.append(" | ".join(partes))
+        if itens:
+            out.append({"classe": bloco["classe"], "itens": itens})
+    return out
+
+
 def gerar_ficha(plantao, caminho, linhas_notas=None):
     meta = plantao.get("meta", {})
     linhas_notas = linhas_notas or {}
@@ -313,7 +341,10 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
     W = 29.7 - 2.4
     for i, leito in enumerate(plantao["leitos"]):
         cfg = linhas_notas.get(leito["leito"], (3, TAM))
-        n_notas, _ATUAL["tam"] = cfg if isinstance(cfg, tuple) else (cfg, TAM)
+        if not isinstance(cfg, tuple):
+            cfg = (cfg, TAM)
+        n_notas, _ATUAL["tam"] = cfg[0], cfg[1]
+        col_chk = cfg[2] if len(cfg) > 2 else "auto"
         r = motor.compute_leito(leito, meta)
         secoes = dict(r["secoes"])
         p = doc.add_paragraph()
@@ -332,6 +363,11 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
         dieta = leito.get("dieta_ficha") or leito.get("dieta")
         if dieta:
             T(p, "      Dieta: ", True, tam=TAM); T(p, dieta, tam=TAM)
+        if leito.get("dispositivos"):
+            q = doc.add_paragraph(); q.paragraph_format.space_before = Pt(1)
+            q.paragraph_format.left_indent = Cm(2.3); q.paragraph_format.first_line_indent = Cm(-2.3)
+            T(q, "Dispositivos/ATB: ", True); T(q, leito["dispositivos"])
+            p = q
         alertas = leito.get("alertas", [])
         if alertas:
             for a in alertas:
@@ -363,13 +399,22 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
 
         _titulo_col(D, f"PRESCRIÇÃO {meta.get('data_prescricao', meta.get('data', ''))}".strip(), primeiro=True)
         n_rx = 0
-        for bloco in leito.get("prescricao", []):
+        for bloco in filtrar_prescricao(leito.get("prescricao", [])):
             q = _par(D); q.paragraph_format.space_before = Pt(5); q.paragraph_format.space_after = Pt(1)
             T(q, bloco["classe"].upper(), True, tam=TAM)
             for item in bloco["itens"]:
                 for x in item.split(" | "):
                     _item_rx(D, x, wr); n_rx += 1
             n_rx += 2
+        checklist = leito.get("checklist", [])
+        if checklist:
+            n_esq = len(vit) // 2 + len(bal) // 2 + len(lab) + 6
+            C = {"E": E, "D": D}.get(col_chk) or (E if n_esq <= n_rx else D)
+            _titulo_col(C, "CHECKLIST DO PLANTÃO")
+            for item in checklist:
+                q = _par(C); q.paragraph_format.space_after = Pt(2)
+                q.paragraph_format.left_indent = Cm(0.55); q.paragraph_format.first_line_indent = Cm(-0.55)
+                T(q, "☐  "); T(q, item)
         n = n_notas
         if n:
             p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(8)
@@ -403,17 +448,19 @@ def ajustar_linhas(plantao):
     with tempfile.TemporaryDirectory() as tmp:
         for leito in plantao["leitos"]:
             um = {"meta": plantao.get("meta", {}), "leitos": [leito]}
-            res[leito["leito"]] = (0, 9)
+            res[leito["leito"]] = (0, TAM)
             achou = False
-            for tam in (TAM,):
+            melhor = None
+            for col in ("E", "D"):
                 for n in range(8, -1, -1):
                     f = Path(tmp) / "x.docx"
-                    gerar_ficha(um, f, {leito["leito"]: (n, tam)})
+                    gerar_ficha(um, f, {leito["leito"]: (n, TAM, col)})
                     if _paginas(f) == 1:
-                        res[leito["leito"]] = (n, tam); achou = True
+                        if melhor is None or n > melhor[0]:
+                            melhor = (n, TAM, col)
                         break
-                if achou:
-                    break
+            if melhor:
+                res[leito["leito"]] = melhor; achou = True
             if not achou:
                 print(f"AVISO: leito {leito['leito']} não coube em 1 folha nem sem anotações — encurte a prescrição.",
                       file=sys.stderr)
