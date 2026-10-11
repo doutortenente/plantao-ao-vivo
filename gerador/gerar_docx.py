@@ -155,7 +155,13 @@ def gerar_evolucoes(plantao, caminho):
 
 
 # ── FICHA-COLA ───────────────────────────────────────────────────────────────
+def _sem_recuo(t):
+    tblPr = t._tbl.tblPr; ind = OxmlElement("w:tblInd")
+    ind.set(qn("w:w"), "108"); ind.set(qn("w:type"), "dxa"); tblPr.append(ind)
+
+
 def _tabela_lisa(t):
+    _sem_recuo(t)
     tblPr = t._tbl.tblPr; b = OxmlElement("w:tblBorders")
     for e in ("top", "left", "bottom", "right", "insideH", "insideV"):
         el = OxmlElement("w:" + e)
@@ -283,14 +289,17 @@ def _grade(cell, itens, largura):
             for p in (pr, pv): p.paragraph_format.space_before = Pt(1); p.paragraph_format.space_after = Pt(1)
             T(pr, rot, True); com_flags(pv, val)
     # parágrafo depois da tabela aninhada (exigência do Word) — mínimo
-    q = cell.add_paragraph(); q.paragraph_format.line_spacing = Pt(2); T(q, "", tam=2)
+    q = cell.add_paragraph(); q.paragraph_format.line_spacing = Pt(1)
+    q.paragraph_format.space_after = Pt(0); T(q, "", tam=1)
 
 
 def _pares(linhas):
     out = []
     for l in linhas:
         m = re.match(r"^(Gaso[^)]*\)|[^:]{1,40}):\s*(.*)$", l)
-        out.append((m.group(1), m.group(2)) if m else ("", l))
+        rot, val = (m.group(1), m.group(2)) if m else ("", l)
+        rot = {"Ingesta hídrica": "Ingesta", "Resíduo gástrico": "Resíduo"}.get(rot, rot)
+        out.append((rot, val))
     return out
 
 
