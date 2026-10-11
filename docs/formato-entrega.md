@@ -9,7 +9,8 @@ Gerador: `gerador/gerar_docx.py`. Texto clínico: `docs/BRIEFING.md`.
 - Times New Roman 10. Rótulos em negrito (`PAS:`, `HB:`, títulos de seção). Flags `[Nx < 50]` em vermelho.
 - Sem caixas coloridas, sem faixas, sem ícone. Preto no branco, filete fino sob títulos.
 - Impressora do plantão não faz frente e verso: cada página é uma folha.
-- Nome do arquivo: `AAAA-MM-DD_UTIx_evolucoes-<turno>.docx` e `AAAA-MM-DD_UTIx_ficha-cola.docx`.
+- Nome do arquivo: `DD-MM-AA-utiN-<classe-do-documento>.<tipo>` — ex.: `11-10-26-uti2-evolucoes.docx` e
+  `11-10-26-uti2-ficha-cola.docx` (mesmo padrão dos arquivos de entrada, como `11-10-26-uti2-controles.pdf`).
 
 ## Evolução (retrato, 1 leito por página)
 

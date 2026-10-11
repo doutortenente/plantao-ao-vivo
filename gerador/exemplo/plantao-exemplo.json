@@ -1,5 +1,5 @@
 {
- "meta": {"unidade": "UTI 2", "data": "01/01/2026", "data_iso": "2026-01-01", "turno": "diurno",
+ "meta": {"unidade": "UTI 2", "data": "01/01/2026", "turno": "diurno",
           "janela": "24 h", "data_prescricao": "01/01"},
  "leitos": [
   {

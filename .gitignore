@@ -1,6 +1,7 @@
 saida/
 entrada/
 *.plantao.json
+*-plantao.json
 *.docx
 *.pdf
 !gerador/exemplo/*.json

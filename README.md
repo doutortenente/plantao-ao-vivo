@@ -11,8 +11,8 @@ correções listadas em `docs/DECISOES.md`.
 
 | Entra | Sai |
 |---|---|
-| Evoluções anteriores (docx/txt) | `AAAA-MM-DD_UTIx_evolucoes-<turno>.docx` — por leito, só os 7 blocos que mudam |
-| Folhas de controle (scan PDF) | `AAAA-MM-DD_UTIx_ficha-cola.docx` — 1 folha paisagem por leito |
+| Evoluções anteriores (docx/txt) | `DD-MM-AA-utiN-evolucoes.docx` (ex.: `11-10-26-uti2-evolucoes.docx`) — por leito, só os 7 blocos que mudam |
+| Folhas de controle (scan PDF) | `DD-MM-AA-utiN-ficha-cola.docx` — 1 folha paisagem por leito |
 | Prescrições do dia (scan PDF) | Rodapé "Conferir" (ilegíveis e divergências) — no chat, fora do bloco |
 | Laudos de laboratório (PDF) | Alertas e bloco final de conduta — no chat |
 
@@ -64,7 +64,7 @@ tests/test_motor.py             testes do motor
 
 ## Dados de paciente
 
-Os plantões do dia não são versionados: a pasta `saida/`, os Word gerados e os JSON de plantão (`*.plantao.json`)
+Os plantões do dia não são versionados: a pasta `saida/`, os Word gerados e os JSON de plantão (`DD-MM-AA-utiN-plantao.json`)
 estão no `.gitignore`. O único JSON versionado é o exemplo fictício. As amostras OCR em
 `skills/controles-vitais-janela/references/amostras/` são folhas reais de 2026 (as mesmas do `claude-workspace`),
 mantidas como referência de layout.

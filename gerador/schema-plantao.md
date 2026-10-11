@@ -9,9 +9,8 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
 ```jsonc
 {
   "meta": {
-    "unidade": "UTI 2",          // vai no nome do arquivo (UTI2)
-    "data": "11/10/2026",
-    "data_iso": "2026-10-11",    // nome do arquivo
+    "unidade": "UTI 2",          // nome do arquivo: uti2
+    "data": "11/10/2026",        // nome do arquivo: 11-10-26
     "turno": "diurno",
     "janela": "24 h",            // padrão; um leito pode sobrescrever
     "data_prescricao": "11/10"
