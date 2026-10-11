@@ -269,10 +269,7 @@ def _grade(cell, itens, largura):
     tblPr = t._tbl.tblPr; b = OxmlElement("w:tblBorders")
     for e in ("top", "left", "bottom", "right", "insideH", "insideV"):
         el = OxmlElement("w:" + e)
-        if e in ("insideH", "bottom", "top"):
-            el.set(qn("w:val"), "single"); el.set(qn("w:sz"), "4"); el.set(qn("w:color"), CINZA)
-        else:
-            el.set(qn("w:val"), "nil")
+        el.set(qn("w:val"), "nil")  # sem linhas: lista alinhada, limpa (11/10/2026)
         b.append(el)
     tblPr.append(b)
     _larguras(t, [wl, wv, wl, wv])
@@ -288,12 +285,56 @@ def _grade(cell, itens, largura):
             continue
         for k, (rot, val, _) in enumerate(linha):
             pr = cells[2 * k].paragraphs[0]; pv = cells[2 * k + 1].paragraphs[0]
-            for p in (pr, pv): p.paragraph_format.space_before = Pt(1); p.paragraph_format.space_after = Pt(1)
+            for p in (pr, pv): p.paragraph_format.space_before = Pt(0.5); p.paragraph_format.space_after = Pt(0.5)
             T(pr, rot, True); com_flags(pv, val)
     # parágrafo depois da tabela aninhada (exigência do Word) — mínimo
     q = cell.add_paragraph(); q.paragraph_format.line_spacing = Pt(1)
     q.paragraph_format.space_after = Pt(0); T(q, "", tam=1)
 
+
+def _lista(cell, itens, largura):
+    """Um parâmetro por linha, rótulo alinhado | valor (flag em negrito logo após). Sem grade."""
+    if not itens:
+        return
+    wl = Cm(1.9)
+    t = cell.add_table(rows=len(itens), cols=2)
+    tblPr = t._tbl.tblPr; b = OxmlElement("w:tblBorders")
+    for e in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        el = OxmlElement("w:" + e); el.set(qn("w:val"), "nil"); b.append(el)
+    tblPr.append(b)
+    _larguras(t, [wl, Cm(largura.cm - 1.9)])
+    for i, (rot, val) in enumerate(itens):
+        c = t.rows[i].cells
+        for x in c: _margens(x, 30, 30)
+        if len(rot) > 10:
+            alvo = c[0].merge(c[1]); p = alvo.paragraphs[0]
+            T(p, rot + ": ", True)
+        else:
+            p0 = c[0].paragraphs[0]; T(p0, rot, True)
+            p0.paragraph_format.space_before = Pt(0.5); p0.paragraph_format.space_after = Pt(0.5)
+            p = c[1].paragraphs[0]
+        p.paragraph_format.space_before = Pt(0.5); p.paragraph_format.space_after = Pt(0.5)
+        com_flags(p, val)
+    q = cell.add_paragraph(); q.paragraph_format.line_spacing = Pt(1)
+    q.paragraph_format.space_after = Pt(0); T(q, "", tam=1)
+
+
+def _linhas_ricas(cell, linhas):
+    """Laboratório: uma linha por grupo, rótulos em negrito no meio do texto (compacto)."""
+    for l in linhas:
+        if not l.strip():
+            continue
+        p = _par(cell); p.paragraph_format.space_after = Pt(1)
+        p.paragraph_format.left_indent = Cm(0.3); p.paragraph_format.first_line_indent = Cm(-0.3)
+        partes = l.split(" | ")
+        for k, parte in enumerate(partes):
+            if k:
+                T(p, "   ")
+            m = re.match(r"^(Gaso[^)]*\)|[^:]{1,40}):\s*(.*)$", parte)
+            if m:
+                T(p, m.group(1) + " ", True); com_flags(p, m.group(2))
+            else:
+                com_flags(p, parte)
 
 def _pares(linhas):
     out = []
@@ -389,13 +430,13 @@ def gerar_ficha(plantao, caminho, linhas_notas=None):
         janela = leito.get("janela") or meta.get("janela", "24 h")
         larg_e = Cm(11.3 - 0.4)
         _titulo_col(E, f"SINAIS VITAIS {janela}", primeiro=True)
-        _grade(E, _pares(vit), larg_e)
+        _lista(E, _pares(vit), larg_e)
         _titulo_col(E, f"BALANÇO {janela}")
-        _grade(E, _pares(bal), larg_e)
+        _lista(E, _pares(bal), larg_e)
         lab = secoes.get("Laboratório:", [])
         if lab:
             _titulo_col(E, "LABORATÓRIO")
-            _grade(E, _pares(separar_pipes(lab)), larg_e)
+            _linhas_ricas(E, lab)
 
         _titulo_col(D, f"PRESCRIÇÃO {meta.get('data_prescricao', meta.get('data', ''))}".strip(), primeiro=True)
         n_rx = 0

@@ -35,7 +35,8 @@ Modelo: a cola que o Dr. faz à mão. 6 leitos = 6 folhas, sem segunda página q
 
 - Topo: `LEITO XX  NOME, idade/sexo · dia de UTI · data turno`; diagnóstico; `Alergia:` e
   `Dieta:`.
-- Coluna esquerda: TODOS os sinais vitais da janela (Máx - Mín + flags), o balanço completo e o laboratório.
+- Coluna esquerda: TODOS os sinais vitais e o balanço, um parâmetro por linha com rótulo alinhado (sem linhas de
+  grade); laboratório compacto, um grupo por linha com rótulos em negrito.
 - Coluna direita: prescrição por classe (ATB, DVA, SEDAÇÃO/ANALGESIA, CV, HPB, TGI...), uma droga por linha:
   `Nome (genérico) dose via frequência ........ horários h` — nome em negrito, horário alinhado à direita.
   Item suspenso ou duplicado em negrito.
