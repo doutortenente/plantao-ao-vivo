@@ -246,10 +246,12 @@ def _grade(cell, itens, largura):
     """itens: lista de (rótulo, valor). Valor longo ocupa a linha inteira."""
     if not itens:
         return
-    wl = Cm(2.1); wv = Cm((largura.cm - 2 * 2.1) / 2)
+    curto = all(len(r) <= 5 for r, _ in itens if len(r) <= 9)
+    lw = 1.3 if curto else 2.1
+    wl = Cm(lw); wv = Cm((largura.cm - 2 * lw) / 2)
     linhas, par = [], []
     for rot, val in itens:
-        longo = len(rot) > 9 or len(val) > 30
+        longo = len(rot) > 9 or len(val) > (26 if lw > 1.5 else 30)
         if longo:
             if par: linhas.append(par); par = []
             linhas.append([(rot, val, True)])
