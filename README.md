@@ -37,6 +37,7 @@ docs/
   BRIEFING.md                   formato do texto clínico — fonte única
   formato-entrega.md            como ficam os dois Word
   DECISOES.md                   decisões do operador e correções feitas neste repo
+  instrucoes-projeto.md         texto das instruções do projeto no claude.ai (versionado)
 skills/
   plantao/                      orquestrador do plantão
   controles-vitais-janela/      transcrição das folhas de controle (+ referências e amostras)
