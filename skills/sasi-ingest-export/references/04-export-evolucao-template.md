@@ -7,11 +7,8 @@ tags: [sasi, template, evolucao, reference]
 Produz texto **copiável e colável** direto na evolução oficial. Estilo SOAP adaptado à realidade UTI-BR, ancorado no
 TEMPLATE-BASE CANÔNICO SASI v2 (Ramo C).
 
-> ⚙️ **ARQUITETURA SASI v2:** este template é a **mesma anatomia** da skill `admissao-uti`. A nota de evolução é o
-> template-base no **modo D2+**: o eixo TEMPO é `Intercorrências 24h` (não HPMA), o `DH` é o dia real, o campo
-> `Admissão (DD/MM/AA):` é **congelado** da admissão original, e os sinais vitais são a faixa Máx - Mín das 24h.
-> **O bloco TEMPLATE-BASE abaixo é IDÊNTICO ao da `admissao-uti`. Alterou aqui → replica lá no mesmo commit.
-Divergência = bug clínico-legal.**
+> Desde 11/10/2026 a nota de admissão tem skill própria (`skills/admissao-uti`), com modelo próprio: este template
+> não é mais espelho dela e serve só ao "Exportar Evolução" do SASI. Evolução do plantão: `docs/BRIEFING.md`.
 
 **Entrada esperada:** snapshot da evolução (JSONB) + cadastrais do paciente + histórico 72h (se disponível). **Saída:**
 Markdown estruturado, pronto para o prontuário eletrônico.

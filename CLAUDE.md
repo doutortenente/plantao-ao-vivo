@@ -9,6 +9,8 @@ Instruções para o Claude quando o Dr. Nicolas manda o material do plantão ("n
 3. `skills/plantao/SKILL.md` — passo a passo.
 4. `skills/controles-vitais-janela/SKILL.md` — como ler a folha de controle.
 
+Admissão de leito novo: só `skills/admissao-uti/SKILL.md` (não a `sasi-ingest-export`).
+
 ## Regras que já custaram caro (não repetir)
 
 - **Janela 24 h** (07 h do dia anterior até 05 h) é o padrão, inclusive na evolução diurna. Só recortar turno se ele

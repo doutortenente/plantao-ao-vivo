@@ -11,6 +11,7 @@
 | 11/10/2026 | Evolução só com o que importa (7 blocos); sem repetir identificação, história, dispositivos, exames antigos. |
 | 11/10/2026 | Times New Roman 10, negrito mantido, visual limpo. |
 | 11/10/2026 | Repositório próprio `plantao-ao-vivo`, independente, sem symlinks. |
+| 11/10/2026 | Admissão com skill própria (`admissao-uti`), no padrão das evoluções reais dele: sem escore, sem rodapé, sem "Exame físico por sistemas"; entrega em Word Times New Roman 10. |
 
 ## Correções feitas ao montar este repositório (11/10/2026)
 
@@ -43,6 +44,9 @@ Origem: `doutortenente/claude-workspace`. O que estava desatualizado ou errado e
 11. **Skill `admissao-uti`** apontava para caminhos do PC (`~/src/...`) que não existem neste repo — apontada para
     o template daqui.
 12. **`doc-plantao-formato.md`** (Google Doc, Arial, caixa cinza) substituído por `docs/formato-entrega.md`.
+13. **Skill `admissao-uti`** trazia o TEMPLATE-BASE v2 do SASI ("Exame físico por sistemas", escores, rodapé),
+    espelhado no template de exportação do SASI. Reescrita em 11/10/2026 a partir das evoluções reais do Dr.
+    (admissão do leito 02 de 10/10/26) e do rascunho v3 dele; o espelhamento com `04-export-evolucao-template.md` acabou.
 
 ## Pendente (não resolvido aqui)
 
