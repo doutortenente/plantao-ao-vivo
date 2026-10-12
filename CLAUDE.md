@@ -18,8 +18,9 @@ Admissão de leito novo: só `skills/admissao-uti/SKILL.md` (não a `sasi-ingest
 - **Evolução = só o que muda**: vitais + balanço, laboratório, terapias, exame físico (copiado da anterior), eventos
   24 h, impressão, plano. Sem identificação, HPMA, antecedentes, dispositivos ou exames antigos.
 - **Balanço = soma das células.** Rodapé da folha só confere; divergência no rodapé "Conferir".
-- **Ficha-cola**: 1 folha paisagem por leito, com TODOS os sinais vitais e o balanço, prescrição por classe, uma
-  droga por linha ("Nome (genérico) dose => horários"), linhas para anotar. Sem caixas coloridas.
+- **Ficha-cola**: modelo aprovado em 12/10/2026, `gerador/ficha_cola.py` (bloco `ficha` no JSON). 1 folha
+  paisagem por leito — conferir TODAS as páginas do PDF; mandar .docx + .pdf. Dx no cabeçalho; prescrição em 2 blocos
+  (infusões/terapias + por sistemas); profilaxia só TEV/LAMG; texto curto, sem encheção.
 - **Fonte**: Times New Roman 10 em tudo; destaque só por negrito (rótulos, flags, alertas). Sem vermelho, sem cor.
   Nada de layout "inventado".
 - **Zero alucinação**: ilegível vira `?` e vai para o rodapé; dose só com fonte legível; separar medido de inferido.

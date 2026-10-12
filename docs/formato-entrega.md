@@ -31,25 +31,28 @@ Uma página por leito não é obrigatória na evolução (a regra de 1 folha é 
 
 ## Ficha-cola (paisagem, 1 folha por leito — obrigatório)
 
-Modelo: a cola que o Dr. faz à mão. 6 leitos = 6 folhas, sem segunda página quase vazia.
+Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha_cola.py`, a partir do bloco
+`ficha` de cada leito (`gerador/schema-plantao.md`). 6 leitos = 6 folhas.
 
-- Topo: `LEITO XX  NOME, idade/sexo · dia de UTI · data turno`; diagnóstico; `Alergia:` e
-  `Dieta:`.
-- Coluna esquerda: TODOS os sinais vitais e o balanço, um parâmetro por linha com rótulo alinhado (sem linhas de
-  grade); laboratório compacto, um grupo por linha com rótulos em negrito.
-- Coluna direita: prescrição por classe (ATB, DVA, SEDAÇÃO/ANALGESIA, CV, HPB, TGI...), uma droga por linha:
-  `Nome (genérico) dose via frequência ........ horários h` — nome em negrito, horário alinhado à direita.
-  Item suspenso ou duplicado em negrito.
-- Linha `Dispositivos/ATB:` logo abaixo de Alergia/Dieta: dispositivo com data de inserção e ATB com dia e início.
-- Alertas: até 3, em negrito, logo abaixo do cabeçalho.
-- CHECKLIST DO PLANTÃO: 3 a 5 tarefas com caixinha (☐), tiradas do plano — na coluna que tiver espaço.
-- Prescrição enxuta: a ficha não mostra classe SN, colírios, lágrima artificial, cremes/tópicos de pele, simeticona,
-  módulos de proteína/fibra, água de SNE e complexo B (lista em `gerador/gerar_docx.py`, `ITENS_OMITIR`).
-- Embaixo: linhas para anotação — quantas couberem.
-- Se o leito não cabe: o gerador reduz as linhas de anotação, e a fonte fica em 10. Se não
-  couber, avisa — aí encurtar a prescrição juntando itens na mesma linha com "; ".
+- Cabeçalho: caixa `LEITO XX` | nome em destaque + idade/sexo + dia de UTI; embaixo `Dx:` (problemas ativos
+  separados por " · ") e `Disp.:` (dispositivo com data) | `Alergia:` (caixa alta e negrito se houver) e turno/data.
+  Diagnósticos ficam no cabeçalho, não em coluna própria.
+- Coluna 1 — CONTROLES: sinais vitais em grade de 2 colunas (PAS/FR, PAD/SpO2, PAM/TAX, FC), Máx - Mín, alerta
+  `[Nx<lim]` em negrito na mesma linha; Dx em linha própria; BALANÇO em grade (Ganhos, Diurese, perdas, BH, Evac.);
+  LABORATÓRIO, um grupo por linha. Fios cinza finos entre linhas (guia de leitura — o Dr. é disléxico).
+- Coluna 2 — PRESCRIÇÃO em 2 blocos: INFUSÕES E TERAPIAS (DVA, sedação, ATB com D e início, VM/O2, dieta/NPT,
+  TRS) e POR SISTEMAS (Neuro, CV, Resp, TGI, Renal, Endócrino, Analgesia, Profilaxia, SN, Suspensos), rótulo à
+  esquerda, fio entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG.
+- Coluna 3 — PENDÊNCIAS (☐), EXAMES, ANOTAÇÕES / NOVOS EXAMES (linhas, quantas couberem).
+- Faixa de baixo: grade CONTROLES DO PLANTÃO (Hora, PA (PAM), FC, SpO2/FiO2, Diurese, Dx × 8) | INTERCORRÊNCIAS,
+  CONDUTAS E PASSAGEM.
+- Fora: subtítulos explicativos, rodapé de fontes, frase de comentário. Dúvida de leitura vai para o "Conferir" do chat.
+- Tamanho: corpo 10 pt; o ajuste desce para 9,5/9 pt e corta linhas de anotação até caber, medindo com 1,5 cm de
+  folga no pé (o Word renderiza mais alto que o LibreOffice — sem folga, a folha estourava para 2 páginas no Word).
+- Entrega: `.docx` + `.pdf` (o PDF é o que imprime igual em qualquer computador).
+- O XML é reordenado no padrão OOXML (`sanear`) porque o Word é estrito e o LibreOffice não.
 
 ## Conferência antes de entregar
 
-- Converter para PDF e contar páginas da ficha-cola (= nº de leitos).
+- Converter para PDF e contar páginas da ficha-cola (= nº de leitos); olhar TODAS as páginas, não uma amostra.
 - Abrir 1 página de cada arquivo e olhar.

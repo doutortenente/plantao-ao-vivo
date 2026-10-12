@@ -33,6 +33,7 @@ import tempfile
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(RAIZ / "skills" / "sasi-ingest-export" / "scripts"))
 import build_passagem as motor  # noqa: E402
 
@@ -125,7 +126,7 @@ def gerar_evolucoes(plantao, caminho):
         T(p, leito.get("nome", ""), True, tam=TAM)
         p2 = doc.add_paragraph()
         info = [leito.get("idade_sexo"), leito.get("dia_uti"),
-                f"Evolução {meta.get('turno', '')} {meta.get('unidade', '')}".strip(), meta.get("data")]
+                f"Evolução {({'noturno': 'noturna', 'diurno': 'diurna'}).get(meta.get('turno', ''), meta.get('turno', ''))} {meta.get('unidade', '')}".strip(), meta.get("data")]
         T(p2, "  ·  ".join(x for x in info if x))
         filete(p2, 8); p2.paragraph_format.space_after = Pt(6)
         for titulo, linhas in r["secoes"]:
@@ -530,8 +531,18 @@ def main():
     evo = pasta / nome_arquivo(meta, "evolucoes" + sufixo, "docx")
     cola = pasta / nome_arquivo(meta, "ficha-cola" + sufixo, "docx")
     gerar_evolucoes(plantao, evo)
-    linhas = {} if a.sem_ajuste else ajustar_linhas(plantao)
-    gerar_ficha(plantao, cola, linhas)
+    if all("ficha" in l for l in plantao["leitos"]):
+        # modelo aprovado em 12/10/2026 (gerador/ficha_cola.py) + PDF para imprimir
+        import ficha_cola
+        cfg = {} if a.sem_ajuste else ficha_cola.ajustar(plantao)
+        ficha_cola.gerar(plantao, cola, cfg)
+        if shutil.which("soffice"):
+            subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", str(pasta), str(cola)],
+                           check=True, capture_output=True, timeout=300)
+    else:
+        print("AVISO: leito sem bloco 'ficha' — usando a ficha-cola antiga (ver schema-plantao.md)", file=sys.stderr)
+        linhas = {} if a.sem_ajuste else ajustar_linhas(plantao)
+        gerar_ficha(plantao, cola, linhas)
     print(evo); print(cola)
     _, avisos = motor.build(plantao)
     if avisos:

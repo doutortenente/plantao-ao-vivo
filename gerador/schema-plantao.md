@@ -63,3 +63,30 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
 Nomes de ganho/perda reconhecidos: ver `CANON` no motor (dieta, soro, EV, diluição, NPT, CH, ingesta, reposição,
 noradrenalina... / diurese, SVD, SNG, resíduo, dreno, evacuação, UF, diálise...). Nome desconhecido não entra na
 conta e vira aviso.
+
+## Bloco `ficha` (ficha-cola, modelo aprovado em 12/10/2026)
+
+Um por leito. Com ele o gerador usa `gerador/ficha_cola.py`; sem ele cai na ficha antiga e avisa.
+Texto curto, sem frase explicativa. `**negrito**` só para alerta (dose divergente, item suspenso, valor crítico).
+
+```jsonc
+"ficha": {
+  "janela_controles": "11/10  ·  07 - 23 h",      // título da coluna CONTROLES
+  "janela_balanco": "07 - 18 h",                  // título do BALANÇO
+  "alergia": "nega",                              // != "nega" sai em CAIXA ALTA e negrito
+  "dx": "Problema 1  ·  Problema 2  ·  AP",       // linha Dx do cabeçalho (até 2 linhas)
+  "disp": "TQT 06/10  ·  PICC MSD 15/09",         // linha Disp. do cabeçalho
+  "infusoes": [["DVA", ["Noradrenalina 16 mg/250 ml 2 ml/h"]],   // INFUSÕES E TERAPIAS:
+               ["ATB", ["Meronem (meropenem) 1 g EV 8/8 h (D3, I: 09/10) => 14-22-06"]]],  // DVA, SEDAÇÃO, ATB, VM/O2, DIETA/NPT, TRS
+  "sistemas": [["NEURO", ["..."]], ["CV", ["..."]], ["RESP", ["..."]], ["TGI", ["..."]],
+               ["RENAL", ["..."]], ["ENDÓCRINO", ["..."]], ["ANALGESIA", ["..."]],
+               ["PROFILAXIA", ["só TEV/LAMG — nunca analgésico aqui"]], ["SN", ["..."]], ["SUSPENSOS", ["..."]]],
+  "vigiar": ["3 a 7 pendências, 1 linha cada, ação concreta"],
+  "exames": ["exame relevante em 1 linha"],
+  "lab_titulo": "LABORATÓRIO 10/10 -> 11/10",
+  "lab": ["Hb 7,3 | Leuco 16.800", "Ur 129 -> 100 | Cr 1,4", "Na 137 | **K 3,3**"]   // 1 grupo por linha
+}
+```
+
+Itens de prescrição: `Nome (genérico) dose via freq => horários`; vários na mesma linha separados por " · ".
+O nome antes do primeiro número/parêntese sai em negrito automaticamente.
