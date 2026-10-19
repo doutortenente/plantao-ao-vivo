@@ -45,7 +45,7 @@ Outros: PCR / troponina / D-dímero / INR (se houver)
 
 ## Terapias vigentes:
 CV: ...
-ATB: ... (D[n], I: dd/mm)
+ATB: ... (D[n], I: dd/mm)    ← D conta do motor: dia de início = D0 (começou ontem: hoje D1)
 RENAL/HE: ...
 ENDÓCRINO: ...
 HEMATO: ...
@@ -89,6 +89,9 @@ antigos. Já estão no prontuário. Entram só as 7 seções acima.
   Acrescentados em 11/10/2026: DX<70 e TAX>37,8 (hipoglicemia e febre não passam calados).
 - **Impressão SEM setinhas ↑/↓/=** (o Dr. detesta). Texto limpo.
 - Campo sem fonte → OMITE a linha. Nunca inventa.
+- Dias (19/10/2026): ATB com dia de início = D0 ("1 dia completo de ATB" = D1). Dia de UTI com dia da admissão = D1
+  (como a nota de admissão: "1º dia de UTI"). Os dois são calculados pelo motor a partir de `I: dd/mm` e de
+  `admissao_uti`; não contar de cabeça.
 
 ## 3. Plano terapêutico é a ALMA — não seja raso
 

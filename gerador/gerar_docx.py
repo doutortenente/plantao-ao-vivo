@@ -158,6 +158,8 @@ def main():
         print("ERRO: leito(s) " + ", ".join(sem_ficha) + " sem o bloco `ficha` (gerador/schema-plantao.md). "
               "A ficha-cola antiga foi aposentada; monte o bloco e gere de novo.", file=sys.stderr)
         sys.exit(2)
+    plantao_original = plantao
+    plantao, _ = motor.preparar(plantao)  # dias de ATB (início = D0) e de UTI (admissão = D1)
     import validar
     erros_v, avisos_v = validar.validar(plantao)
     if erros_v:
@@ -187,7 +189,7 @@ def main():
     else:
         print("AVISO: sem LibreOffice, o PDF da ficha-cola não foi gerado.", file=sys.stderr)
     print(evo); print(cola)
-    _, avisos = motor.build(plantao)
+    _, avisos = motor.build(plantao_original)
     avisos = avisos_v + avisos
     if avisos:
         print("\nRodapé (conferir — fora do bloco):")

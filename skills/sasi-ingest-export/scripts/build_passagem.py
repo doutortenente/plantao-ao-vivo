@@ -16,6 +16,9 @@ O que o motor garante
   - Nada de explicação dentro do bloco clínico: observação vai para os avisos.
   - Cruzamentos de segurança (checagens.py): alergia × prescrição, TEV, duplicidade, droga
     suspensa no plano anterior. Saem como "ALERTA: …" no topo dos avisos.
+  - Dias (preparar): ATB escrito "(I: 30/12)" ou "(D?, I: 30/12)" vira "(D2, I: 30/12)" — dia de
+    início = D0; dia de UTI sai de `admissao_uti` — dia da admissão = D1 (decisão de 19/10/2026).
+    D escrito à mão que diverge da conta é corrigido e vira aviso.
 
 Uso
   python3 build_passagem.py --demo
@@ -43,6 +46,8 @@ Entrada (por leito) — ver gerador/schema-plantao.md para o contrato completo
 """
 
 import argparse
+import copy
+import datetime as dt
 import json
 import re
 import sys
@@ -328,7 +333,87 @@ def render_leito(leito, meta=None):
     return "\n".join(L), r["avisos"]
 
 
+# ── dias de ATB e de UTI ─────────────────────────────────────────────────────
+ATB_DIA = re.compile(r"\((?:D(\?|\d+),\s*)?I:\s*(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\)")
+
+
+def _data(txt, ref=None):
+    """'01/01/2026' ou '30/12' (ano tirado de ref: a data mais recente que não passa de ref)."""
+    m = re.match(r"^\s*(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?", str(txt or ""))
+    if not m:
+        return None
+    d, mes, ano = int(m.group(1)), int(m.group(2)), m.group(3)
+    if ano:
+        ano = int(ano) + (2000 if len(ano) == 2 else 0)
+    elif ref:
+        ano = ref.year if (mes, d) <= (ref.month, ref.day) else ref.year - 1
+    else:
+        return None
+    try:
+        return dt.date(ano, mes, d)
+    except ValueError:
+        return None
+
+
+def dias_atb(texto, data):
+    """Escreve o D de cada ATB '(D?, I: dd/mm)' pela data do plantão. Devolve (texto, avisos)."""
+    avisos = []
+    if not data:
+        return texto, avisos
+
+    def troca(m):
+        escrito, d, mes, ano = m.group(1), m.group(2), m.group(3), m.group(4)
+        inicio = _data(f"{d}/{mes}" + (f"/{ano}" if ano else ""), data)
+        if not inicio or inicio > data:
+            avisos.append(f"ATB com início inválido ou depois do plantão: {m.group(0)}")
+            return m.group(0)
+        n = (data - inicio).days
+        if n > 60:
+            avisos.append(f"ATB há {n} dias ({m.group(0)}): conferir a data de início")
+        if escrito not in (None, "?") and int(escrito) != n:
+            avisos.append(f"ATB: estava D{escrito}, a conta dá D{n} (início {d}/{mes} = D0) — corrigido")
+        return f"(D{n}, I: {d}/{mes}" + (f"/{ano}" if ano else "") + ")"
+    return ATB_DIA.sub(troca, texto), avisos
+
+
+def preparar(payload):
+    """Cópia do plantão com os dias calculados (ATB e UTI). Devolve (plantao, avisos por leito 'Lxx: …')."""
+    dados = copy.deepcopy(payload)
+    meta = dados.get("meta", {})
+    data = _data(meta.get("data"))
+    avisos = []
+    for leito in dados.get("leitos", [dados] if "leito" in dados else []):
+        L = f"L{leito.get('leito', '?')}"
+        adm = _data(leito.get("admissao_uti"), data)
+        if leito.get("admissao_uti") and data and adm:
+            n = (data - adm).days + 1
+            atual = leito.get("dia_uti") or ""
+            m = re.search(r"D(\d+)", atual)
+            if m and int(m.group(1)) != n:
+                avisos.append(f"{L}: dia de UTI estava D{m.group(1)}, a conta dá D{n} (admissão = D1) — corrigido")
+            leito["dia_uti"] = re.sub(r"D\d+", f"D{n}", atual, count=1) if m else f"D{n} UTI"
+        elif leito.get("admissao_uti"):
+            avisos.append(f"{L}: admissao_uti ilegível ({leito['admissao_uti']}): dia de UTI não calculado")
+        for chave in ("terapias",):
+            novos = []
+            for t in leito.get(chave, []):
+                t, av = dias_atb(t, data)
+                novos.append(t); avisos += [f"{L}: {a}" for a in av]
+            if chave in leito:
+                leito[chave] = novos
+        f = leito.get("ficha") or {}
+        for bloco in ("infusoes", "sistemas"):
+            for linha in f.get(bloco, []):
+                itens = []
+                for it in linha[1]:
+                    it, av = dias_atb(it, data)
+                    itens.append(it); avisos += [f"{L}: {a} (ficha)" for a in av]
+                linha[1] = itens
+    return dados, avisos
+
+
 def build(payload):
+    payload, avisos_dias = preparar(payload)
     if "leitos" in payload:
         meta, leitos = payload.get("meta", {}), payload["leitos"]
     else:
@@ -338,6 +423,7 @@ def build(payload):
         txt, av = render_leito(leito, meta)
         out += [txt, ""]
         avisos += [f"L{leito.get('leito', '?')}: {a}" for a in av]
+    avisos += avisos_dias
     avisos.sort(key=lambda a: "ALERTA:" not in a)  # alertas de segurança primeiro, ordem mantida
     return "\n".join(out).rstrip() + "\n", avisos
 

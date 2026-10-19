@@ -20,7 +20,8 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "nome": "NOME COMPLETO",
     "iniciais": "NC",                       // opcional
     "idade_sexo": "36F",
-    "dia_uti": "D4 UTI",
+    "dia_uti": "D4 UTI",                    // calculado se houver admissao_uti (diverge = aviso e vale a conta)
+    "admissao_uti": "08/10/2026",           // dia da admissão = D1
     "diagnostico": "Problema 1  ·  Problema 2",   // Dx do cabeçalho da ficha (fonte única)
     "alergia": "Nega",                      // fonte única; != "nega" sai em CAIXA ALTA e negrito; sem saber: "?"
     "dieta": "geral VO",                    // vai na linha de balanço
@@ -42,7 +43,8 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "avisos": ["vai para o rodapé Conferir, nunca para o bloco"],
 
     "laboratorio": ["HB: 13,4 -> 13,2 g/dl | HT: 39,9 -> 40,4 %", "UR: 26,4 -> 26,1 mg/dl"],
-    "terapias": ["RESP: ...", "ATB: Rocefin 1 g EV 12/12h (D4, I: 08/10)."],
+    "terapias": ["RESP: ...", "ATB: Rocefin 1 g EV 12/12h (D?, I: 08/10)."],  // D? ou só (I: dd/mm): o motor
+                                            // escreve o D (início = D0); D errado é corrigido e vira aviso
     "exame_fisico": ["- SNC: ...", "- ACV: ..."],
     "evolucao": ["frase com verbo de ação", "..."],
     "impressao": ["Problema, tendência - leitura de 1 linha"],
