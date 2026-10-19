@@ -83,7 +83,7 @@ def mensagem(plantao, avisos, arquivos, erros_conferencia=(), historico=None):
 
     nomes = ", ".join(Path(a).name for a in arquivos)
     linhas = [f"Saíram a evolução e a ficha-cola de {n} leito{'s' if n > 1 else ''} ({nomes}); "
-              f"{n_conferir} item{'ns' if n_conferir != 1 else ''} para conferir.", ""]
+              f"{n_conferir} {'itens' if n_conferir != 1 else 'item'} para conferir.", ""]
     if erros_conferencia:
         linhas += ["**Não entregar ainda: a conferência achou erro**"] + [f"- {e}" for e in erros_conferencia] + [""]
     if novos or repetidos:

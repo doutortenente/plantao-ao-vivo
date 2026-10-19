@@ -26,6 +26,11 @@ class Mensagem(unittest.TestCase):
         self.assertIn("- L99 Hemodinâmico: Noradrenalina para meta PAM >= 65 mmHg", txt)
         self.assertNotIn("Infeccioso", txt.split("**Conduta (metas)**")[1])  # sem meta numérica
 
+    def test_plural(self):
+        txt = entrega.mensagem(EXEMPLO, AVISOS + ["L99: outro aviso"], [Path("a.docx")])
+        self.assertIn("2 itens para conferir", txt.splitlines()[0])
+        self.assertIn("0 itens para conferir", entrega.mensagem(EXEMPLO, [], [Path("a.docx")]).splitlines()[0])
+
     def test_erro_de_conferencia_vem_antes(self):
         txt = entrega.mensagem(EXEMPLO, [], [Path("a.docx")], ["ficha-cola com 2 página(s) para 1 leito(s)"])
         self.assertIn("**Não entregar ainda", txt)
