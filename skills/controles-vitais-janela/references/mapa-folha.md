@@ -46,7 +46,7 @@ Bloco **PERDAS**:
 
 - Diurese · SNG/SNE · Evacuação · Resíduo Gástrico · Dreno/SVD
 
-**RODAPÉS (verdade confiável — usar estes):**
+**RODAPÉS (só conferência — a conta é a soma das células, docs/BRIEFING.md §4):**
 
 - `Ganhos 6h-18h` / `Perdas 6h-18h` / `Balanço 6h-18h`
 - `Ganhos 19h-6h` / `Perdas 19h-6h` / `Balanço 19h-6h`
@@ -54,9 +54,10 @@ Bloco **PERDAS**:
 
 DERIVAÇÕES:
 
-- **Ingesta (janela)** = soma dos `Ganhos` da (s) janela (s). Subtotal ilegível → `?`.
-- **Diurese** = `D:` do rodapé (ou soma da coluna Diurese se `D:` ilegível).
-- **BH** = `BH:` do rodapé.
+- **Ingesta (janela)** = soma das CÉLULAS de ganho da(s) janela(s). Célula ilegível → `?` e aviso no Conferir.
+- **Diurese** = soma das CÉLULAS da coluna Diurese (a última célula não é o total). `D:` do rodapé só confere.
+- **BH** = Σ ganhos − Σ perdas pelas células (motor `build_passagem.py`). `BH:` do rodapé só confere; divergência
+  vai para o Conferir, nunca para o bloco.
 - **Evacuação** = nº de episódios + qualidade (P/L/E/ME/SC) + quantidade (+/++/+++).
 - **Resíduo gástrico / Dreno** → linha extra se houver valor.
 
