@@ -38,8 +38,8 @@ description: >
    para os alertas.
 5. **JSON do plantão.** Montar um arquivo no contrato `gerador/schema-plantao.md`, com:
    vitais (séries), células de balanço, laboratório, terapias, exame físico (copiado da evolução anterior), eventos
-   24 h, impressão, plano, prescrição por classe, até 3 alertas, linha de dispositivos/ATB e checklist do
-   plantão (3 a 5 tarefas tiradas do plano).
+   24 h, impressão, plano, até 3 alertas para o chat e o bloco `ficha` de cada leito (obrigatório: Dx, dispositivos,
+   alergia, prescrição em infusões/terapias + por sistemas, 3 a 7 pendências tiradas do plano, exames e lab).
 6. **Gerar.** `python3 gerador/gerar_docx.py plantao.json --saida saida/` → evolução + ficha-cola.
    Conferir o PDF renderizado (6 leitos = 6 folhas na ficha-cola).
 7. **Responder no chat.** Os dois arquivos + alertas críticos (uma vez só) + rodapé "Conferir" do motor + bloco

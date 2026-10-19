@@ -21,10 +21,9 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "iniciais": "NC",                       // opcional
     "idade_sexo": "36F",
     "dia_uti": "D4 UTI",
-    "diagnostico": "linha curta da ficha-cola",
-    "alergia": "Nega",                      // vermelho na ficha se != "Nega..."
+    "diagnostico": "linha curta",           // hoje não impresso: a ficha usa ficha.dx
+    "alergia": "Nega",                      // hoje não impresso: a ficha usa ficha.alergia
     "dieta": "geral VO",                    // vai na linha de balanço
-    "dieta_ficha": "Geral VO",              // opcional: texto do topo da ficha
     "janela": "desde a admissão (19 h - 05 h)",  // opcional
 
     "vitais": {                             // série horária OU agregado
@@ -49,13 +48,10 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "impressao": ["Problema, tendência - leitura de 1 linha"],
     "conduta": ["1. Respiratório:", "- ação;", "2. Profilaxias: TEV ...; LAMG ...; cabeceira 30º."],
 
-    "dispositivos": "TQT (06/10) · PICC MSD (15/09) · SVD (22/09) · Meronem D2 (I: 09/10)",  // ficha-cola, 1 linha
-    "checklist": ["Colher HB/HT pós-CH", "Cobrar Cirurgia Geral"],    // ficha-cola, 3-5 tarefas do plantão
+    "dispositivos": "TQT (06/10) · PICC MSD (15/09) · SVD (22/09)",  // hoje não impresso: a ficha usa ficha.disp
+    "alertas": ["até 3 frases curtas"],     // para o chat; não vão para a ficha nem para o bloco
 
-    "prescricao": [                          // só para a ficha-cola (filtrada: ver CLASSES_OMITIR/ITENS_OMITIR)
-      {"classe": "ATB", "itens": ["Rocefin (ceftriaxona) 1 g EV 12/12h — I: 08/10 (D4) => 10-22"]}
-    ],
-    "alertas": ["até 3 frases curtas"]
+    "ficha": { }                             // OBRIGATÓRIO: bloco da ficha-cola, abaixo
   }]
 }
 ```
@@ -66,7 +62,7 @@ conta e vira aviso.
 
 ## Bloco `ficha` (ficha-cola, modelo aprovado em 12/10/2026)
 
-Um por leito. Com ele o gerador usa `gerador/ficha_cola.py`; sem ele cai na ficha antiga e avisa.
+Um por leito, obrigatório. Sem ele o gerador para com erro (a ficha-cola antiga foi aposentada em 19/10/2026).
 Texto curto, sem frase explicativa. `**negrito**` só para alerta (dose divergente, item suspenso, valor crítico).
 
 ```jsonc

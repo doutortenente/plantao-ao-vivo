@@ -14,7 +14,6 @@
       "dia_uti": "D3 UTI",
       "diagnostico": "Pneumonia comunitária grave + LRA KDIGO I (caso fictício)",
       "alergia": "Dipirona",
-      "dieta_ficha": "Enteral 50 ml/h SNE",
       "dieta": "enteral 50 ml/h",
       "vitais": {
         "PAS": [
@@ -227,43 +226,11 @@
         "3. Renal: meta diurese >= 0,5 ml/kg/h; evitar nefrotóxicos; UR/CR amanhã.",
         "4. Profilaxias: TEV: Enoxaparina 40 mg/dia; LAMG: Pantoprazol 40 mg; cabeceira 30º."
       ],
-      "prescricao": [
-        {
-          "classe": "ATB",
-          "itens": [
-            "Tazocin (piperacilina/tazobactam) 4,5 g EV 6/6h — I: 30/12 (D3) => 12-18-24-06",
-            "Azitromicina 500 mg EV 1x/dia — I: 30/12 (D3) => 10"
-          ]
-        },
-        {
-          "classe": "DVA",
-          "itens": [
-            "Noradrenalina 16 mg + SG 5% 234 ml — BIC 3 ml/h"
-          ]
-        },
-        {
-          "classe": "HPB",
-          "itens": [
-            "Clexane (enoxaparina) 40 mg SC 1x/dia => 18"
-          ]
-        },
-        {
-          "classe": "TGI",
-          "itens": [
-            "Pantozol (pantoprazol) 40 mg EV jejum => 06"
-          ]
-        }
-      ],
       "alertas": [
         "Alergia a dipirona — conferir analgésicos SN",
         "PAM 60 às 17 h; lactato 3,1"
       ],
       "dispositivos": "SVD (30/12) · AVP · Tazocin D3 + Azitromicina D3 (I: 30/12)",
-      "checklist": [
-        "Colher hemoculturas 2 amostras",
-        "Lactato de controle em 6 h",
-        "Titular noradrenalina para PAM >= 65"
-      ],
       "ficha": {
         "janela_controles": "01/01  ·  07 - 05 h",
         "janela_balanco": "07 - 05 h",

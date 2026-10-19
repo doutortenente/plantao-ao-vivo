@@ -73,17 +73,5 @@ class Exemplo(unittest.TestCase):
         self.assertIn("BH: + 400 ml", txt)
 
 
-class FiltroFicha(unittest.TestCase):
-    def test_tira_baixo_valor(self):
-        sys.path.insert(0, str(RAIZ / "gerador"))
-        import gerar_docx as g
-        out = g.filtrar_prescricao([
-            {"classe": "SN", "itens": ["Novalgina 1 g"]},
-            {"classe": "TGI", "itens": ["Luftal 40 gts", "Tiorfan 100 mg | água 50 ml SNE 8/8h"]},
-            {"classe": "ATB", "itens": ["Meronem 1 g EV 8/8h"]}])
-        self.assertEqual(out, [{"classe": "TGI", "itens": ["Tiorfan 100 mg"]},
-                               {"classe": "ATB", "itens": ["Meronem 1 g EV 8/8h"]}])
-
-
 if __name__ == "__main__":
     unittest.main()

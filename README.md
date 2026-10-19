@@ -59,8 +59,9 @@ tests/test_motor.py             testes do motor
 ## Requisitos
 
 - Python 3.10+ e `pip install -r gerador/requirements.txt` (python-docx).
-- LibreOffice (`soffice`) para o ajuste automático da ficha-cola. Sem ele, use `--sem-ajuste` (3 linhas de
-  anotação fixas; a folha pode estourar se a prescrição for longa).
+- LibreOffice (`soffice`) e `pdfinfo` (poppler-utils) para o ajuste automático da ficha-cola. Sem eles, use
+  `--sem-ajuste` (6 linhas de anotação e 4 de intercorrências em 10 pt; a folha pode estourar se a prescrição for
+  longa).
 - Testes: `python3 -m unittest discover -s tests`.
 
 ## Dados de paciente

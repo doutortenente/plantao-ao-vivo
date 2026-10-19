@@ -4,7 +4,7 @@ Cabeçalho: leito + nome + Dx + dispositivos | alergia + plantão.
 Corpo: CONTROLES + LAB | PRESCRIÇÃO (infusões/terapias + por sistemas) | PENDÊNCIAS + EXAMES + ANOTAÇÕES.
 Rodapé de trabalho: grade de controles do plantão | intercorrências.
 Preto no branco, Times New Roman, fios cinza entre linhas para guiar a leitura."""
-import json, re, shutil, subprocess, sys, tempfile
+import json, re, subprocess, sys, tempfile
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -375,7 +375,6 @@ ORDEM = {
 
 def sanear(doc):
     """Reordena pPr/tcPr/tblPr na ordem do schema OOXML (o Word é estrito; o LibreOffice não)."""
-    W_NS = qn("w:p")[:-1]
     for tag, ordem in ORDEM.items():
         pos = {qn("w:" + n): i for i, n in enumerate(ordem.split())}
         for el in doc.element.body.iter(qn("w:" + tag)):
@@ -422,7 +421,8 @@ def n_paginas(docx):
 
 
 def ajustar(plantao, folga=1.5):
-    res = {}
+    """Devolve (cfg por leito, leitos que não couberam nem em 9 pt sem anotações)."""
+    res, nao_coube = {}, []
     with tempfile.TemporaryDirectory() as tmp:
         for leito in plantao["leitos"]:
             um = {"meta": plantao["meta"], "leitos": [leito]}
@@ -437,12 +437,16 @@ def ajustar(plantao, folga=1.5):
                 if achou:
                     break
             res[leito["leito"]] = achou or (0, 2, 9)
+            if not achou:
+                nao_coube.append(leito["leito"])
             print(leito["leito"], res[leito["leito"]], "OK" if achou else "NAO COUBE", file=sys.stderr)
-    return res
+    return res, nao_coube
 
 
 if __name__ == "__main__":
     pl = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-    cfg = ajustar(pl)
+    cfg, nao_coube = ajustar(pl)
     gerar(pl, sys.argv[2], cfg)
     print(sys.argv[2])
+    if nao_coube:
+        sys.exit("NAO COUBE em 1 folha: leito(s) " + ", ".join(nao_coube))
