@@ -18,7 +18,8 @@ Uso:
 
 O ajuste (padrão) mede cada leito no LibreOffice para a ficha caber em 1 folha. Sem ajuste, a ficha sai com
 6 linhas de anotação e 4 de intercorrências em 10 pt, e pode estourar.
-Antes de gerar roda gerador/validar.py (erro = não gera). No fim roda gerador/conferir.py (fonte, tamanho, cor, texto proibido, 1 folha por leito, PNG de cada página).
+Antes de gerar roda gerador/validar.py (erro = não gera). No fim roda gerador/conferir.py (fonte, tamanho, cor, texto proibido, 1 folha por leito, PNG de cada página)
+e gerador/entrega.py (versão anterior em historico/, diff por leito e o rascunho do chat em mensagem.md).
 Saída: 0 = ok; 2 = JSON sem bloco `ficha` ou sem LibreOffice; 3 = algum leito não coube em 1 folha;
 4 = a conferência achou erro.
 Contrato do JSON: gerador/schema-plantao.md
@@ -177,6 +178,9 @@ def main():
     sufixo = f"-{turno}" if turno else ""
     evo = pasta / nome_arquivo(meta, "evolucoes" + sufixo, "docx")
     cola = pasta / nome_arquivo(meta, "ficha-cola" + sufixo, "docx")
+    import entrega
+    historico = entrega.guardar_anterior(pasta, [evo.name, cola.name, evo.with_suffix(".pdf").name,
+                                                 cola.with_suffix(".pdf").name, "mensagem.md", "evolucoes.txt"])
     gerar_evolucoes(plantao, evo)
 
     import ficha_cola
@@ -188,8 +192,9 @@ def main():
     else:
         print("AVISO: sem LibreOffice, o PDF da ficha-cola não foi gerado.", file=sys.stderr)
     print(evo); print(cola)
-    _, avisos = motor.build(plantao_original)
+    texto, avisos = motor.build(plantao_original)
     avisos = avisos_v + avisos
+    (pasta / "evolucoes.txt").write_text(texto, encoding="utf-8")
     if avisos:
         print("\nRodapé (conferir — fora do bloco):")
         for w in avisos:
@@ -197,6 +202,16 @@ def main():
     import conferir
     erros, avisos_conf, pngs = conferir.conferir(evo, cola, len(plantao["leitos"]))
     print(conferir.relatorio(erros, avisos_conf, pngs))
+    if historico and (historico / "evolucoes.txt").exists():
+        mudou = entrega.diff_por_leito((historico / "evolucoes.txt").read_text(encoding="utf-8"), texto)
+        print(f"\nVersão anterior guardada em {historico}. Mudou: "
+              + (", ".join(f"L{k} ({len(v)} linha(s))" for k, v in mudou.items()) or "nada no texto da evolução"))
+        for leito, linhas in mudou.items():
+            print(f"  L{leito}:"); print("\n".join("    " + x for x in linhas))
+    msg = pasta / "mensagem.md"
+    msg.write_text(entrega.mensagem(plantao, avisos, [evo, cola, cola.with_suffix(".pdf")], erros + [
+        f"leito {n} não coube em 1 folha" for n in nao_coube], historico), encoding="utf-8")
+    print(f"Rascunho do chat: {msg}")
     if nao_coube:
         print("\nERRO: leito(s) " + ", ".join(nao_coube) + " não couberam em 1 folha nem em 9 pt sem anotações. "
               "Encurte a prescrição desses leitos e gere de novo.", file=sys.stderr)

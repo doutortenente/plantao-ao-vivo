@@ -53,8 +53,10 @@ description: >
    motor ou `(revisar)` no texto = não gera (código 2); corrigir o JSON e gerar de novo. Os avisos vão para o Conferir.
    O gerador roda `gerador/conferir.py` no fim: 1 folha por leito, Times New Roman, tamanhos aprovados, sem cor,
    sem `(revisar)`, sem travessão entre números. Saída ≠ 0 = não entregar. Olhar TODOS os PNG de `saida/paginas/`.
-7. **Responder no chat.** Os dois arquivos + alertas críticos (uma vez só) + rodapé "Conferir" do motor + bloco
-   final de conduta com metas numéricas.
+7. **Responder no chat.** O gerador escreve o rascunho em `saida/mensagem.md` (1ª linha com o que saiu e quantos
+   itens conferir, alertas sem repetir os já dados, Conferir por leito, conduta com metas numéricas): partir dele.
+   Mandar os arquivos (.docx + .pdf da ficha). Correção de entrega: a versão anterior fica em `saida/historico/` e o
+   gerador mostra o diff por leito — mudar só o que ele apontou.
 
 ## Regras
 
