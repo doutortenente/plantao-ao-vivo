@@ -24,9 +24,30 @@ class Validar(unittest.TestCase):
         self.assertEqual(V.validar(EXEMPLO), ([], []))
 
     def test_campo_obrigatorio(self):
-        erros, _ = com(lambda l, d: (l["ficha"].pop("dx"), d["meta"].pop("data_prescricao")))
-        self.assertIn("L99: falta `ficha.dx`", erros)
+        erros, _ = com(lambda l, d: (l["ficha"].pop("lab"), l.pop("diagnostico"), d["meta"].pop("data_prescricao")))
+        self.assertIn("L99: falta `ficha.lab`", erros)
+        self.assertIn("L99: falta `diagnostico` (ou `ficha.dx`)", erros)
         self.assertIn("meta: falta `data_prescricao`", erros)
+
+    def test_alergia_divergente_e_erro(self):
+        # o exemplo antigo: alergia a dipirona no leito, "nega" na ficha e Novalgina prescrita
+        erros, _ = com(lambda l, d: l["ficha"].__setitem__("alergia", "nega"))
+        self.assertTrue(any("alergia diverge" in e for e in erros))
+
+    def test_copias_divergentes_sao_aviso(self):
+        def mudar(l, d):
+            l["ficha"]["dx"] = "Outra coisa"
+            l["ficha"]["lab"].append("Hb 12,1")
+            l["ficha"]["infusoes"][1] = ["ATB", ["Rocefin (ceftriaxona) 2 g EV 1x/dia (D2, I: 31/12)"]]
+        _, avisos = com(mudar)
+        txt = "\n".join(avisos)
+        self.assertIn("diagnostico diverge", txt)
+        self.assertIn("12,1", txt)
+        self.assertIn("ATB da ficha (ceftriaxona, rocefin) não bate", txt)
+
+    def test_generico_entre_parenteses_conta_como_mesmo_atb(self):
+        _, avisos = com(lambda l, d: l["terapias"].__setitem__(0, "ATB: Piperacilina + tazobactam 4,5 g EV 6/6h; Azitromicina 500 mg."))
+        self.assertFalse(any("ATB" in a for a in avisos))
 
     def test_item_de_balanco_desconhecido_e_erro(self):
         erros, _ = com(lambda l, d: l["ganhos"].append({"nome": "xpto", "ml": 300}))

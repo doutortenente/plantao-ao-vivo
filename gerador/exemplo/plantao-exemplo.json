@@ -12,7 +12,7 @@
       "nome": "PACIENTE FICTÍCIO DE EXEMPLO",
       "idade_sexo": "60M",
       "dia_uti": "D3 UTI",
-      "diagnostico": "Pneumonia comunitária grave + LRA KDIGO I (caso fictício)",
+      "diagnostico": "Pneumonia comunitária grave  ·  Choque séptico  ·  LRA KDIGO I  ·  HAS",
       "alergia": "Dipirona",
       "dieta": "enteral 50 ml/h",
       "vitais": {
@@ -198,7 +198,7 @@
         "Gaso A: pH 7,31 / pCO2 34 / HCO3 17 / BE -8 / Lactato 3,1"
       ],
       "terapias": [
-        "ATB: Tazocin 4,5 g EV 6/6h (D3, I: 30/12); Azitromicina 500 mg EV 1x/dia (D3, I: 30/12).",
+        "ATB: Tazocin 4,5 g EV 6/6h (D2, I: 30/12); Azitromicina 500 mg EV 1x/dia (D2, I: 30/12).",
         "CV: Noradrenalina em BIC.",
         "HEMATO: Enoxaparina 40 mg SC 1x/dia.",
         "TGI/NUTRIÇÃO: dieta enteral 50 ml/h; Pantoprazol 40 mg EV 1x/dia."
@@ -220,7 +220,7 @@
       ],
       "conduta": [
         "1. Infeccioso:",
-        "- Mantido Tazocin (D3) + Azitromicina (D3); colher hemoculturas 2 amostras;",
+        "- Mantido Tazocin (D2) + Azitromicina (D2); colher hemoculturas 2 amostras;",
         "- Se nova febre ou piora clínica: escalonar conforme culturas.",
         "2. Hemodinâmico: Noradrenalina para meta PAM >= 65 mmHg; lactato de controle em 6 h.",
         "3. Renal: meta diurese >= 0,5 ml/kg/h; evitar nefrotóxicos; UR/CR amanhã.",
@@ -230,46 +230,38 @@
         "Alergia a dipirona — conferir analgésicos SN",
         "PAM 60 às 17 h; lactato 3,1"
       ],
-      "dispositivos": "SVD (30/12) · AVP · Tazocin D3 + Azitromicina D3 (I: 30/12)",
+      "dispositivos": "CVC VJID 01/01  ·  PAI 01/01  ·  SVD 30/12",
       "ficha": {
         "janela_controles": "01/01  ·  07 - 05 h",
         "janela_balanco": "07 - 05 h",
-        "alergia": "nega",
-        "dx": "Pneumonia comunitária grave  ·  Choque séptico  ·  IRA KDIGO II  ·  HAS",
-        "disp": "CVC VJID 01/01  ·  PAI 01/01  ·  SVD 01/01",
         "infusoes": [
           [
             "DVA",
             [
-              "Noradrenalina 16 mg/250 ml 5 ml/h"
+              "Noradrenalina 16 mg/250 ml 3 ml/h"
             ]
           ],
           [
             "ATB",
             [
-              "Rocefin (ceftriaxona) 2 g EV 1x/dia (D2, I: 31/12) => 10"
+              "Tazocin (piperacilina + tazobactam) 4,5 g EV 6/6 h (D2, I: 30/12) => 06-12-18-24",
+              "Azitromicina 500 mg EV 1x/dia (D2, I: 30/12) => 10"
             ]
           ],
           [
             "O2",
             [
-              "CN 2 L/min"
+              "CN 3 L/min"
             ]
           ],
           [
             "DIETA",
             [
-              "Geral VO"
+              "Enteral 50 ml/h SNE"
             ]
           ]
         ],
         "sistemas": [
-          [
-            "CV",
-            [
-              "AAS 100 => 0-1-0"
-            ]
-          ],
           [
             "TGI",
             [
@@ -279,35 +271,35 @@
           [
             "ANALGESIA",
             [
-              "Novalgina (dipirona) 1 g EV 6/6 h => 10-16-22-04"
+              "Paracetamol 750 mg VO 6/6 h => 10-16-22-04"
             ]
           ],
           [
             "PROFILAXIA",
             [
-              "Clexane (enoxaparina) 40 mg SC 1x/dia"
+              "Clexane (enoxaparina) 40 mg SC 1x/dia => 22"
             ]
           ],
           [
             "SN",
             [
-              "Zofran 8 mg EV 8/8 h"
+              "Zofran (ondansetrona) 8 mg EV 8/8 h"
             ]
           ]
         ],
         "vigiar": [
-          "Nora 5 ml/h: meta PAM ≥ 65",
-          "Culturas de 31/12",
-          "Lactato de controle"
+          "Nora 3 ml/h: meta PAM ≥ 65",
+          "Hemoculturas 2 amostras",
+          "Lactato de controle em 6 h"
         ],
         "exames": [
           "RX tórax 31/12: consolidação em base D"
         ],
         "lab_titulo": "LABORATÓRIO 31/12 -> 01/01",
         "lab": [
-          "Hb 12,1 | Leuco 18.200 -> 15.400",
-          "Ur 80 -> 72 | Cr 2,1 -> 1,8",
-          "Na 138 | **K 5,6 -> 4,9**"
+          "Hb 11,2 -> 10,8 | Leuco 16.200 -> 18.400",
+          "Ur 58 -> 72 | Cr 1,3 -> 1,7",
+          "Na 138 | K 4,8 | Mg 1,9 | **Lactato 3,1**"
         ]
       }
     }

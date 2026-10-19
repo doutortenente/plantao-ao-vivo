@@ -21,8 +21,8 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "iniciais": "NC",                       // opcional
     "idade_sexo": "36F",
     "dia_uti": "D4 UTI",
-    "diagnostico": "linha curta",           // hoje não impresso: a ficha usa ficha.dx
-    "alergia": "Nega",                      // hoje não impresso: a ficha usa ficha.alergia
+    "diagnostico": "Problema 1  ·  Problema 2",   // Dx do cabeçalho da ficha (fonte única)
+    "alergia": "Nega",                      // fonte única; != "nega" sai em CAIXA ALTA e negrito; sem saber: "?"
     "dieta": "geral VO",                    // vai na linha de balanço
     "janela": "desde a admissão (19 h - 05 h)",  // opcional
 
@@ -48,7 +48,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "impressao": ["Problema, tendência - leitura de 1 linha"],
     "conduta": ["1. Respiratório:", "- ação;", "2. Profilaxias: TEV ...; LAMG ...; cabeceira 30º."],
 
-    "dispositivos": "TQT (06/10) · PICC MSD (15/09) · SVD (22/09)",  // hoje não impresso: a ficha usa ficha.disp
+    "dispositivos": "TQT 06/10  ·  PICC MSD 15/09  ·  SVD 22/09",  // Disp. do cabeçalho da ficha (fonte única)
     "alertas": ["até 3 frases curtas"],     // para o chat; não vão para a ficha nem para o bloco
 
     "ficha": { }                             // OBRIGATÓRIO: bloco da ficha-cola, abaixo
@@ -64,14 +64,17 @@ conta e vira aviso.
 
 Um por leito, obrigatório. Sem ele o gerador para com erro (a ficha-cola antiga foi aposentada em 19/10/2026).
 Texto curto, sem frase explicativa. `**negrito**` só para alerta (dose divergente, item suspenso, valor crítico).
+Todo número de `lab` tem de estar em `laboratorio`, e o ATB da ficha tem de bater com o das terapias
+(gerador/validar.py avisa).
 
 ```jsonc
 "ficha": {
-  "janela_controles": "11/10  ·  07 - 23 h",      // título da coluna CONTROLES
-  "janela_balanco": "07 - 18 h",                  // título do BALANÇO
-  "alergia": "nega",                              // != "nega" sai em CAIXA ALTA e negrito
-  "dx": "Problema 1  ·  Problema 2  ·  AP",       // linha Dx do cabeçalho (até 2 linhas)
-  "disp": "TQT 06/10  ·  PICC MSD 15/09",         // linha Disp. do cabeçalho
+  // opcionais: só quando a ficha precisa de texto diferente do leito. Sem eles, vale o do leito.
+  "janela_controles": "11/10  ·  07 - 23 h",      // padrão: "<data>  ·  07 - 05 h" (24 h) ou a janela do leito
+  "janela_balanco": "07 - 18 h",                  // padrão: "07 - 05 h" (24 h) ou a janela do leito
+  "alergia": "nega",                              // padrão: leito.alergia. Diferente do leito = ERRO na validação
+  "dx": "Problema 1  ·  Problema 2  ·  AP",       // padrão: leito.diagnostico (aviso se diferente)
+  "disp": "TQT 06/10  ·  PICC MSD 15/09",         // padrão: leito.dispositivos (aviso se diferente)
   "infusoes": [["DVA", ["Noradrenalina 16 mg/250 ml 2 ml/h"]],   // INFUSÕES E TERAPIAS:
                ["ATB", ["Meronem (meropenem) 1 g EV 8/8 h (D3, I: 09/10) => 14-22-06"]]],  // DVA, SEDAÇÃO, ATB, VM/O2, DIETA/NPT, TRS
   "sistemas": [["NEURO", ["..."]], ["CV", ["..."]], ["RESP", ["..."]], ["TGI", ["..."]],

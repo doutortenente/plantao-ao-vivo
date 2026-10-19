@@ -38,5 +38,23 @@ class FichaObrigatoria(unittest.TestCase):
         self.assertIn("01-01-26-uti2-ficha-cola-diurno.docx", saidas)
 
 
+class CabecalhoFonteUnica(unittest.TestCase):
+    def test_ficha_usa_alergia_dx_e_disp_do_leito(self):
+        sys.path.insert(0, str(RAIZ / "gerador"))
+        import ficha_cola
+        from docx import Document
+        dados = json.loads(EXEMPLO.read_text(encoding="utf-8"))
+        self.assertNotIn("alergia", dados["leitos"][0]["ficha"])
+        with tempfile.TemporaryDirectory() as tmp:
+            cola = Path(tmp) / "cola.docx"
+            ficha_cola.gerar(dados, cola, {})
+            texto = "\n".join(p.text for p in Document(str(cola)).element.body.iter()
+                              if hasattr(p, "text") and p.text)
+        self.assertIn("DIPIRONA", texto)
+        self.assertIn("LRA KDIGO I", texto)
+        self.assertIn("CVC VJID 01/01", texto)
+        self.assertIn("CONTROLES  01/01  ·  07 - 05 h", texto)
+
+
 if __name__ == "__main__":
     unittest.main()

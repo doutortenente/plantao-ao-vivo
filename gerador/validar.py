@@ -5,10 +5,13 @@ validar.py — confere o JSON do plantão ANTES de gerar (o checklist do docs/BR
 
 Erros (o gerar_docx.py não gera):
   - campo que o gerador exige e falta (antes dava KeyError no meio da ficha-cola);
+  - alergia diferente entre o leito e o bloco `ficha` (a ficha imprimiria a errada);
   - item de balanço fora do dicionário do motor (CANON): sairia fora da conta e o BH ficaria errado;
   - "(revisar)" em qualquer texto (proibido no bloco colável).
 Avisos (vão para o "Conferir"):
   - "?" em texto livre; PROFILAXIA com item que não é TEV/LAMG; item que não vai na ficha (colírio, pele…);
+  - Dx ou dispositivos diferentes entre leito e ficha; número do lab da ficha que não está em `laboratorio`;
+    ATB da ficha que não está nas terapias (e vice-versa);
   - setas na Impressão; plano sem linha de Profilaxias; menos itens de plano que problemas na Impressão;
   - pendências fora de 3 a 7; mais de 3 alertas.
 
@@ -25,8 +28,9 @@ import build_passagem as motor  # noqa: E402
 
 META_OBRIGATORIO = ("unidade", "data", "turno", "data_prescricao")
 LEITO_OBRIGATORIO = ("leito", "nome", "idade_sexo", "dia_uti")
-FICHA_OBRIGATORIO = ("janela_controles", "janela_balanco", "alergia", "dx", "disp", "infusoes", "sistemas",
-                     "vigiar", "lab")
+FICHA_OBRIGATORIO = ("infusoes", "sistemas", "vigiar", "lab")
+# cabeçalho da ficha: no leito (fonte única) ou sobrescrito no bloco `ficha` (texto mais curto)
+CABECALHO = {"alergia": "alergia", "dx": "diagnostico", "disp": "dispositivos"}
 
 # O que não vai para a ficha-cola (decisão de 11/10/2026): pele, colírios, lágrima, simeticona…
 CLASSES_FORA_DA_FICHA = {"SINTOMÁTICOS", "OFTALMO", "PELE", "TÓPICOS"}
@@ -68,6 +72,8 @@ def validar_leito(leito, meta):
     for k in FICHA_OBRIGATORIO:
         if k not in ficha:
             erros.append(f"{L}: falta `ficha.{k}`")
+    e, a = _coerencia(leito, ficha, L)
+    erros += e; avisos += a
 
     for lado in ("ganhos", "perdas"):
         for item in leito.get(lado, []):
@@ -109,6 +115,60 @@ def validar_leito(leito, meta):
         avisos.append(f"{L}: {n_vig} pendência(s) na ficha (o combinado é de 3 a 7)")
     if len(leito.get("alertas", [])) > 3:
         avisos.append(f"{L}: {len(leito['alertas'])} alertas (até 3, frases curtas)")
+    return erros, avisos
+
+
+def _norm(txt):
+    return re.sub(r"[\s·,;|]+", " ", str(txt).replace("**", "")).strip().lower()
+
+
+NUMERO = re.compile(r"\d+(?:[.,]\d+)*")
+NOME_DROGA = re.compile(r"^\s*\**([A-Za-zÀ-ú][A-Za-zÀ-ú-]+)")
+
+
+def _atbs(texto):
+    """Nomes de droga (comercial e genérico entre parênteses) de um texto de ATB."""
+    nomes = set()
+    for generico in re.findall(r"\(([A-Za-zÀ-ú][A-Za-zÀ-ú +-]+)\)", texto):
+        nomes.update(g.strip().lower() for g in generico.split("+") if g.strip())
+    sem_parenteses = re.sub(r"\([^)]*\)", " ", texto)
+    for parte in re.split(r"[;·]|\s\+\s", sem_parenteses):
+        m = NOME_DROGA.match(parte.replace("ATB:", ""))
+        if m:
+            nomes.add(m.group(1).lower())
+    return nomes
+
+
+def _coerencia(leito, ficha, L):
+    """Cópias do mesmo dado no leito e no bloco `ficha` têm de bater."""
+    erros, avisos = [], []
+    for chave, campo in CABECALHO.items():
+        no_leito, na_ficha = leito.get(campo), ficha.get(chave)
+        if not no_leito and not na_ficha:
+            erros.append(f"{L}: falta `{campo}` (ou `ficha.{chave}`)" +
+                         (": se não houver alergia, escreva \"nega\"; se não souber, \"?\"" if chave == "alergia" else ""))
+        elif no_leito and na_ficha and _norm(no_leito) != _norm(na_ficha):
+            msg = f"{campo} diverge: leito \"{no_leito}\" × ficha \"{na_ficha}\" (a ficha imprime o da ficha)"
+            (erros if chave == "alergia" else avisos).append(f"{L}: {msg}")
+    lab_txt = " ".join(leito.get("laboratorio", []))
+    numeros_lab = set(NUMERO.findall(lab_txt))
+    faltam = [n for linha in ficha.get("lab", []) for n in NUMERO.findall(linha.replace("**", ""))
+              if n not in numeros_lab]
+    if lab_txt and faltam:
+        avisos.append(f"{L}: lab da ficha com número que não está em `laboratorio`: {', '.join(dict.fromkeys(faltam))}")
+    atb_ficha = set().union(*[_atbs(it) for rot, its in ficha.get("infusoes", []) + ficha.get("sistemas", [])
+                              if rot.strip().upper() == "ATB" for it in its]) if ficha else set()
+    atb_terapia = set().union(*[_atbs(t) for t in leito.get("terapias", []) if t.strip().upper().startswith("ATB")])
+    if atb_ficha and atb_terapia and not atb_ficha & atb_terapia:
+        avisos.append(f"{L}: ATB da ficha ({', '.join(sorted(atb_ficha))}) não bate com as terapias "
+                      f"({', '.join(sorted(atb_terapia))})")
+    elif atb_ficha and atb_terapia:
+        so_terapia = {n for n in atb_terapia if n not in atb_ficha}
+        so_ficha = {n for n in atb_ficha if n not in atb_terapia}
+        # nomes que aparecem só de um lado e não são o genérico do outro
+        if so_terapia and so_ficha:
+            avisos.append(f"{L}: ATB diferente entre ficha ({', '.join(sorted(so_ficha))}) e terapias "
+                          f"({', '.join(sorted(so_terapia))})")
     return erros, avisos
 
 

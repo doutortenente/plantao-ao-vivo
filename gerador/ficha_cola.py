@@ -175,6 +175,27 @@ def droga(p, item):
             t(p, seg)
 
 
+# ── dados do cabeçalho: uma fonte só ────────────────────────────────────────
+# alergia, Dx e dispositivos moram no leito (alergia, diagnostico, dispositivos); o bloco `ficha` só sobrescreve
+# quando precisa de um texto mais curto. Divergência entre os dois vira erro/aviso no gerador/validar.py.
+CABECALHO = {"alergia": "alergia", "dx": "diagnostico", "disp": "dispositivos"}
+
+
+def dado(leito, chave):
+    v = leito["ficha"].get(chave)
+    return v if v not in (None, "") else (leito.get(CABECALHO[chave]) or "")
+
+
+def janelas(leito, meta):
+    """Títulos de CONTROLES e BALANÇO. Sem `janela_controles`/`janela_balanco` no bloco, saem da janela do leito
+    ou do plantão (24 h = 07 - 05 h)."""
+    f = leito["ficha"]
+    jan = leito.get("janela") or meta.get("janela") or "24 h"
+    padrao_c = f"{meta.get('data', '')[:5]}  ·  07 - 05 h" if jan == "24 h" else jan
+    padrao_b = "07 - 05 h" if jan == "24 h" else jan
+    return f.get("janela_controles") or padrao_c, f.get("janela_balanco") or padrao_b
+
+
 # ── colunas ────────────────────────────────────────────────────────────────
 def linhas_controle(r, leito):
     jan_linhas = r["secoes"][0][1]
@@ -209,8 +230,8 @@ def linhas_controle(r, leito):
     return vit, bal
 
 
-def col_controles(C, r, leito):
-    sec(C, f"CONTROLES  {leito['ficha']['janela_controles']}", first=True)
+def col_controles(C, r, leito, jan_c, jan_b):
+    sec(C, f"CONTROLES  {jan_c}", first=True)
     vit, bal = linhas_controle(r, leito)
     pares = [("PAS", "FR"), ("PAD", "SpO2"), ("PAM", "TAX"), ("FC", None)]
     w = [1.0, 1.75, 1.3] * 2
@@ -235,7 +256,7 @@ def col_controles(C, r, leito):
         if fl:
             q = P(g2.rows[0].cells[2], True, 0); q.alignment = 2; t(q, fl, b=True, tam=S["tam"] - 1)
 
-    subsec(C, f"BALANÇO  {leito['ficha']['janela_balanco']}")
+    subsec(C, f"BALANÇO  {jan_b}")
     curtos = [(k, v) for k, v in bal if k != "Evacuação"]
     evac = [v for k, v in bal if k == "Evacuação"]
     n = (len(curtos) + 1) // 2
@@ -306,7 +327,6 @@ def linhas(cell, n):
 
 # ── página ─────────────────────────────────────────────────────────────────
 def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
-    f = leito["ficha"]
     r = motor.compute_leito(leito, meta)
     if not primeiro:
         q = doc.add_paragraph(); q.paragraph_format.page_break_before = True
@@ -327,11 +347,11 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
     t(q, nome, b=True, tam=E.NOME)
     t(q, f"     {leito['idade_sexo']}  ·  {leito['dia_uti'].split(' (')[0]}", tam=S["tam"])
     q = P(b, after=1); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
-    t(q, "Dx:  ", b=True); rk(q, f["dx"])
+    t(q, "Dx:  ", b=True); rk(q, dado(leito, "dx"))
     q = P(b, after=0); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
-    t(q, "Disp.:  ", b=True); rk(q, f["disp"])
+    t(q, "Disp.:  ", b=True); rk(q, dado(leito, "disp"))
     q = P(c, True, 2); t(q, "Alergia:  ", b=True)
-    al = f["alergia"]
+    al = dado(leito, "alergia")
     t(q, al.upper() if al.lower() != "nega" else "nega", b=al.lower() != "nega")
     q = P(c, after=0); t(q, f"{meta['turno'].capitalize()}  ·  {meta['data']}")
     q = doc.add_paragraph(); q.paragraph_format.space_after = Pt(4); q.paragraph_format.space_before = Pt(2)
@@ -340,7 +360,7 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
     body = tabela(doc, 1, 3, [WL, WM, WR], {"insideV": (E.FIO_SECAO, E.PAPEL_TINTA)})
     esq, meio, dir_ = body.rows[0].cells
     margens(esq, 0, 0, 0, 150); margens(meio, 0, 150, 0, 150); margens(dir_, 0, 150, 0, 0)
-    col_controles(esq, r, leito)
+    col_controles(esq, r, leito, *janelas(leito, meta))
     col_rx(meio, leito, meta)
     col_acao(dir_, leito, n_anot)
 
