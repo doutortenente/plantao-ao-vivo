@@ -18,7 +18,7 @@ Uso:
 
 O ajuste (padrão) mede cada leito no LibreOffice para a ficha caber em 1 folha. Sem ajuste, a ficha sai com
 6 linhas de anotação e 4 de intercorrências em 10 pt, e pode estourar.
-No fim roda gerador/conferir.py (fonte, tamanho, cor, texto proibido, 1 folha por leito, PNG de cada página).
+Antes de gerar roda gerador/validar.py (erro = não gera). No fim roda gerador/conferir.py (fonte, tamanho, cor, texto proibido, 1 folha por leito, PNG de cada página).
 Saída: 0 = ok; 2 = JSON sem bloco `ficha` ou sem LibreOffice; 3 = algum leito não coube em 1 folha;
 4 = a conferência achou erro.
 Contrato do JSON: gerador/schema-plantao.md
@@ -158,6 +158,13 @@ def main():
         print("ERRO: leito(s) " + ", ".join(sem_ficha) + " sem o bloco `ficha` (gerador/schema-plantao.md). "
               "A ficha-cola antiga foi aposentada; monte o bloco e gere de novo.", file=sys.stderr)
         sys.exit(2)
+    import validar
+    erros_v, avisos_v = validar.validar(plantao)
+    if erros_v:
+        print("ERRO: o JSON não passou na validação (gerador/validar.py):", file=sys.stderr)
+        for e in erros_v:
+            print("- " + e, file=sys.stderr)
+        sys.exit(2)
     soffice = shutil.which("soffice")
     if not a.sem_ajuste and not (soffice and shutil.which("pdfinfo")):
         print("ERRO: o ajuste da ficha-cola precisa do LibreOffice (soffice) e do pdfinfo (poppler-utils). "
@@ -181,6 +188,7 @@ def main():
         print("AVISO: sem LibreOffice, o PDF da ficha-cola não foi gerado.", file=sys.stderr)
     print(evo); print(cola)
     _, avisos = motor.build(plantao)
+    avisos = avisos_v + avisos
     if avisos:
         print("\nRodapé (conferir — fora do bloco):")
         for w in avisos:
