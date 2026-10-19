@@ -648,8 +648,8 @@ function linhaVital(p, vals, pend){
   if (!leg.length) return {s: p.lab + ": ? " + p.unit, leg:[]};
   var mx = leg[0], mn = leg[0];
   leg.forEach(function(x){ if (x.n.v > mx.n.v) mx = x; if (x.n.v < mn.n.v) mn = x; plausivel(p.lab, x, p.abs, pend); });
-  var s = p.lab + ": " + mx.n.raw + " - " + mn.n.raw + " " + p.unit + flagsTxt(leg.map(function(x){ return x.n.v; }), p.lim);
-  return {s:s, leg:leg};
+  var base = p.lab + ": " + mx.n.raw + " - " + mn.n.raw + " " + p.unit, fl = flagsTxt(leg.map(function(x){ return x.n.v; }), p.lim);
+  return {s:base + fl, base:base, fl:fl, leg:leg};
 }
 
 /* coluna impressa → nome que o motor conhece (CANON) e lado da conta; igual ao esteira/montar.py */
@@ -802,7 +802,7 @@ function buildBed(P, jan, janTxt){
       });
       /* 11/10/2026: AA/cateter entre parênteses no SpO2; VM em linha própria depois do Dx (BRIEFING §2) */
       var ehVM = sups.some(function(x){ return /PCV|VCV|PSV|PEEP|FiO2|VM|IOT|TQT/i.test(x); });
-      if (sups.length && !ehVM) s += " (" + sups.join(" -> ") + ")";
+      if (sups.length && !ehVM) s = r.base + " (" + sups.join(" -> ") + ")" + r.fl;  /* como o motor: suporte antes do flag */
       else if (sups.length && ehVM) supVM = "Sup O2: " + sups.join(" -> ");
       else if (supIleg) pend.push("Sup O2 ilegível.");
     }

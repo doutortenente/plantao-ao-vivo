@@ -11,7 +11,7 @@ const sv = Object.assign({}, ident, {
   afericoes: horas.map((h, i) => ({
     hora: h, t: ["37,9", "38,2", "37,6", "37,1", "36,8", "36,6", "36,5", "36,7", "36,9", "36,6", "36,4", "36,5"][i],
     fr: String(22 - (i % 4)), fc: String(96 + i), pa: [{ pas: String(130 - 4 * i), pad: String(70 - i), pam: String(90 - i) }],
-    dx: { "7": "212", "13": "65", "19": "154" }[h] || null, spo2: h === "23" ? "?" : "94", suporte: "2L",
+    dx: { "7": "212", "13": "65", "19": "154" }[h] || null, spo2: h === "23" ? "?" : (h === "3" ? "90" : "94"), suporte: "2L",
   })),
 });
 const bal = Object.assign({}, ident, {

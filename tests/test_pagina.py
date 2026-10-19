@@ -69,6 +69,7 @@ class Pagina(unittest.TestCase):
         bloco = self.bed["texto"]
         self.assertIn("[1x < 70]", bloco)
         self.assertIn("[2x > 37,8]", bloco)
+        self.assertIn("SpO2: 94 - 90 % (2L) [1x < 92]", bloco)  # suporte antes do flag, como o motor
         self.assertNotRegex(bloco, r"(?i)\(revisar|confirmar\)|⚠")
         self.assertTrue(any("leitura incerta" in p for p in self.bed["pend"]))
         self.assertTrue(any("BIC \"NORA\"" in p for p in self.bed["pend"]))
