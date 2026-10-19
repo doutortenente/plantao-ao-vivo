@@ -58,6 +58,8 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
 
     "dispositivos": "TQT 06/10  ·  PICC MSD 15/09  ·  SVD 22/09",  // Disp. do cabeçalho da ficha (fonte única)
     "alertas": ["até 3 frases curtas"],     // para o chat; não vão para a ficha nem para o bloco
+    "prescricao_lida": {"Infeccioso e Respiratório": ["…"]},  // opcional: o que a página de extração leu da
+                                            // prescrição (7 blocos); o Claude monta o bloco `ficha` a partir dela
 
     "ficha": { }                             // OBRIGATÓRIO: bloco da ficha-cola, abaixo
   }]

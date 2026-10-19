@@ -15,12 +15,10 @@ sys.path.insert(0, str(RAIZ / "skills" / "sasi-ingest-export" / "scripts"))
 import build_passagem as motor  # noqa: E402
 
 # textos que ensinam o formato (amostras OCR e o histórico de decisões ficam de fora)
-# extracao-web entra quando a página for corrigida junto com o README (etapa 18 do plano de 19/10/2026)
-FORA_POR_ENQUANTO = {RAIZ / "extracao-web" / "README.md"}
 DOUTRINA = [p for p in RAIZ.rglob("*.md")
-            if "amostras" not in p.parts and p.name != "DECISOES.md" and ".git" not in p.parts
-            and p not in FORA_POR_ENQUANTO]
-LIMIARES_EM = [RAIZ / "docs" / "BRIEFING.md", RAIZ / "skills" / "controles-vitais-janela" / "SKILL.md"]
+            if "amostras" not in p.parts and p.name != "DECISOES.md" and ".git" not in p.parts]
+LIMIARES_EM = [RAIZ / "docs" / "BRIEFING.md", RAIZ / "skills" / "controles-vitais-janela" / "SKILL.md",
+               RAIZ / "extracao-web" / "README.md"]
 
 
 def ler(p):
@@ -54,6 +52,14 @@ class Doutrina(unittest.TestCase):
                              r"vermelho na ficha"):
                 m = re.search(proibido, txt, re.I)
                 self.assertIsNone(m, f"{p.relative_to(RAIZ)}: ensina marca proibida no bloco: {m and m.group(0)}")
+
+    def test_pagina_de_extracao_sem_marca_no_bloco_e_com_os_limiares(self):
+        js = ler(RAIZ / "extracao-web" / "extracao-controles-labs-prescricao.html")
+        for proibido in ('" (revisar)"', '(REVISAR OCR)', '(CONFIRMAR)', '"⚠'):
+            self.assertNotIn(proibido, js, f"página de extração põe {proibido} no bloco")
+        for op, n in ((">", "37.8"), ("<", "70")):
+            self.assertRegex(js, r'\["' + re.escape(op) + r'",\s*' + re.escape(n) + r"\]",
+                             f"página de extração sem o limiar {op} {n} do motor")
 
     def test_sasi_so_com_pedido_explicito(self):
         cab = ler(RAIZ / "skills" / "sasi-ingest-export" / "SKILL.md").split("---")[1]
