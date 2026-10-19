@@ -29,8 +29,9 @@ description: >
 
 1. **Inventário.** Listar leitos pelas evoluções. Conferir que cada leito tem folha de controle, prescrição e lab.
    Leito sem lab do dia → dizer no chat. Número de leito divergente entre folha e prescrição → dizer no chat.
-2. **Laboratório.** `pdftotext -layout`; série `anterior -> atual` usando a evolução anterior. Amostra marcada
-   "AMOSTRA MAQUINA" é do circuito de diálise, não do paciente.
+2. **Laboratório.** `python3 skills/sasi-ingest-export/scripts/labs.py laudo.pdf --anterior "<linhas de Laboratório
+   da evolução anterior>"` monta a seção com série `anterior -> atual` e ignora "AMOSTRA MAQUINA" (circuito de
+   diálise). BETA até calibrar com um laudo real: conferir contra o PDF; divergência vale o PDF e vai para o Conferir.
 3. **Folhas de controle.** Rasterizar (`pdftoppm`, 150 dpi visão geral, 250–300 dpi recorte por turno).
    Transcrever as 12 aferições (07 h a 05 h) **com a hora** (`{"07": 146, "09": 126, …}`) — **janela 24 h é o padrão**,
    e o motor confere pelas horas (faltou o diurno = ALERTA). Balanço: transcrever as CÉLULAS, também com a hora.
