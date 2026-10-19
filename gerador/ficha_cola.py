@@ -186,11 +186,11 @@ def dado(leito, chave):
     return v if v not in (None, "") else (leito.get(CABECALHO[chave]) or "")
 
 
-def janelas(leito, meta):
-    """Títulos de CONTROLES e BALANÇO. Sem `janela_controles`/`janela_balanco` no bloco, saem da janela do leito
-    ou do plantão (24 h = 07 - 05 h)."""
+def janelas(leito, meta, jan=None):
+    """Títulos de CONTROLES e BALANÇO. Sem `janela_controles`/`janela_balanco` no bloco, saem da janela que o motor
+    conferiu (24 h = 07 - 05 h)."""
     f = leito["ficha"]
-    jan = leito.get("janela") or meta.get("janela") or "24 h"
+    jan = jan or leito.get("janela") or meta.get("janela") or "24 h"
     padrao_c = f"{meta.get('data', '')[:5]}  ·  07 - 05 h" if jan == "24 h" else jan
     padrao_b = "07 - 05 h" if jan == "24 h" else jan
     return f.get("janela_controles") or padrao_c, f.get("janela_balanco") or padrao_b
@@ -360,7 +360,7 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
     body = tabela(doc, 1, 3, [WL, WM, WR], {"insideV": (E.FIO_SECAO, E.PAPEL_TINTA)})
     esq, meio, dir_ = body.rows[0].cells
     margens(esq, 0, 0, 0, 150); margens(meio, 0, 150, 0, 150); margens(dir_, 0, 150, 0, 0)
-    col_controles(esq, r, leito, *janelas(leito, meta))
+    col_controles(esq, r, leito, *janelas(leito, meta, r["janela"]))
     col_rx(meio, leito, meta)
     col_acao(dir_, leito, n_anot)
 

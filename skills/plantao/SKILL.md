@@ -32,7 +32,8 @@ description: >
 2. **Laboratório.** `pdftotext -layout`; série `anterior -> atual` usando a evolução anterior. Amostra marcada
    "AMOSTRA MAQUINA" é do circuito de diálise, não do paciente.
 3. **Folhas de controle.** Rasterizar (`pdftoppm`, 150 dpi visão geral, 250–300 dpi recorte por turno).
-   Transcrever as 12 aferições (07 h a 05 h) — **janela 24 h é o padrão**. Balanço: transcrever as CÉLULAS.
+   Transcrever as 12 aferições (07 h a 05 h) **com a hora** (`{"07": 146, "09": 126, …}`) — **janela 24 h é o padrão**,
+   e o motor confere pelas horas (faltou o diurno = ALERTA). Balanço: transcrever as CÉLULAS, também com a hora.
 4. **Prescrição.** Ler cada página; incorporar o manuscrito (riscado, "suspenso", "modificado"). Doses só como
    escritas. Pôr o plano da evolução anterior em `plano_anterior`: o motor alerta sozinho o que ele mandou suspender
    e continua prescrito, além de alergia × prescrição, TEV e duplicidade (`ALERTA:` no topo do Conferir). Alerta de

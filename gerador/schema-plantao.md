@@ -4,6 +4,9 @@ Um arquivo por plantão. Lido pelo motor (`skills/sasi-ingest-export/scripts/bui
 (`gerador/gerar_docx.py`). Exemplo completo: `gerador/exemplo/plantao-exemplo.json`.
 
 Regra geral: o JSON leva números CRUS (células, séries). Quem soma, conta flag e formata é o motor.
+Séries por hora (`{"07": 146, "09": 126, …}`, horários da folha 07, 09 … 23, 01, 03, 05): com elas o motor confere a
+janela. Pedida 24 h e só há 19–05 h → título "19 - 05 h" e ALERTA (erro de 11/10/2026); hora faltando → aviso.
+Recorte de turno só com `meta.recorte` (ou `janela` do leito) quando ele pedir.
 Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
 
 ```jsonc
@@ -27,14 +30,15 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "dieta": "geral VO",                    // vai na linha de balanço
     "janela": "desde a admissão (19 h - 05 h)",  // opcional
 
-    "vitais": {                             // série horária OU agregado
-      "PAS": [146, 126, "?", 122],
+    "vitais": {                             // POR HORA (preferido), lista sem hora, ou agregado
+      "PAM": {"07": 90, "09": [86, 84], "11": "?", "19": 68},   // hora da folha (07 … 05); 2 leituras = lista
+      "PAS": [146, 126, "?", 122],          // aceito, mas sem hora o motor não confere a janela (aviso)
       "PAD": {"max": 94, "min": 71, "flag": 0},          // agregado: flag = nº de vezes no 1º limiar
       "TAX": {"max": 36.8, "min": 35.0, "flag": {"< 35,5": 3}},
       "Dx": [255, 141, "< 20", 176]
     },
     "sup_o2": "AA" ,                        // AA/cateter → (AA) no SpO2; VM → linha própria
-    "ganhos": [{"nome": "dieta SNE", "serie": [100, 100]}, {"nome": "soro EV", "ml": 500}],
+    "ganhos": [{"nome": "dieta SNE", "serie": {"07": 100, "09": 100}}, {"nome": "soro EV", "ml": 500}],
     "perdas": [{"nome": "diurese (SVD)", "serie": [150, 100]}, {"nome": "UF", "serie": [70, 80]},
                {"nome": "resíduo gástrico", "serie": [40, 25]}],
     "conferencia_enfermagem": {"ganhos": 1840, "perdas": 1300, "bh": 540},  // rodapé da folha, só confere

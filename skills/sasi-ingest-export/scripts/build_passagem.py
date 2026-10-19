@@ -123,6 +123,28 @@ def _fmt(n, casas=None):
     return f"{int(inteiro):,}".replace(",", ".") + "," + dec
 
 
+# ── horários da folha (Mod. 0120-01): aferição q2h, 07 h a 05 h ─────────────
+SLOTS = ("07", "09", "11", "13", "15", "17", "19", "21", "23", "01", "03", "05")
+DIURNO, NOTURNO = set(SLOTS[:6]), set(SLOTS[6:])
+HORA = re.compile(r"^(\d{1,2})(?:\s*h|:\d{2})?$")
+
+
+def _hora(k):
+    m = HORA.match(str(k).strip())
+    return f"{int(m.group(1)):02d}" if m and int(m.group(1)) < 24 else None
+
+
+def por_hora(dados):
+    """{'07': 146, '09': [120, 118], …} -> (horas, valores em ordem). Outra coisa -> None."""
+    if not isinstance(dados, dict) or not dados or not all(_hora(k) for k in dados):
+        return None
+    horas, valores = [], []
+    for k, v in dados.items():
+        horas.append(_hora(k))
+        valores += v if isinstance(v, list) else [v]
+    return horas, valores
+
+
 def _num(v):
     """Converte célula em (valor_numérico, texto_exibido). '?' -> (None, '?')."""
     if v is None:
@@ -165,7 +187,9 @@ def calc_balanco(ganhos, perdas):
         for it in itens or []:
             nome = it.get("nome", "?")
             if it.get("serie") is not None:
-                vals = [_num(v) for v in it["serie"]]
+                serie = it["serie"]
+                ph = por_hora(serie)
+                vals = [_num(v) for v in (ph[1] if ph else serie)]
                 ileg = sum(1 for v, t in vals if v is None and t == "?")
                 ml = sum(v for v, _ in vals if v is not None)
                 if ileg:
@@ -202,6 +226,12 @@ def resumo_vital(nome, dados):
     """
     avisos, flags = [], []
     lim = LIMIARES.get(nome, [])
+    ph = por_hora(dados)
+    horas_ileg = ""
+    if ph:
+        horas_ileg = ", ".join(f"{_hora(k)} h" for k, v in dados.items()
+                               if any(_num(x) == (None, "?") for x in (v if isinstance(v, list) else [v])))
+        dados = ph[1]
     if isinstance(dados, dict):
         vmax, tmax = _num(dados.get("max"))
         vmin, tmin = _num(dados.get("min"))
@@ -214,7 +244,8 @@ def resumo_vital(nome, dados):
     pares = [_num(v) for v in dados]
     ileg = sum(1 for v, t in pares if v is None and t == "?")
     if ileg:
-        avisos.append(f"{nome}: {ileg} aferição(ões) ilegível(is) fora do Máx - Mín")
+        avisos.append(f"{nome}: {ileg} aferição(ões) ilegível(is) fora do Máx - Mín"
+                      + (f" ({horas_ileg})" if horas_ileg else ""))
     validos = [(v, t) for v, t in pares if v is not None]
     if not validos:
         return "?", "?", [], avisos, None
@@ -253,9 +284,10 @@ def compute_leito(leito, meta=None):
     if data or turno:
         cab += f" — {data} {turno}".rstrip()
 
-    jan = leito.get("janela") or meta.get("janela", "24 h")
-    linhas = []
     vitais = leito.get("vitais", {})
+    jan, av_jan = janela_efetiva(leito, meta)
+    avisos += av_jan
+    linhas = []
     sup = leito.get("sup_o2")
     vm = _eh_vm(sup)
     for nm in ORDEM_VITAIS:
@@ -322,7 +354,7 @@ def compute_leito(leito, meta=None):
             cont = [c if re.match(r"^\d+\.", c) else f"{i}. {c}" for i, c in enumerate(cont, 1)]
         secoes.append((TITULOS[chave], list(cont)))
     avisos = checagens.checar(leito) + avisos  # alergia × prescrição, TEV, duplicidade, suspenso: no topo
-    return {"cabecalho": cab, "secoes": secoes, "avisos": avisos, "balanco": bal}
+    return {"cabecalho": cab, "secoes": secoes, "avisos": avisos, "balanco": bal, "janela": jan}
 
 
 def render_leito(leito, meta=None):
@@ -331,6 +363,48 @@ def render_leito(leito, meta=None):
     for titulo, linhas in r["secoes"]:
         L += ["", titulo] + linhas
     return "\n".join(L), r["avisos"]
+
+
+# ── janela: confere pelas horas das séries ────────────────────────────────────
+def janela_efetiva(leito, meta):
+    """Janela do título. Padrão 24 h (07 h a 05 h). Com séries por hora, o motor confere: só noite vira
+    '19 - 05 h' (e ALERTA), só dia vira '07 - 17 h'. Recorte de turno só com meta.recorte ou leito.janela."""
+    avisos = []
+    declarada = leito.get("janela") or meta.get("janela") or "24 h"
+    recorte = leito.get("recorte") or meta.get("recorte")
+    vitais = leito.get("vitais", {})
+    horas = set()
+    sem_hora = []
+    for nm, dados in vitais.items():
+        ph = por_hora(dados)
+        if ph:
+            horas.update(ph[0])
+        elif isinstance(dados, list):
+            sem_hora.append(nm)
+    if declarada != "24 h" or recorte:
+        return declarada, avisos
+    if not horas:
+        if sem_hora:
+            avisos.append("séries sem hora: o motor não conferiu se a janela de 24 h está completa")
+        return declarada, avisos
+    dia, noite = horas & DIURNO, horas & NOTURNO
+    principais = set()
+    for nm in ("PAS", "PAM", "FC"):
+        ph = por_hora(vitais.get(nm))
+        if ph:
+            principais.update(ph[0])
+    faltam = [h for h in SLOTS if h not in (principais or horas)]
+    if dia and noite:
+        if faltam:
+            avisos.append("janela 24 h com aferição faltando às " + ", ".join(f"{h} h" for h in faltam))
+        return "24 h", avisos
+    if noite:
+        avisos.append("ALERTA: janela pedida é 24 h, mas só há aferições de 19 a 05 h (faltou o diurno): "
+                      "o título saiu 19 - 05 h")
+        return "19 - 05 h", avisos
+    avisos.append("ALERTA: janela pedida é 24 h, mas só há aferições de 07 a 17 h (faltou o noturno): "
+                  "o título saiu 07 - 17 h")
+    return "07 - 17 h", avisos
 
 
 # ── dias de ATB e de UTI ─────────────────────────────────────────────────────
