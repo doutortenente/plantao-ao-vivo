@@ -52,7 +52,7 @@ gerador/
   requirements.txt
 extracao-web/                   página-artefato que lê os scans no navegador (ver README dela)
 esteira/processar.py            esteira Airtable → GitHub Actions (estágio de teste)
-.github/workflows/              plantao.yml e plantao-processar.yml (disparo manual)
+.github/workflows/              testes.yml (a cada push e PR) e plantao.yml (esteira, disparo manual)
 tests/test_motor.py             testes do motor
 ```
 
