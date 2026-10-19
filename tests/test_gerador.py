@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Testes do gerador (entrada e saída do gerar_docx.py). Rodar: python3 -m unittest discover -s tests"""
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -33,7 +34,9 @@ class FichaObrigatoria(unittest.TestCase):
     def test_sem_ajuste_gera_os_dois(self):
         dados = json.loads(EXEMPLO.read_text(encoding="utf-8"))
         r, saidas = rodar(dados, "--sem-ajuste")
-        self.assertEqual(r.returncode, 0, r.stderr)
+        # sem LibreOffice os Word saem, mas a conferência não deixa entregar (sem PDF, sem contar folhas)
+        tem_pdf = shutil.which("soffice") and shutil.which("pdfinfo")
+        self.assertEqual(r.returncode, 0 if tem_pdf else 4, r.stdout + r.stderr)
         self.assertIn("01-01-26-uti2-evolucoes-diurno.docx", saidas)
         self.assertIn("01-01-26-uti2-ficha-cola-diurno.docx", saidas)
 

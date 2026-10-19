@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """Testes do gerador/conferir.py. Rodar: python3 -m unittest discover -s tests"""
 import json
+import os
 import shutil
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -78,6 +80,21 @@ class Paginas(unittest.TestCase):
             erros, _, _ = C.conferir(evo, cola, 2)
             self.assertTrue(any("1 folha por leito" in e for e in erros))
 
+    def test_pdf_mais_velho_que_o_docx_e_refeito(self):
+        sys.path.insert(0, str(RAIZ / "gerador"))
+        import gerar_docx
+        import ficha_cola
+        dados = json.loads((RAIZ / "gerador" / "exemplo" / "plantao-exemplo.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            evo, cola = Path(tmp) / "evo.docx", Path(tmp) / "cola.docx"
+            gerar_docx.gerar_evolucoes(dados, evo)
+            ficha_cola.gerar({"meta": dados["meta"], "leitos": dados["leitos"] * 2}, cola, {})
+            pdf = cola.with_suffix(".pdf")
+            ficha_cola.gerar(dados, Path(tmp) / "um.docx", {})
+            pdf.write_bytes(C.para_pdf(Path(tmp) / "um.docx").read_bytes())  # PDF de 1 folha, de outra versão
+            os.utime(pdf, (time.time() - 3600,) * 2)
+            erros, _, _ = C.conferir(evo, cola, 1)  # o .docx atual tem 2 folhas: tem de acusar
+            self.assertTrue(any("2 página(s) para 1 leito" in e for e in erros), erros)
 
 if __name__ == "__main__":
     unittest.main()

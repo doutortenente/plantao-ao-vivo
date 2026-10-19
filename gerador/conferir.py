@@ -7,7 +7,8 @@ Erros (a entrega não pode sair assim):
   - ficha-cola com nº de páginas diferente do nº de leitos (1 folha por leito);
   - run fora de Times New Roman, tamanho fora da lista aprovada, ou com cor;
   - "(revisar)" no texto; "–"/"—" entre números (Máx - Mín usa " - "); setas ↑ ↓ na evolução.
-Avisos: "→" no texto; LibreOffice ausente (sem PDF não dá para contar páginas).
+Sem LibreOffice/pdfinfo também é erro: sem PDF não dá para contar as folhas, e a entrega não sai.
+Avisos: "→" no texto.
 
 Também gera o PDF da evolução e um PNG por página em <saida>/paginas/, para olhar todas as folhas.
 
@@ -108,13 +109,13 @@ def conferir(evolucoes, ficha, n_leitos):
         e, a = conferir_docx(caminho, tam, evolucao=evo)
         erros += e; avisos += a
     if not ((shutil.which("soffice") or shutil.which("libreoffice")) and shutil.which("pdfinfo")):
-        avisos.append("sem LibreOffice/pdfinfo: páginas não contadas e sem PDF para olhar")
+        erros.append("sem LibreOffice/pdfinfo: sem PDF e sem contar as folhas — instale os dois antes de entregar")
         return erros, avisos, pngs
     pasta = Path(ficha).parent / "paginas"
     pdf_evo = para_pdf(evolucoes)
     pdf_ficha = Path(ficha).with_suffix(".pdf")
-    if not pdf_ficha.exists():
-        pdf_ficha = para_pdf(ficha)
+    if not pdf_ficha.exists() or pdf_ficha.stat().st_mtime < Path(ficha).stat().st_mtime:
+        pdf_ficha = para_pdf(ficha)  # PDF de uma versão anterior do .docx não vale
     n = paginas(pdf_ficha)
     if n != n_leitos:
         erros.append(f"ficha-cola com {n} página(s) para {n_leitos} leito(s): tem de ser 1 folha por leito")

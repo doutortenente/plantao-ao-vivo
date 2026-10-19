@@ -13,7 +13,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
 {
   "meta": {
     "unidade": "UTI 2",          // nome do arquivo: uti2
-    "data": "11/10/2026",        // nome do arquivo: 11-10-26
+    "data": "11/10/2026",        // dd/mm/aaaa (obrigatório: os dias de ATB e de UTI saem dela); arquivo: 11-10-26
     "turno": "diurno",           // nome do arquivo: ...-evolucoes-diurno
     "janela": "24 h",            // padrão; um leito pode sobrescrever
     "data_prescricao": "11/10"
@@ -65,13 +65,20 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
 ```
 
 Cruzamentos de segurança (`skills/sasi-ingest-export/scripts/checagens.py`, rodam no motor): alergia × prescrição
-pela classe da droga, falta de profilaxia de TEV, duplicidade (IBP, anticoagulante, mesma droga em dois itens) e
-droga suspensa no `plano_anterior`. Saem como `ALERTA:` no topo do "Conferir". Droga fora do dicionário `DROGAS`
-não é checada: acrescente lá.
+pela classe da droga, falta de profilaxia de TEV (só o plano que diz por quê — contraindicação, plaquetopenia,
+sangramento — dispensa o alerta), duplicidade (IBP, anticoagulante, mesma droga em dois itens) e droga suspensa no
+`plano_anterior` (lido por oração: "não suspender" e "se sangrar, suspender" não contam). Item suspenso não conta como
+prescrito. Saem como `ALERTA:` no topo do "Conferir". Droga fora do dicionário `DROGAS` não é checada: acrescente lá.
 
-Nomes de ganho/perda reconhecidos: ver `CANON` no motor (dieta, soro, EV, diluição, NPT, CH, ingesta, reposição,
-noradrenalina... / diurese, SVD, SNG, resíduo, dreno, evacuação, UF, diálise...). Nome desconhecido não entra na
-conta e vira aviso.
+O D do ATB é escrito em todos os textos do leito (terapias, plano, evolução, impressão, ficha); "(D3)" sem a data de
+início não é recalculado, mas vira aviso se divergir da conta, e "D?" que sobra vai para o "Conferir". Trecho que diz
+"suspenso" fica com o D que tinha. Início sem ano que daria mais de 60 dias, e admissão depois do plantão, não são
+escritos: ficam como estão e vão para o "Conferir".
+
+Nomes de ganho/perda reconhecidos: ver `CANON` no motor (dieta, soro, EV, diluição, NPT, CH, hemácias, plaquetas,
+ingesta, reposição, DVA, sedação, bicarbonato, glicose, ATB... / diurese, débito urinário, SVD, SNG, SOG, resíduo,
+dreno, drenagem, hemovac, colostomia, ileostomia, evacuação, UF, CVVHDF, diálise...). Nome desconhecido é ERRO no
+validar: ficaria fora da conta e o BH sairia errado.
 
 ## Bloco `ficha` (ficha-cola, modelo aprovado em 12/10/2026)
 

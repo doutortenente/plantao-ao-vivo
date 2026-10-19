@@ -192,7 +192,8 @@ def janelas(leito, meta, jan=None):
     conferiu (24 h = 07 - 05 h)."""
     f = leito["ficha"]
     jan = jan or leito.get("janela") or meta.get("janela") or "24 h"
-    padrao_c = f"{meta.get('data', '')[:5]}  ·  07 - 05 h" if jan == "24 h" else jan
+    d = motor._data(meta.get("data"))
+    padrao_c = f"{d:%d/%m}  ·  07 - 05 h" if jan == "24 h" and d else (jan if jan != "24 h" else "07 - 05 h")
     padrao_b = "07 - 05 h" if jan == "24 h" else jan
     return f.get("janela_controles") or padrao_c, f.get("janela_balanco") or padrao_b
 
@@ -466,7 +467,7 @@ def ajustar(plantao, folga=E.FOLGA_MEDICAO):
 
 
 if __name__ == "__main__":
-    pl = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+    pl, _ = motor.preparar(json.loads(Path(sys.argv[1]).read_text(encoding="utf-8")))  # dias de ATB e de UTI
     cfg, nao_coube = ajustar(pl)
     gerar(pl, sys.argv[2], cfg)
     print(sys.argv[2])

@@ -79,5 +79,33 @@ class Validar(unittest.TestCase):
         self.assertTrue(any("Profilaxias" in a for a in avisos))
 
 
+class RevisaoDe19Out(unittest.TestCase):
+    """Achados da revisão adversarial das etapas 1–8 (19/10/2026)."""
+
+    def test_data_sem_ano_e_erro(self):
+        erros, _ = com(lambda l, d: d["meta"].__setitem__("data", "01/01"))
+        self.assertTrue(any("`data` tem de ser dd/mm/aaaa" in e for e in erros), erros)
+
+    def test_tipos_errados_sao_erro_e_nao_quebram(self):
+        for mudar, trecho in ((lambda l, d: l.__setitem__("diagnostico", ["PAC", "Choque"]), "`diagnostico` tem de ser texto"),
+                              (lambda l, d: l.__setitem__("alergia", ["Dipirona"]), "`alergia` tem de ser texto"),
+                              (lambda l, d: l.__setitem__("leito", 5), "`leito` tem de ser texto"),
+                              (lambda l, d: l["ficha"]["sistemas"].append(["SN", "Zofran 8 mg EV"]), "`ficha.sistemas`"),
+                              (lambda l, d: l["ficha"].__setitem__("sistemas", {"TGI": ["x"]}), "`ficha.sistemas`")):
+            erros, _ = com(mudar)
+            self.assertTrue(any(trecho in e for e in erros), (trecho, erros))
+
+    def test_interrogacao_colada_e_no_cabecalho_avisa(self):
+        _, avisos = com(lambda l, d: l["terapias"].append("ATB: Vancomicina 1?00 mg EV 12/12h"))
+        self.assertTrue(any("1?00" in a for a in avisos), avisos)
+        _, avisos = com(lambda l, d: (l.__setitem__("alergia", "?"), l["ficha"].pop("alergia", None)))
+        self.assertTrue(any("`alergia`" in a for a in avisos), avisos)
+
+    def test_revisar_no_rodape_e_no_chat_pode(self):
+        erros, _ = com(lambda l, d: (l["avisos"].append("PAS 03 h ilegível (revisar)"),
+                                     l.setdefault("alertas", []).append("Alergia (revisar)")))
+        self.assertEqual([e for e in erros if "(revisar)" in e], [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -72,13 +72,17 @@ CANON = {
     "reposiç": "ganho", "infus": "ganho", "sedac": "ganho", "sedaç": "ganho",
     "noradren": "ganho", "nora": "ganho", "propofol": "ganho", "fentanil": "ganho",
     "fenta": "ganho", "precedex": "ganho", "midazol": "ganho",
+    "hemac": "ganho", "hemác": "ganho", "plaquet": "ganho", "crioprec": "ganho", "adrenal": "ganho",
+    "vasopress": "ganho", "dobuta": "ganho", "dexmedet": "ganho", "bicarb": "ganho", "glicose": "ganho",
+    "atb": "ganho", "antibiot": "ganho",
     # PERDAS
-    "diurese": "perda", "diur": "perda", "urina": "perda", "svd": "perda",
+    "diurese": "perda", "diur": "perda", "urin": "perda", "svd": "perda", "sog": "perda",
     "sng": "perda", "gastric": "perda", "residuo": "perda", "resíduo": "perda",
     "dreno": "perda", "penrose": "perda", "torax": "perda", "tórax": "perda",
     "evacuac": "perda", "evacuaç": "perda", "fezes": "perda", "fistula": "perda",
     "fístula": "perda", "vomito": "perda", "vômito": "perda", "emese": "perda",
-    "aspirado": "perda", "sangramento": "perda", "uf": "perda",
+    "aspirado": "perda", "sangramento": "perda", "uf": "perda", "drenag": "perda", "hemovac": "perda",
+    "colostom": "perda", "ileostom": "perda", "cvvhdf": "perda", "hemodiafil": "perda",
     "ultrafiltr": "perda", "hemodial": "perda", "dialise": "perda", "diálise": "perda",
 }
 
@@ -331,10 +335,10 @@ def compute_leito(leito, meta=None):
         if evac_ml:
             txt = (txt + ", " if txt else "") + f"{_fmt(evac_ml)} ml"
         linhas.append(f"Evacuação: {txt}")
-    diur = sum(ml for n, ml in bal["itens_perda"] if re.search(r"diur|urina|svd", n, re.I))
+    diur = sum(ml for n, ml in bal["itens_perda"] if re.search(r"diur|urin|svd", n, re.I))
     outras = [(n[:1].upper() + n[1:], ml) for n, ml in bal["itens_perda"]
-              if not re.search(r"diur|urina|svd|evacua|fezes", n, re.I)]
-    if any(re.search(r"diur|urina|svd", n, re.I) for n, _ in bal["itens_perda"]):
+              if not re.search(r"diur|urin|svd|evacua|fezes", n, re.I)]
+    if any(re.search(r"diur|urin|svd", n, re.I) for n, _ in bal["itens_perda"]):
         linhas.append(f"Diurese: {_fmt(diur)} ml")
     for n, ml in outras:
         linhas.append(f"{n}: {_fmt(ml)} ml")
@@ -409,6 +413,10 @@ def janela_efetiva(leito, meta):
 
 # ── dias de ATB e de UTI ─────────────────────────────────────────────────────
 ATB_DIA = re.compile(r"\((?:D(\?|\d+),\s*)?I:\s*(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\)")
+D_SOLTO = re.compile(r"\(D(\?|\d+)\)")  # "(D3)" sem a data de início: o motor não recalcula, só confere
+# campos de texto do leito por onde o D do ATB passa (todos, para a evolução e a ficha não se contradizerem)
+TEXTOS_LEITO = ("terapias", "conduta", "evolucao", "impressao")
+TEXTOS_FICHA = ("vigiar", "exames")
 
 
 def _data(txt, ref=None):
@@ -429,61 +437,129 @@ def _data(txt, ref=None):
         return None
 
 
-def dias_atb(texto, data):
-    """Escreve o D de cada ATB '(D?, I: dd/mm)' pela data do plantão. Devolve (texto, avisos)."""
+def dias_atb(texto, data, calculados=None):
+    """Escreve o D de cada ATB '(D?, I: dd/mm)' pela data do plantão. Devolve (texto, avisos).
+
+    Trecho (entre ";") que diz "suspenso" não é recontado: o D final de um ATB suspenso fica como está.
+    Início sem ano que daria mais de 60 dias (ex.: 20/10 num plantão de 19/10 = D364) não é escrito: fica o texto
+    e vai para o Conferir. `calculados` (dict) recebe genérico → D, para conferir os "(Dn)" soltos depois."""
     avisos = []
     if not data:
         return texto, avisos
 
-    def troca(m):
+    def troca(m, trecho):
         escrito, d, mes, ano = m.group(1), m.group(2), m.group(3), m.group(4)
         inicio = _data(f"{d}/{mes}" + (f"/{ano}" if ano else ""), data)
         if not inicio or inicio > data:
             avisos.append(f"ATB com início inválido ou depois do plantão: {m.group(0)}")
             return m.group(0)
         n = (data - inicio).days
+        if n > 60 and not ano:
+            avisos.append(f"ATB com início {d}/{mes} daria D{n} ({m.group(0)}): conferir a data de início")
+            return m.group(0)
         if n > 60:
             avisos.append(f"ATB há {n} dias ({m.group(0)}): conferir a data de início")
         if escrito not in (None, "?") and int(escrito) != n:
             avisos.append(f"ATB: estava D{escrito}, a conta dá D{n} (início {d}/{mes} = D0) — corrigido")
+        g = checagens.droga_antes(trecho, m.start())
+        if calculados is not None and g:
+            calculados[g] = n
         return f"(D{n}, I: {d}/{mes}" + (f"/{ano}" if ano else "") + ")"
-    return ATB_DIA.sub(troca, texto), avisos
+
+    partes = re.split(r"(;)", texto)
+    for i, trecho in enumerate(partes):
+        if trecho != ";" and not re.search(r"suspens", trecho, re.I):
+            partes[i] = ATB_DIA.sub(lambda m, t=trecho: troca(m, t), trecho)
+    return "".join(partes), avisos
+
+
+def _dia_uti(leito, data, L):
+    """dia_uti pela admissao_uti (admissão = D1). Devolve avisos."""
+    adm_txt = leito.get("admissao_uti")
+    if not adm_txt:
+        return []
+    if not data:
+        return []  # o aviso de meta.data já saiu
+    adm = _data(adm_txt, data)
+    if not adm:
+        return [f"{L}: admissao_uti ilegível ({adm_txt}): dia de UTI não calculado"]
+    n = (data - adm).days + 1
+    sem_ano = not re.match(r"^\s*\d{1,2}/\d{1,2}/\d{2,4}", str(adm_txt))
+    if adm > data or n > 365 or (sem_ano and n > 180):
+        return [f"{L}: admissao_uti {adm_txt} implausível para o plantão (daria D{n}): dia de UTI não mexido, conferir"]
+    atual = leito.get("dia_uti") or ""
+    if not isinstance(atual, str):
+        return []  # o validar acusa o tipo
+    m = re.search(r"\bD\s*(\d+)\s*UTI\b", atual, re.I) or re.fullmatch(r"\s*D\s*(\d+)\s*", atual)
+    if not atual.strip():
+        leito["dia_uti"] = f"D{n} UTI"
+        return []
+    if not m:
+        return [f"{L}: dia_uti fora do formato \"Dn UTI\" (\"{atual}\"): a conta dá D{n} UTI — conferir"]
+    avisos = []
+    if int(m.group(1)) != n:
+        avisos.append(f"{L}: dia de UTI estava D{m.group(1)}, a conta dá D{n} (admissão = D1) — corrigido")
+    novo = f"D{n} UTI" if re.search(r"UTI", m.group(0), re.I) else f"D{n}"
+    leito["dia_uti"] = atual[:m.start()] + novo + atual[m.end():]
+    return avisos
 
 
 def preparar(payload):
-    """Cópia do plantão com os dias calculados (ATB e UTI). Devolve (plantao, avisos por leito 'Lxx: …')."""
+    """Cópia do plantão com os dias calculados (ATB e UTI). Devolve (plantao, avisos por leito 'Lxx: …').
+
+    Campos de texto em string (com quebras de linha) viram lista. Linha de ficha fora do formato
+    [rótulo, [itens]] fica como está (o validar acusa)."""
     dados = copy.deepcopy(payload)
     meta = dados.get("meta", {})
     data = _data(meta.get("data"))
+    leitos = dados.get("leitos", [dados] if "leito" in dados else [])
     avisos = []
-    for leito in dados.get("leitos", [dados] if "leito" in dados else []):
+    if meta.get("data") and not (data and re.fullmatch(r"\s*\d{1,2}/\d{1,2}/\d{4}\s*", str(meta["data"]))):
+        avisos.append(f"meta.data \"{meta.get('data')}\" fora do formato dd/mm/aaaa: dias de ATB e de UTI não "
+                      "calculados")
+        data = None
+    for leito in leitos:
         L = f"L{leito.get('leito', '?')}"
-        adm = _data(leito.get("admissao_uti"), data)
-        if leito.get("admissao_uti") and data and adm:
-            n = (data - adm).days + 1
-            atual = leito.get("dia_uti") or ""
-            m = re.search(r"D(\d+)", atual)
-            if m and int(m.group(1)) != n:
-                avisos.append(f"{L}: dia de UTI estava D{m.group(1)}, a conta dá D{n} (admissão = D1) — corrigido")
-            leito["dia_uti"] = re.sub(r"D\d+", f"D{n}", atual, count=1) if m else f"D{n} UTI"
-        elif leito.get("admissao_uti"):
-            avisos.append(f"{L}: admissao_uti ilegível ({leito['admissao_uti']}): dia de UTI não calculado")
-        for chave in ("terapias",):
+        avisos += _dia_uti(leito, data, L)
+        calculados, textos = {}, []  # textos: (onde, lista, índice) para conferir "(Dn)" e "D?" depois
+
+        def passar(onde, valores, sufixo=""):
             novos = []
-            for t in leito.get(chave, []):
-                t, av = dias_atb(t, data)
-                novos.append(t); avisos += [f"{L}: {a}" for a in av]
-            if chave in leito:
-                leito[chave] = novos
-        f = leito.get("ficha") or {}
+            for t in valores:
+                t, av = dias_atb(t, data, calculados)
+                novos.append(t); avisos.extend(f"{L}: {a}{sufixo}" for a in av)
+            textos.extend((onde, t) for t in novos)
+            return novos
+
+        for chave in TEXTOS_LEITO + ("plano_anterior", "laboratorio", "exame_fisico", "outros_balanco"):
+            if isinstance(leito.get(chave), str):
+                leito[chave] = leito[chave].split("\n")
+        for chave in TEXTOS_LEITO:
+            if isinstance(leito.get(chave), list):
+                leito[chave] = passar(chave, [t for t in leito[chave] if isinstance(t, str)])
+        f = leito.get("ficha") if isinstance(leito.get("ficha"), dict) else {}
         for bloco in ("infusoes", "sistemas"):
-            for linha in f.get(bloco, []):
-                itens = []
-                for it in linha[1]:
-                    it, av = dias_atb(it, data)
-                    itens.append(it); avisos += [f"{L}: {a} (ficha)" for a in av]
-                linha[1] = itens
-    return dados, avisos
+            for linha in f.get(bloco) or []:
+                if not (isinstance(linha, list) and len(linha) == 2 and isinstance(linha[1], list)):
+                    continue
+                if str(linha[0]).strip().upper().startswith("SUSPENS"):
+                    continue  # ATB suspenso: o D final fica como foi escrito
+                linha[1] = passar(f"ficha.{bloco}", [it for it in linha[1] if isinstance(it, str)], " (ficha)")
+        for bloco in TEXTOS_FICHA:
+            if isinstance(f.get(bloco), list):
+                f[bloco] = passar(f"ficha.{bloco}", [t for t in f[bloco] if isinstance(t, str)], " (ficha)")
+        for onde, t in textos:
+            for m in D_SOLTO.finditer(t):
+                g = checagens.droga_antes(t, m.start())
+                if m.group(1) == "?":
+                    avisos.append(f"{L}: \"D?\" sem data de início em `{onde}`: {t[:70]}")
+                elif g in calculados and int(m.group(1)) != calculados[g]:
+                    trecho = t[max(0, m.start() - 30):m.end()].lstrip(" -;,")
+                    avisos.append(f"{L}: `{onde}` tem \"…{trecho}\", mas a conta dá D{calculados[g]} para {g}: "
+                                  "conferir")
+            if re.search(r"\(D\?,", t) and not re.search(r"suspens", t, re.I):
+                avisos.append(f"{L}: \"D?\" não calculado em `{onde}`: {t[:70]}")
+    return dados, list(dict.fromkeys(avisos))
 
 
 def build(payload):

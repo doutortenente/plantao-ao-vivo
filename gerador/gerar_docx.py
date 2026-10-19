@@ -18,10 +18,14 @@ Uso:
 
 O ajuste (padrão) mede cada leito no LibreOffice para a ficha caber em 1 folha. Sem ajuste, a ficha sai com
 6 linhas de anotação e 4 de intercorrências em 10 pt, e pode estourar.
-Antes de gerar roda gerador/validar.py (erro = não gera). No fim roda gerador/conferir.py (fonte, tamanho, cor, texto proibido, 1 folha por leito, PNG de cada página)
-e gerador/entrega.py (versão anterior em historico/, diff por leito e o rascunho do chat em mensagem.md).
-Saída: 0 = ok; 2 = JSON sem bloco `ficha` ou sem LibreOffice; 3 = algum leito não coube em 1 folha;
-4 = a conferência achou erro.
+Com --sem-ajuste a ficha ainda é medida uma vez com a folga de 1,5 cm (o Word desenha mais alto que o LibreOffice):
+passou de 1 folha por leito, é erro. Sem LibreOffice, --sem-ajuste gera os Word mas a conferência dá erro (sem PDF
+nem contagem de páginas não se entrega).
+Antes de gerar roda gerador/validar.py (erro = não gera). No fim roda gerador/conferir.py (fonte, tamanho, cor,
+texto proibido, 1 folha por leito, PNG de cada página) e gerador/entrega.py (versão anterior em historico/, diff por
+leito e o rascunho do chat em mensagem.md). Os ALERTA (segurança) saem no topo do Conferir.
+Saída: 0 = ok; 2 = JSON sem bloco `ficha`, que não passou na validação, ou sem LibreOffice (sem --sem-ajuste);
+3 = algum leito não coube em 1 folha; 4 = a conferência achou erro.
 Contrato do JSON: gerador/schema-plantao.md
 """
 import argparse
@@ -29,6 +33,7 @@ import json
 import re
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -193,7 +198,7 @@ def main():
         print("AVISO: sem LibreOffice, o PDF da ficha-cola não foi gerado.", file=sys.stderr)
     print(evo); print(cola)
     texto, avisos = motor.build(plantao_original)
-    avisos = avisos_v + avisos
+    avisos = sorted(avisos_v + avisos, key=lambda w: "ALERTA:" not in w)  # segurança no topo do Conferir
     (pasta / "evolucoes.txt").write_text(texto, encoding="utf-8")
     if avisos:
         print("\nRodapé (conferir — fora do bloco):")
@@ -201,6 +206,14 @@ def main():
             print("- " + w)
     import conferir
     erros, avisos_conf, pngs = conferir.conferir(evo, cola, len(plantao["leitos"]))
+    if a.sem_ajuste and soffice and shutil.which("pdfinfo"):
+        with tempfile.TemporaryDirectory() as tmp:
+            medida = Path(tmp) / "medida.docx"
+            ficha_cola.gerar(plantao, medida, cfg, folga=E.FOLGA_MEDICAO)
+            n_med = ficha_cola.n_paginas(medida)
+        if n_med != len(plantao["leitos"]):
+            erros.append(f"com a folga de medição de {E.FOLGA_MEDICAO:g} cm (o Word desenha mais alto) a ficha-cola dá "
+                         f"{n_med} página(s) para {len(plantao['leitos'])} leito(s): gere sem --sem-ajuste")
     print(conferir.relatorio(erros, avisos_conf, pngs))
     if historico and (historico / "evolucoes.txt").exists():
         mudou = entrega.diff_por_leito((historico / "evolucoes.txt").read_text(encoding="utf-8"), texto)
