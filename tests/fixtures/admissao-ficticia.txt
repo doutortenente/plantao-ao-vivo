@@ -1,0 +1,43 @@
+98 - PACIENTE FICTÍCIO DE ADMISSÃO
+ADMISSÃO UTI 2 - 01-01-26
+
+Paciente de 70 anos, em 1º dia de internação em UTI por quadro de:
+1. Choque séptico de foco urinário, com noradrenalina 0,2 mcg/kg/min
+   => lactato 4,1 na chegada
+2. LRA KDIGO II
+
+Admissão (01/01/26): chegou do PS em BIC de noradrenalina, sonolento, PAM 66 mmHg.
+
+HPMA: febre e disúria há 3 dias; procurou o PS em 31/12/25.
+
+Antecedentes: HAS, DM2.
+
+Medicamentos de uso domiciliar: losartana 50 mg 12/12h; metformina 850 mg 12/12h.
+
+ALERGIAS: nega
+
+Dispositivos:
+CVC - VJID (01/01)
+SVD - (31/12)
+
+Uso:
+Drogas Vasoativas: noradrenalina
+Antibióticos: ceftriaxona 2 g EV 1x/dia (I: 31/12)
+
+Sinais Vitais admissão:
+PA: 98 x 50 (66) mmHg
+FC: 112 bpm
+SpO2: 95%, aa
+
+Exame Físico Geral:
+- Geral: REG, desidratado +/4+.
+- Sistema Cardiovascular: RCR 2T, TEC 4 s.
+
+Exames Complementares:
+- Urina I (01/01): leucocitúria, nitrito positivo.
+
+Plano terapêutico e Condutas:
+1. Infeccioso:
+- Mantida ceftriaxona; urocultura e hemoculturas colhidas.
+2. Hemodinâmico: noradrenalina para meta PAM >= 65 mmHg.
+3. Profilaxias: TEV: enoxaparina 40 mg SC 1x/dia; LAMG: pantoprazol 40 mg EV; cabeceira 30º.
