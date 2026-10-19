@@ -27,6 +27,9 @@ description: >
 
 ## Passo a passo
 
+0. **Preparar.** Pôr o material em `entrada/` e rodar `python3 gerador/preparar.py entrada/ --saida saida/preparo`:
+   classifica os arquivos, conta páginas, gera os PNG das folhas de controle (150 dpi e metades a 300 dpi), o texto
+   dos laudos e `manifest.json` com o inventário leito × documentos e os avisos (leito sem lab, nº de folhas).
 1. **Evolução anterior.** `python3 gerador/evolucao_anterior.py anterior.docx` devolve, por leito, `exame_fisico`
    (cópia literal), `plano_anterior` e `laboratorio_anterior` para o JSON. Leito não reconhecido = ler na mão.
    **Inventário.** Listar leitos pelas evoluções. Conferir que cada leito tem folha de controle, prescrição e lab.
@@ -34,7 +37,7 @@ description: >
 2. **Laboratório.** `python3 skills/sasi-ingest-export/scripts/labs.py laudo.pdf --anterior "<linhas de Laboratório
    da evolução anterior>"` monta a seção com série `anterior -> atual` e ignora "AMOSTRA MAQUINA" (circuito de
    diálise). BETA até calibrar com um laudo real: conferir contra o PDF; divergência vale o PDF e vai para o Conferir.
-3. **Folhas de controle.** Rasterizar (`pdftoppm`, 150 dpi visão geral, 250–300 dpi recorte por turno).
+3. **Folhas de controle.** Ler os PNG que o `preparar.py` gerou (150 dpi visão geral, metades a 300 dpi).
    Transcrever as 12 aferições (07 h a 05 h) **com a hora** (`{"07": 146, "09": 126, …}`) — **janela 24 h é o padrão**,
    e o motor confere pelas horas (faltou o diurno = ALERTA). Balanço: transcrever as CÉLULAS, também com a hora.
 4. **Prescrição.** Ler cada página; incorporar o manuscrito (riscado, "suspenso", "modificado"). Doses só como
