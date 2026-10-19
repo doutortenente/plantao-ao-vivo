@@ -34,8 +34,9 @@ description: >
 3. **Folhas de controle.** Rasterizar (`pdftoppm`, 150 dpi visão geral, 250–300 dpi recorte por turno).
    Transcrever as 12 aferições (07 h a 05 h) — **janela 24 h é o padrão**. Balanço: transcrever as CÉLULAS.
 4. **Prescrição.** Ler cada página; incorporar o manuscrito (riscado, "suspenso", "modificado"). Doses só como
-   escritas. Conferir contra o plano da evolução anterior: o que o plano mandou suspender e continua prescrito vai
-   para os alertas.
+   escritas. Pôr o plano da evolução anterior em `plano_anterior`: o motor alerta sozinho o que ele mandou suspender
+   e continua prescrito, além de alergia × prescrição, TEV e duplicidade (`ALERTA:` no topo do Conferir). Alerta de
+   alergia vai para o chat na hora, antes de terminar os arquivos.
 5. **JSON do plantão.** Montar um arquivo no contrato `gerador/schema-plantao.md`, com:
    vitais (séries), células de balanço, laboratório, terapias, exame físico (copiado da evolução anterior), eventos
    24 h, impressão, plano, até 3 alertas para o chat e o bloco `ficha` de cada leito (obrigatório: Dx, dispositivos,

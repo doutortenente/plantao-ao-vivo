@@ -47,6 +47,8 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "evolucao": ["frase com verbo de ação", "..."],
     "impressao": ["Problema, tendência - leitura de 1 linha"],
     "conduta": ["1. Respiratório:", "- ação;", "2. Profilaxias: TEV ...; LAMG ...; cabeceira 30º."],
+    "plano_anterior": ["linhas do plano da evolução anterior"],  // opcional: o motor alerta se algo que ele
+                                            // mandou suspender continua na prescrição da ficha
 
     "dispositivos": "TQT 06/10  ·  PICC MSD 15/09  ·  SVD 22/09",  // Disp. do cabeçalho da ficha (fonte única)
     "alertas": ["até 3 frases curtas"],     // para o chat; não vão para a ficha nem para o bloco
@@ -55,6 +57,11 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
   }]
 }
 ```
+
+Cruzamentos de segurança (`skills/sasi-ingest-export/scripts/checagens.py`, rodam no motor): alergia × prescrição
+pela classe da droga, falta de profilaxia de TEV, duplicidade (IBP, anticoagulante, mesma droga em dois itens) e
+droga suspensa no `plano_anterior`. Saem como `ALERTA:` no topo do "Conferir". Droga fora do dicionário `DROGAS`
+não é checada: acrescente lá.
 
 Nomes de ganho/perda reconhecidos: ver `CANON` no motor (dieta, soro, EV, diluição, NPT, CH, ingesta, reposição,
 noradrenalina... / diurese, SVD, SNG, resíduo, dreno, evacuação, UF, diálise...). Nome desconhecido não entra na

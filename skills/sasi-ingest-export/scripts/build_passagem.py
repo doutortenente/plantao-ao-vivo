@@ -14,6 +14,8 @@ O que o motor garante
   - Item de balanço fora do dicionário não entra na conta e vira aviso.
   - Valor ilegível ("?") não entra no Máx - Mín e vira aviso.
   - Nada de explicação dentro do bloco clínico: observação vai para os avisos.
+  - Cruzamentos de segurança (checagens.py): alergia × prescrição, TEV, duplicidade, droga
+    suspensa no plano anterior. Saem como "ALERTA: …" no topo dos avisos.
 
 Uso
   python3 build_passagem.py --demo
@@ -44,6 +46,10 @@ import argparse
 import json
 import re
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import checagens  # noqa: E402
 
 # ── Dicionário canônico de balanço hídrico ──────────────────────────────────
 # Radical curto (<= 3 letras) só casa com PALAVRA INTEIRA ("ev", "sf", "ch", "uf"),
@@ -310,6 +316,7 @@ def compute_leito(leito, meta=None):
         if chave == "impressao":
             cont = [c if re.match(r"^\d+\.", c) else f"{i}. {c}" for i, c in enumerate(cont, 1)]
         secoes.append((TITULOS[chave], list(cont)))
+    avisos = checagens.checar(leito) + avisos  # alergia × prescrição, TEV, duplicidade, suspenso: no topo
     return {"cabecalho": cab, "secoes": secoes, "avisos": avisos, "balanco": bal}
 
 
@@ -331,6 +338,7 @@ def build(payload):
         txt, av = render_leito(leito, meta)
         out += [txt, ""]
         avisos += [f"L{leito.get('leito', '?')}: {a}" for a in av]
+    avisos.sort(key=lambda a: "ALERTA:" not in a)  # alertas de segurança primeiro, ordem mantida
     return "\n".join(out).rstrip() + "\n", avisos
 
 
