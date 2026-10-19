@@ -27,7 +27,9 @@ description: >
 
 ## Passo a passo
 
-1. **Inventário.** Listar leitos pelas evoluções. Conferir que cada leito tem folha de controle, prescrição e lab.
+1. **Evolução anterior.** `python3 gerador/evolucao_anterior.py anterior.docx` devolve, por leito, `exame_fisico`
+   (cópia literal), `plano_anterior` e `laboratorio_anterior` para o JSON. Leito não reconhecido = ler na mão.
+   **Inventário.** Listar leitos pelas evoluções. Conferir que cada leito tem folha de controle, prescrição e lab.
    Leito sem lab do dia → dizer no chat. Número de leito divergente entre folha e prescrição → dizer no chat.
 2. **Laboratório.** `python3 skills/sasi-ingest-export/scripts/labs.py laudo.pdf --anterior "<linhas de Laboratório
    da evolução anterior>"` monta a seção com série `anterior -> atual` e ignora "AMOSTRA MAQUINA" (circuito de
@@ -56,6 +58,7 @@ description: >
 - Rodar em sequência na própria sessão; sem subagentes (economia de cota).
 - O médico não roda comando: o Claude executa tudo.
 - Nada de `(revisar)` dentro do bloco colável. Dúvida → rodapé.
-- Exame físico: copiar o da evolução anterior; só tirar o que ficou falso (ex.: droga suspensa).
+- Exame físico: copiar o da evolução anterior (o `evolucao_anterior.py` copia literal); só tirar o que ficou falso
+  (ex.: droga suspensa).
 - Plano: verbo de comando, contingência ("se X → Y"), meta numérica, profilaxias. Raso = refaz.
 - Supabase/OneDrive: fora do fluxo padrão. Só se o operador pedir.
