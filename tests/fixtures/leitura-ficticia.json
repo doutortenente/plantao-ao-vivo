@@ -1,0 +1,512 @@
+{
+ "controles": {
+  "identificacao": {
+   "leito": "7",
+   "nome": "PACIENTE FICTICIO DE TESTE",
+   "idade": "68 anos",
+   "sexo": "M",
+   "unidade": "UTI ADULTO 2",
+   "data": "31/12/2025"
+  },
+  "afericoes": [
+   {
+    "hora": "7",
+    "t": "37,9",
+    "fr": "22",
+    "fc": "96",
+    "pa": [
+     {
+      "pas": "132",
+      "pad": "70",
+      "pam": "90"
+     }
+    ],
+    "dx": "212",
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "9",
+    "t": "38,2",
+    "fr": "21",
+    "fc": "97",
+    "pa": [
+     {
+      "pas": "128",
+      "pad": "69",
+      "pam": "89"
+     },
+     {
+      "pas": "120",
+      "pad": "66",
+      "pam": "84"
+     }
+    ],
+    "dx": null,
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "11",
+    "t": "37,6",
+    "fr": "20",
+    "fc": "98",
+    "pa": [
+     {
+      "pas": "118",
+      "pad": "68",
+      "pam": "88"
+     }
+    ],
+    "dx": null,
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "13",
+    "t": "37,1",
+    "fr": "19",
+    "fc": "99",
+    "pa": [
+     {
+      "pas": "110",
+      "pad": "67",
+      "pam": "87"
+     }
+    ],
+    "dx": "168",
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "15",
+    "t": "36,8",
+    "fr": "22",
+    "fc": "100",
+    "pa": [
+     {
+      "pas": "96",
+      "pad": "66",
+      "pam": "86"
+     }
+    ],
+    "dx": null,
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "17",
+    "t": "36,6",
+    "fr": "21",
+    "fc": "101",
+    "pa": [
+     {
+      "pas": "88",
+      "pad": "65",
+      "pam": "85"
+     }
+    ],
+    "dx": null,
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "19",
+    "t": "36,5",
+    "fr": "20",
+    "fc": "102",
+    "pa": [
+     {
+      "pas": "101",
+      "pad": "64",
+      "pam": "84"
+     }
+    ],
+    "dx": "154",
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "21",
+    "t": "36,7",
+    "fr": "19",
+    "fc": "103",
+    "pa": [
+     {
+      "pas": "120",
+      "pad": "63",
+      "pam": "83"
+     }
+    ],
+    "dx": null,
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "23",
+    "t": "36,9",
+    "fr": "22",
+    "fc": "104",
+    "pa": [
+     {
+      "pas": "125",
+      "pad": "62",
+      "pam": "82"
+     }
+    ],
+    "dx": null,
+    "spo2": "?",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "1",
+    "t": "36,6",
+    "fr": "21",
+    "fc": "105",
+    "pa": [
+     {
+      "pas": "130",
+      "pad": "61",
+      "pam": "81"
+     }
+    ],
+    "dx": "140",
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "3",
+    "t": "36,4",
+    "fr": "20",
+    "fc": "106",
+    "pa": [
+     {
+      "pas": "128",
+      "pad": "60",
+      "pam": "80"
+     }
+    ],
+    "dx": null,
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   },
+   {
+    "hora": "5",
+    "t": "36,5",
+    "fr": "19",
+    "fc": "107",
+    "pa": [
+     {
+      "pas": "122",
+      "pad": "59",
+      "pam": "79"
+     }
+    ],
+    "dx": null,
+    "spo2": "94",
+    "suporte": "O2 cateter 2 L/min"
+   }
+  ],
+  "balanco": [
+   {
+    "coluna": "SNE",
+    "rotulo": null,
+    "celulas": [
+     {
+      "hora": "7",
+      "ml": "50"
+     },
+     {
+      "hora": "9",
+      "ml": "50"
+     },
+     {
+      "hora": "11",
+      "ml": "50"
+     },
+     {
+      "hora": "13",
+      "ml": "50"
+     },
+     {
+      "hora": "15",
+      "ml": "50"
+     },
+     {
+      "hora": "17",
+      "ml": "50"
+     },
+     {
+      "hora": "19",
+      "ml": "50"
+     },
+     {
+      "hora": "21",
+      "ml": "50"
+     },
+     {
+      "hora": "23",
+      "ml": "50"
+     },
+     {
+      "hora": "1",
+      "ml": "50"
+     },
+     {
+      "hora": "3",
+      "ml": "50"
+     },
+     {
+      "hora": "5",
+      "ml": "50"
+     }
+    ]
+   },
+   {
+    "coluna": "Endovenoso",
+    "rotulo": "NORA",
+    "celulas": [
+     {
+      "hora": "7",
+      "ml": "3"
+     },
+     {
+      "hora": "9",
+      "ml": "3"
+     },
+     {
+      "hora": "11",
+      "ml": "3"
+     },
+     {
+      "hora": "13",
+      "ml": "3"
+     },
+     {
+      "hora": "15",
+      "ml": "3"
+     },
+     {
+      "hora": "17",
+      "ml": "3"
+     },
+     {
+      "hora": "19",
+      "ml": "3"
+     },
+     {
+      "hora": "21",
+      "ml": "3"
+     },
+     {
+      "hora": "23",
+      "ml": "3"
+     },
+     {
+      "hora": "1",
+      "ml": "3"
+     },
+     {
+      "hora": "3",
+      "ml": "3"
+     },
+     {
+      "hora": "5",
+      "ml": "3"
+     }
+    ]
+   },
+   {
+    "coluna": "Dil.",
+    "rotulo": null,
+    "celulas": [
+     {
+      "hora": "10",
+      "ml": "100"
+     },
+     {
+      "hora": "16",
+      "ml": "100"
+     }
+    ]
+   },
+   {
+    "coluna": "Diurese",
+    "rotulo": null,
+    "celulas": [
+     {
+      "hora": "7",
+      "ml": "60"
+     },
+     {
+      "hora": "9",
+      "ml": "60"
+     },
+     {
+      "hora": "11",
+      "ml": "60"
+     },
+     {
+      "hora": "13",
+      "ml": "60"
+     },
+     {
+      "hora": "15",
+      "ml": "60"
+     },
+     {
+      "hora": "17",
+      "ml": "60"
+     },
+     {
+      "hora": "19",
+      "ml": "60"
+     },
+     {
+      "hora": "21",
+      "ml": "60"
+     },
+     {
+      "hora": "23",
+      "ml": "60"
+     },
+     {
+      "hora": "1",
+      "ml": "60"
+     },
+     {
+      "hora": "3",
+      "ml": "60"
+     },
+     {
+      "hora": "5",
+      "ml": "60"
+     }
+    ]
+   },
+   {
+    "coluna": "Dreno/SVD",
+    "rotulo": "penrose",
+    "celulas": [
+     {
+      "hora": "7",
+      "ml": "20"
+     },
+     {
+      "hora": "19",
+      "ml": "?"
+     }
+    ]
+   }
+  ],
+  "rodape": {
+   "ganhos_24h": "1.036",
+   "perdas_24h": "740",
+   "diurese_24h": "720",
+   "bh_24h": "+ 296"
+  },
+  "evacuacao": "1x (++, pastosa)",
+  "dieta": "SNE",
+  "pendencias": [
+   "FR e FC trocadas às 15 h"
+  ]
+ },
+ "prescricao": {
+  "identificacao": {
+   "leito": "7",
+   "nome": "PACIENTE FICTICIO DE TESTE",
+   "idade": "68 anos",
+   "sexo": "M",
+   "unidade": "UTI ADULTO 2",
+   "data": "01/01/2026"
+  },
+  "diagnostico": "PAC grave · Choque séptico",
+  "alergias": "Dipirona",
+  "dispositivos": "CVC VJID 01/01 · SVD 30/12",
+  "dieta": "Enteral 50 ml/h SNE",
+  "itens": [
+   {
+    "nome": "Noradrenalina 16 mg/250 ml",
+    "dose": null,
+    "via": "EV",
+    "frequencia": "BIC 3 ml/h",
+    "horarios": null,
+    "grupo": "DVA",
+    "inicio": null
+   },
+   {
+    "nome": "Tazocin",
+    "dose": "4,5 g",
+    "via": "EV",
+    "frequencia": "6/6 h",
+    "horarios": "06–12–18–24",
+    "grupo": "ATB",
+    "inicio": "30/12"
+   },
+   {
+    "nome": "Azitromicina",
+    "dose": "500 mg",
+    "via": "EV",
+    "frequencia": "1x/dia",
+    "horarios": "10",
+    "grupo": "ATB",
+    "inicio": null
+   },
+   {
+    "nome": "Pantozol",
+    "dose": "40 mg",
+    "via": "EV",
+    "frequencia": "jejum",
+    "horarios": "06",
+    "grupo": "PROFILAXIA",
+    "inicio": null
+   },
+   {
+    "nome": "Clexane",
+    "dose": "40 mg",
+    "via": "SC",
+    "frequencia": "1x/dia",
+    "horarios": "22",
+    "grupo": "PROFILAXIA",
+    "inicio": null
+   },
+   {
+    "nome": "Paracetamol",
+    "dose": "750 mg",
+    "via": "VO",
+    "frequencia": "6/6 h (revisar)",
+    "horarios": "10-16-22-04",
+    "grupo": "ANALGESIA",
+    "inicio": null
+   },
+   {
+    "nome": "Lacrima Plus colírio",
+    "dose": "1 gota",
+    "via": "ocular",
+    "frequencia": "4/4 h",
+    "horarios": null,
+    "grupo": "OUTRO",
+    "inicio": null
+   },
+   {
+    "nome": "Zofran",
+    "dose": "8 mg",
+    "via": "EV",
+    "frequencia": "8/8 h SN",
+    "horarios": null,
+    "grupo": "SN",
+    "inicio": null
+   }
+  ],
+  "suspensos": [
+   "Ceftriaxona 2 g EV"
+  ],
+  "ordens": [
+   "Hemoculturas 2 amostras",
+   "Lactato de controle em 6 h",
+   "Cabeceira 30°"
+  ],
+  "pendencias": []
+ },
+ "labs": null
+}

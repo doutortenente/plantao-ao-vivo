@@ -1,0 +1,3 @@
+# Esteira (GitHub Actions): o gerador + o SDK oficial da API do Claude (versão fixa, conferida nos testes).
+-r ../gerador/requirements.txt
+anthropic==1.15.0

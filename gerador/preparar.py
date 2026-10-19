@@ -13,6 +13,10 @@ Para cada arquivo de <entrada>:
   - evolução anterior (.docx/.txt): leitos, exame físico, plano e labs (evolucao_anterior.py).
 Escreve <saida>/manifest.json com o inventário leito × documentos e os avisos (leito sem lab, sem controles…).
 
+recortes_para_leitura() é o que a esteira (esteira/leitura.py) manda para a API do Claude: por página, a visão geral
+e duas metades cortadas no lado longo, em JPEG, no limite da visão em alta resolução (2576 px no lado longo, 3,75 MP,
+5 MB por imagem).
+
 Uso: python3 gerador/preparar.py entrada/ --saida saida/preparo
 """
 import argparse
@@ -76,6 +80,61 @@ def folha_de_controle(pdf, pag, pasta, w, h):
         _rodar(base + ["-r", "300", "-x", "0", "-y", str(y), "-W", str(largura), "-H", str(alt), str(pdf),
                        str(pasta / nome)])
     return sorted(pasta.glob("*.png"))
+
+
+LADO_MAX, AREA_MAX, BYTES_MAX = 2576, 3_750_000, 5_000_000
+SOBREPOSICAO = 0.04  # cada metade avança 4 % sobre a outra: linha cortada no meio aparece inteira numa delas
+
+
+def tamanho_da_pagina(pdf, pag):
+    """(largura, altura) em pontos como a página é desenhada (rotação aplicada)."""
+    out = _rodar(["pdfinfo", "-f", str(pag), "-l", str(pag), str(pdf)])
+    w, h = (float(x) for x in re.search(r"Page\s+\d+\s+size:\s+([\d.]+) x ([\d.]+)", out).groups())
+    rot = re.search(r"Page\s+\d+\s+rot:\s+(\d+)", out)
+    return (h, w) if rot and int(rot.group(1)) % 180 else (w, h)
+
+
+def _dpi(larg_pt, alt_pt):
+    """Maior dpi que cabe no limite de lado e de área."""
+    lin, col = larg_pt / 72, alt_pt / 72
+    return int(min(LADO_MAX / max(lin, col), (AREA_MAX / (lin * col)) ** 0.5))
+
+
+def _jpeg(pdf, pag, destino, dpi, x=None, y=None, w=None, h=None):
+    for qualidade in (85, 75, 60):
+        cmd = ["pdftoppm", "-f", str(pag), "-l", str(pag), "-singlefile", "-jpeg", "-jpegopt",
+               f"quality={qualidade}", "-r", str(dpi)]
+        if x is not None:
+            cmd += ["-x", str(x), "-y", str(y), "-W", str(w), "-H", str(h)]
+        _rodar(cmd + [str(pdf), str(destino)])
+        arq = destino.with_suffix(".jpg")
+        if arq.stat().st_size <= BYTES_MAX:
+            return arq
+    raise ValueError(f"{arq.name}: imagem passa de 5 MB mesmo em JPEG 60")
+
+
+def recortes_para_leitura(pdf, pasta):
+    """[(página, [visão geral, metade 1, metade 2])] em JPEG. Retrato corta em cima/baixo; paisagem, esquerda/direita."""
+    pasta = Path(pasta); pasta.mkdir(parents=True, exist_ok=True)
+    n, _, _ = paginas(pdf)
+    saida = []
+    for pag in range(1, n + 1):
+        w, h = tamanho_da_pagina(pdf, pag)
+        geral = _jpeg(pdf, pag, pasta / f"p{pag:02d}-geral", min(150, int(1568 / (max(w, h) / 72))))
+        retrato = h >= w
+        meia = (w, h * (0.5 + SOBREPOSICAO)) if retrato else (w * (0.5 + SOBREPOSICAO), h)
+        dpi = _dpi(*meia)
+        W, H = int(w / 72 * dpi), int(h / 72 * dpi)
+        if retrato:
+            alt = int(H * (0.5 + SOBREPOSICAO))
+            caixas = ((0, 0, W, alt), (0, H - alt, W, alt))
+        else:
+            larg = int(W * (0.5 + SOBREPOSICAO))
+            caixas = ((0, 0, larg, H), (W - larg, 0, larg, H))
+        metades = [_jpeg(pdf, pag, pasta / f"p{pag:02d}-{nome}", dpi, *caixa)
+                   for nome, caixa in zip(("cima", "baixo") if retrato else ("esquerda", "direita"), caixas)]
+        saida.append((pag, [geral] + metades))
+    return saida
 
 
 def preparar(entrada, saida):

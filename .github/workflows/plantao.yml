@@ -1,7 +1,10 @@
-# Esteira do plantão — casca fixa.
-# Toda a lógica mora em esteira/processar.py.
-# Segredo necessário no repositório: AIRTABLE_TOKEN (só ele é exposto ao job).
-# Entrada: ID de uma linha da tabela "Plantão × Leito" do Airtable.
+# Esteira do plantão — casca fixa. Toda a lógica mora em esteira/processar.py.
+# Segredos do repositório (só estes chegam ao job):
+#   AIRTABLE_TOKEN     obrigatório.
+#   ANTHROPIC_API_KEY  liga a leitura automática dos scans; sem ele, a esteira só baixa e confere os anexos.
+# Variável do repositório: AIRTABLE_CAMPO_SAIDA = ID (fld…) do campo de anexos onde voltam a ficha e o rascunho.
+# Entrada: ID de uma linha da tabela "Plantão × Leito" do Airtable; data e turno são opcionais.
+# O log deste job é público (repositório público): o script só imprime contagens e o status.
 name: plantao
 
 on:
@@ -11,6 +14,16 @@ on:
         description: "ID da linha na tabela Plantão × Leito do Airtable"
         required: true
         type: string
+      data:
+        description: "Data do plantão (dd/mm/aaaa); vazio = a da prescrição"
+        required: false
+        type: string
+      turno:
+        description: "Turno"
+        required: false
+        type: choice
+        options: [diurno, noturno]
+        default: diurno
 
 permissions:
   contents: read
@@ -22,20 +35,31 @@ concurrency:
 jobs:
   processar:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       RECORD_ID: ${{ inputs.record_id }}
+      DATA_PLANTAO: ${{ inputs.data }}
+      TURNO: ${{ inputs.turno }}
       AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      AIRTABLE_CAMPO_SAIDA: ${{ vars.AIRTABLE_CAMPO_SAIDA }}
     steps:
       - name: Validar entrada
         run: |
           [[ "$RECORD_ID" =~ ^rec[A-Za-z0-9]{14}$ ]] || { echo "record_id invalido"; exit 1; }
+          [[ -z "$DATA_PLANTAO" || "$DATA_PLANTAO" =~ ^[0-9]{2}/[0-9]{2}/[0-9]{4}$ ]] || { echo "data invalida"; exit 1; }
 
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Dependências
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libreoffice-writer poppler-utils fonts-liberation
+          pip install -r esteira/requirements.txt
 
       - name: Processar a linha
         run: python esteira/processar.py

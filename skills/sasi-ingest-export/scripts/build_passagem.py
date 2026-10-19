@@ -317,8 +317,10 @@ def compute_leito(leito, meta=None):
     bal = calc_balanco(leito.get("ganhos"), leito.get("perdas"))
     avisos += bal["avisos"]
     conf = leito.get("conferencia_enfermagem") or {}
+    diur = sum(ml for n, ml in bal["itens_perda"] if re.search(r"diur|urin|svd", n, re.I))
     for rot, calc, inf in (("Ganhos", bal["ganho_total"], conf.get("ganhos")),
                            ("Perdas", bal["perda_total"], conf.get("perdas")),
+                           ("Diurese", diur, conf.get("diurese")),
                            ("BH", bal["balanco"], conf.get("bh"))):
         if inf is not None and abs(calc - float(inf)) > 0.5:
             avisos.append(f"CONFERÊNCIA — {rot}: folha diz {_fmt(inf)}, células somam {_fmt(calc)}")
@@ -335,7 +337,6 @@ def compute_leito(leito, meta=None):
         if evac_ml:
             txt = (txt + ", " if txt else "") + f"{_fmt(evac_ml)} ml"
         linhas.append(f"Evacuação: {txt}")
-    diur = sum(ml for n, ml in bal["itens_perda"] if re.search(r"diur|urin|svd", n, re.I))
     outras = [(n[:1].upper() + n[1:], ml) for n, ml in bal["itens_perda"]
               if not re.search(r"diur|urin|svd|evacua|fezes", n, re.I)]
     if any(re.search(r"diur|urin|svd", n, re.I) for n, _ in bal["itens_perda"]):

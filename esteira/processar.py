@@ -1,23 +1,43 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-processar.py — trabalhador da esteira do plantão (roda no GitHub Actions).
+processar.py — trabalhador da esteira do plantão (roda no GitHub Actions, workflow plantao.yml).
 
 Entrada (variáveis de ambiente):
-  RECORD_ID  ID da linha na tabela "Plantão × Leito" do Airtable.
-  AIRTABLE_TOKEN  token do Airtable (segredo do repositório, passado só ele ao job).
-  SEGREDOS        (legado, opcional) JSON com os segredos; usado só se AIRTABLE_TOKEN faltar.
+  RECORD_ID             ID da linha na tabela "Plantão × Leito" do Airtable (uma linha = um leito).
+  AIRTABLE_TOKEN        token do Airtable (segredo do repositório).
+  ANTHROPIC_API_KEY     (opcional) liga a leitura automática. Sem ela, a esteira só baixa e confere os anexos.
+  AIRTABLE_CAMPO_SAIDA  (opcional) ID do campo de anexos onde voltam a ficha (.docx + .pdf) e o JSON rascunho.
+  DATA_PLANTAO, TURNO   (opcionais) data dd/mm/aaaa e turno; sem elas, a data sai da prescrição e o turno é diurno.
+  SEGREDOS              (legado, opcional) JSON com os segredos; usado só se AIRTABLE_TOKEN faltar.
 
-Estágio atual (teste 2): baixa os anexos da linha e confere o tamanho de cada um.
-Ainda NÃO lê o scan nem monta o bloco. O resultado vai para os campos Status e Avisos.
-Só biblioteca padrão.
+Com a chave (etapa 3):
+  1. baixa os anexos (controles, prescrição, exames) e as evoluções anteriores (texto);
+  2. recorta cada página em JPEG (preparar.recortes_para_leitura) e lê com a API do Claude (leitura.py);
+     laudo de laboratório com texto vai pelo labs.py, sem API;
+  3. monta o JSON do plantão do leito (montar.py) e roda motor.preparar → validar → ficha-cola (ajuste em 1 folha)
+     → PDF → conferência (fonte, tamanho, cor, 1 folha);
+  4. devolve na linha: ficha .docx + .pdf e o JSON rascunho (campo de saída) e o "Conferir" (campo Avisos).
+A evolução (Impressão, Plano) continua no chat, a partir do JSON rascunho.
+
+O log do Actions é público: aqui só saem contagens e o status, nunca nome, nome de arquivo ou dado clínico.
 """
+import base64
+import datetime as dt
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 import urllib.request
 from pathlib import Path
+
+RAIZ = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(RAIZ / "esteira"))
+sys.path.insert(0, str(RAIZ / "gerador"))
+sys.path.insert(0, str(RAIZ / "skills" / "sasi-ingest-export" / "scripts"))
 
 BASE = "apppxhq0Qx7nqm14E"
 TABELA = "tblgiiRmOyXmSLWu1"
@@ -31,6 +51,10 @@ CAMPO = {
 }
 ANEXOS = ("controles", "prescricao", "exames")
 PASTA = Path("entrada")
+SAIDA = Path("saida-esteira")
+ANEXO_MAX = 5_000_000  # limite do uploadAttachment do Airtable
+TIPOS = {".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+         ".pdf": "application/pdf", ".json": "application/json"}
 
 
 def segredo(nome):
@@ -41,17 +65,31 @@ def segredo(nome):
     return valor
 
 
-def airtable(metodo, record_id, token, corpo=None):
-    url = f"https://api.airtable.com/v0/{BASE}/{TABELA}/{record_id}?returnFieldsByFieldId=true"
+def _pedido(url, token, metodo, corpo=None, timeout=60):
     dados = json.dumps(corpo).encode() if corpo is not None else None
     req = urllib.request.Request(url, data=dados, method=metodo, headers={
         "Authorization": "Bearer " + token, "Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as r:
+    with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.load(r)
+
+
+def airtable(metodo, record_id, token, corpo=None):
+    url = f"https://api.airtable.com/v0/{BASE}/{TABELA}/{record_id}?returnFieldsByFieldId=true"
+    return _pedido(url, token, metodo, corpo)
 
 
 def gravar(record_id, token, **campos):
     airtable("PATCH", record_id, token, {"fields": {CAMPO[k]: v for k, v in campos.items()}})
+
+
+def enviar_anexo(record_id, token, campo, arquivo):
+    """Sobe um arquivo para o campo de anexos (endpoint uploadAttachment do Airtable, até 5 MB)."""
+    arquivo = Path(arquivo)
+    if arquivo.stat().st_size > ANEXO_MAX:
+        raise ValueError(f"{arquivo.suffix}: passa de 5 MB")
+    url = f"https://content.airtable.com/v0/{BASE}/{record_id}/{campo}/uploadAttachment"
+    return _pedido(url, token, "POST", {"contentType": TIPOS[arquivo.suffix.lower()], "filename": arquivo.name,
+                                        "file": base64.b64encode(arquivo.read_bytes()).decode("ascii")}, 120)
 
 
 def nome_seguro(nome):
@@ -71,44 +109,177 @@ def baixar(url, destino):
     return total
 
 
+def baixar_anexos(campos, pasta):
+    """Baixa os anexos da linha. Devolve ({chave: [arquivos]}, linhas do relatório, nº de falhas)."""
+    arquivos, linhas, falhas = {k: [] for k in ANEXOS}, [], 0
+    for chave in ANEXOS:
+        for i, anexo in enumerate(campos.get(CAMPO[chave], []), 1):
+            esperado = anexo.get("size")
+            destino = pasta / chave / f"{i:02d}_{nome_seguro(anexo.get('filename', ''))}"
+            try:
+                baixado = baixar(anexo["url"], destino)
+            except Exception as e:  # falha de rede ou link vencido
+                falhas += 1
+                linhas.append(f"{chave} {i}: FALHOU ao baixar ({type(e).__name__})")
+                continue
+            ok = esperado is None or baixado == esperado
+            falhas += 0 if ok else 1
+            linhas.append(f"{chave} {i}: {anexo.get('filename')} | {baixado / 1e6:.2f} MB baixados"
+                          + ("" if ok else f" | DIFERE do tamanho informado ({esperado} bytes)"))
+            if ok:
+                arquivos[chave].append(destino)
+    if not any(arquivos.values()) and not falhas:
+        linhas.insert(0, "nenhum anexo na linha")
+    return arquivos, linhas, falhas
+
+
+def _texto_do_pdf(pdf):
+    try:
+        return subprocess.run(["pdftotext", "-layout", str(pdf), "-"], capture_output=True, text=True,
+                              check=True, timeout=120).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def ler_documentos(cli, arquivos, pasta):
+    """{"controles"|"prescricao"|"labs": leitura, "labs_texto": texto} + erros + avisos."""
+    import leitura
+    import preparar
+    leituras, erros, avisos = {"labs_texto": None}, [], []
+    for chave, tipo in (("controles", "controles"), ("prescricao", "prescricao"), ("exames", "labs")):
+        pdfs = [a for a in arquivos.get(chave, []) if a.suffix.lower() == ".pdf"]
+        outros = [a for a in arquivos.get(chave, []) if a.suffix.lower() != ".pdf"]
+        if outros:
+            avisos.append(f"{chave}: {len(outros)} anexo(s) que não são PDF ficaram de fora (ler no chat)")
+        if tipo == "labs":
+            texto = "\n".join(t for t in (_texto_do_pdf(p) for p in pdfs) if len(re.sub(r"\W", "", t)) >= 50)
+            if texto:
+                leituras["labs_texto"] = texto
+                pdfs = [p for p in pdfs if len(re.sub(r"\W", "", _texto_do_pdf(p))) < 50]  # só os escaneados
+        if not pdfs:
+            if tipo != "labs" or not leituras["labs_texto"]:
+                avisos.append(f"{chave}: sem anexo em PDF")
+            continue
+        paginas = []
+        for i, pdf in enumerate(pdfs):
+            paginas += [(len(paginas) + p, imgs)
+                        for p, imgs in preparar.recortes_para_leitura(pdf, pasta / "recortes" / chave / f"{i:02d}")]
+        try:
+            leituras[tipo], _ = leitura.ler(cli, tipo, paginas)
+        except leitura.LeituraFalhou as e:
+            erros.append(f"{chave}: não lido ({e})")
+    return leituras, erros, avisos
+
+
+def gerar_ficha(plantao, pasta):
+    """Ficha-cola do leito. Devolve ([docx, pdf] ou [], erros, avisos do Conferir)."""
+    import build_passagem as motor
+    import conferir
+    import ficha_cola
+    import gerar_docx
+    import office
+    import validar
+    prep, _ = motor.preparar(plantao)
+    erros, avisos_v = validar.validar(prep)
+    _, avisos_m = motor.build(plantao)
+    avisos = sorted(avisos_v + avisos_m, key=lambda w: "ALERTA:" not in w)
+    if erros:
+        return [], erros, avisos
+    meta, leito = prep["meta"], prep["leitos"][0]
+    turno = re.sub(r"\s+", "-", meta.get("turno", "").strip().lower())
+    nome = nome_seguro(gerar_docx.nome_arquivo(meta, f"ficha-cola-{turno}-leito{leito['leito']}", "docx")
+                       .replace(".docx", f"-{dt.datetime.now():%H%M}.docx"))
+    cola = pasta / nome
+    cfg, nao_coube = ficha_cola.ajustar(prep)
+    ficha_cola.gerar(prep, cola, cfg)
+    pdf = office.para_pdf(cola, pasta)
+    e, a = conferir.conferir_docx(cola, conferir.TAM_FICHA)
+    n = conferir.paginas(pdf)
+    if n != 1:
+        e.append(f"ficha-cola com {n} página(s): tem de ser 1 folha")
+    if nao_coube:
+        e.append("a ficha não coube em 1 folha nem em 9 pt sem anotações: encurtar no chat")
+    return [cola, pdf], e, avisos + a
+
+
+def relatorio(arquivos_ok, erros, avisos, linhas_anexos, gerados):
+    """Texto do campo Avisos: o "Conferir" da linha."""
+    alertas = [a for a in avisos if "ALERTA:" in a]
+    resto = [a for a in avisos if "ALERTA:" not in a]
+    partes = ["LEITURA AUTOMÁTICA (rascunho: conferir no chat antes de imprimir)",
+              "Ficha-cola: " + ("gerada, 1 folha" if gerados else "NÃO gerada")]
+    for titulo, itens in (("ERROS", erros), ("ALERTAS", alertas), ("CONFERIR", resto), ("ANEXOS", linhas_anexos)):
+        if itens:
+            partes += ["", titulo] + [f"- {x}" for x in itens]
+    if arquivos_ok:
+        partes += ["", "Devolvidos: " + ", ".join(Path(a).name for a in arquivos_ok)]
+    return "\n".join(partes)
+
+
+def etapa3(cli, campos, arquivos, pasta, contexto):
+    """Lê, monta, gera e confere. Devolve (arquivos para devolver, erros, avisos)."""
+    import montar
+    leituras, erros, avisos = ler_documentos(cli, arquivos, pasta)
+    plantao, erros_m = montar.montar(leituras, dict(contexto, evolucao_anterior=campos.get(
+        CAMPO["evolucoes_anteriores"]) or None))
+    erros += erros_m
+    meta, leito = plantao["meta"], plantao["leitos"][0]
+    rascunho = pasta / nome_seguro(f"{meta['data'].replace('/', '-') or 'sem-data'}-leito{leito['leito']}-"
+                                   f"rascunho-{dt.datetime.now():%H%M}.json")
+    rascunho.write_text(json.dumps(plantao, ensure_ascii=False, indent=2), encoding="utf-8")
+    if erros:  # leitura falhou ou identificação não bate: o rascunho volta, a ficha não sai
+        return [rascunho], erros, avisos + [f"L{leito['leito']}: {a}" for a in leito.get("avisos", [])]
+    gerados, e, a = gerar_ficha(plantao, pasta)
+    return gerados + [rascunho], erros + e, avisos + a
+
+
 def main():
     record_id = os.environ.get("RECORD_ID", "")
     if not re.fullmatch(r"rec[A-Za-z0-9]{14}", record_id):
         sys.exit("RECORD_ID inválido")
     token = segredo("AIRTABLE_TOKEN")
+    campo_saida = os.environ.get("AIRTABLE_CAMPO_SAIDA", "").strip()
+    contexto = {"data": os.environ.get("DATA_PLANTAO", "").strip() or None,
+                "turno": os.environ.get("TURNO", "").strip() or "diurno", "hoje": dt.date.today()}
 
     gravar(record_id, token, status="lendo")
-    linhas, falhas = [], 0
+    erros, avisos, linhas, devolvidos, gerados, falhas = [], [], [], [], False, 0
+    pasta = Path(tempfile.mkdtemp(prefix="plantao-", dir=os.environ.get("RUNNER_TEMP") or None))
     try:
+        import leitura
         campos = airtable("GET", record_id, token).get("fields", {})
-        for chave in ANEXOS:
-            for i, anexo in enumerate(campos.get(CAMPO[chave], []), 1):
-                esperado = anexo.get("size")
-                destino = PASTA / chave / f"{i:02d}_{nome_seguro(anexo.get('filename', ''))}"
-                try:
-                    baixado = baixar(anexo["url"], destino)
-                except Exception as e:  # falha de rede ou link vencido
-                    falhas += 1
-                    linhas.append(f"{chave} {i}: FALHOU ao baixar ({type(e).__name__})")
-                    continue
-                ok = esperado is None or baixado == esperado
-                falhas += 0 if ok else 1
-                linhas.append(
-                    f"{chave} {i}: {anexo.get('filename')} | {baixado / 1e6:.2f} MB baixados"
-                    + ("" if ok else f" | DIFERE do tamanho informado ({esperado} bytes)"))
+        arquivos, linhas, falhas = baixar_anexos(campos, pasta / PASTA)
         texto_ant = campos.get(CAMPO["evolucoes_anteriores"]) or ""
         linhas.append(f"evoluções anteriores: {len(texto_ant)} caracteres")
-        if not any(l.split(" ")[0] in ANEXOS for l in linhas):
-            linhas.insert(0, "nenhum anexo na linha")
+        cli = leitura.cliente()
+        if cli is None:
+            avisos.append("leitura automática desligada (falta o segredo ANTHROPIC_API_KEY): só baixou os anexos")
+        elif falhas:
+            erros.append("anexo não baixado inteiro: leitura não feita (dispare de novo)")
+        elif not re.fullmatch(r"fld[A-Za-z0-9]{14}", campo_saida):  # antes de ler: a leitura custa
+            erros.append("falta a variável AIRTABLE_CAMPO_SAIDA (ID do campo de anexos): leitura não feita, "
+                         "não haveria onde devolver a ficha")
+        else:
+            arquivos_out, erros, avisos = etapa3(cli, campos, arquivos, pasta / SAIDA, contexto)
+            gerados = any(a.suffix == ".pdf" for a in arquivos_out) and not erros
+            for arq in arquivos_out:
+                try:
+                    enviar_anexo(record_id, token, campo_saida, arq)
+                    devolvidos.append(arq)
+                except Exception as e:
+                    erros.append(f"não consegui devolver {arq.suffix} ({type(e).__name__})")
     except Exception as e:
-        falhas += 1
-        linhas.append(f"erro: {type(e).__name__}: {e}")
-
-    cabecalho = "TESTE 2 (só baixa os anexos; ainda não lê o scan nem monta o bloco)"
-    gravar(record_id, token, status="falhou" if falhas else "pronto",
-           avisos=cabecalho + "\n" + "\n".join(linhas))
-    print("\n".join(linhas))
-    sys.exit(1 if falhas else 0)
+        erros.append(f"erro: {type(e).__name__}: {e}")
+    finally:
+        status = "falhou" if (erros or falhas) else "pronto"
+        texto = relatorio(devolvidos, erros, avisos, linhas, gerados)
+        try:
+            gravar(record_id, token, status=status, avisos=texto[:95000])
+        finally:
+            shutil.rmtree(pasta, ignore_errors=True)
+            print(f"status: {status} | {len(erros)} erro(s), {len(avisos)} aviso(s), {len(devolvidos)} arquivo(s) "
+                  f"devolvido(s), {len(linhas)} linha(s) de anexo")
+    sys.exit(1 if status == "falhou" else 0)
 
 
 if __name__ == "__main__":

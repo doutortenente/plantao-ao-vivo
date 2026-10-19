@@ -41,7 +41,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "ganhos": [{"nome": "dieta SNE", "serie": {"07": 100, "09": 100}}, {"nome": "soro EV", "ml": 500}],
     "perdas": [{"nome": "diurese (SVD)", "serie": [150, 100]}, {"nome": "UF", "serie": [70, 80]},
                {"nome": "resíduo gástrico", "serie": [40, 25]}],
-    "conferencia_enfermagem": {"ganhos": 1840, "perdas": 1300, "bh": 540},  // rodapé da folha, só confere
+    "conferencia_enfermagem": {"ganhos": 1840, "perdas": 1300, "diurese": 1100, "bh": 540},  // rodapé, só confere
     "evacuacao": "ausente (última 08/10)",
     "outros_balanco": ["Noradrenalina: 7 -> 5 -> 2,5 ml/h"],
     "avisos": ["vai para o rodapé Conferir, nunca para o bloco"],
