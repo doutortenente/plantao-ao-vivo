@@ -11,6 +11,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "skills" / "sasi-ingest-export" / "scripts"))
 import build_passagem as motor  # noqa: E402
 import estilo as E  # noqa: E402
+import office  # noqa: E402
 
 from docx import Document  # noqa: E402
 from docx.enum.section import WD_ORIENT  # noqa: E402
@@ -436,9 +437,8 @@ def gerar(plantao, caminho, cfg=None, folga=0.0):
 
 
 def n_paginas(docx):
-    subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", str(Path(docx).parent), str(docx)],
-                   check=True, capture_output=True, timeout=180)
-    out = subprocess.run(["pdfinfo", str(Path(docx).with_suffix(".pdf"))], capture_output=True, text=True).stdout
+    pdf = office.para_pdf(docx, timeout=180)
+    out = subprocess.run(["pdfinfo", str(pdf)], capture_output=True, text=True).stdout
     return int(re.search(r"Pages:\s+(\d+)", out).group(1))
 
 

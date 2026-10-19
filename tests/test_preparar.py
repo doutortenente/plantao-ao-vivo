@@ -2,7 +2,6 @@
 """preparar.py com uma entrada fictícia. Rodar: python3 -m unittest discover -s tests"""
 import json
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -11,6 +10,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "gerador"))
 import gerar_docx  # noqa: E402
+import office  # noqa: E402
 import preparar  # noqa: E402
 
 TEM = all(shutil.which(x) for x in ("soffice", "pdfinfo", "pdftoppm", "pdftotext"))
@@ -18,9 +18,7 @@ EXEMPLO = json.loads((RAIZ / "gerador" / "exemplo" / "plantao-exemplo.json").rea
 
 
 def pdf_de(arquivo, pasta):
-    subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", str(pasta), str(arquivo)],
-                   check=True, capture_output=True, timeout=180)
-    return Path(pasta) / (Path(arquivo).stem + ".pdf")
+    return office.para_pdf(arquivo, pasta)
 
 
 @unittest.skipUnless(TEM, "sem LibreOffice/poppler")

@@ -24,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import estilo as E  # noqa: E402
+import office  # noqa: E402
 
 from docx import Document  # noqa: E402
 from docx.oxml.ns import qn  # noqa: E402
@@ -83,11 +84,7 @@ def conferir_docx(caminho, tamanhos, evolucao=False):
 
 
 def para_pdf(docx):
-    soffice = shutil.which("soffice") or shutil.which("libreoffice")
-    pdf = Path(docx).with_suffix(".pdf")
-    subprocess.run([soffice, "--headless", "--convert-to", "pdf", "--outdir", str(pdf.parent), str(docx)],
-                   check=True, capture_output=True, timeout=300)
-    return pdf
+    return office.para_pdf(docx)
 
 
 def paginas(pdf):

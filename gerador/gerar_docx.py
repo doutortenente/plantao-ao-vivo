@@ -27,7 +27,6 @@ import argparse
 import json
 import re
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -184,8 +183,8 @@ def main():
     cfg, nao_coube = ({}, []) if a.sem_ajuste else ficha_cola.ajustar(plantao)
     ficha_cola.gerar(plantao, cola, cfg)
     if soffice:
-        subprocess.run([soffice, "--headless", "--convert-to", "pdf", "--outdir", str(pasta), str(cola)],
-                       check=True, capture_output=True, timeout=300)
+        import office
+        office.para_pdf(cola, pasta)
     else:
         print("AVISO: sem LibreOffice, o PDF da ficha-cola não foi gerado.", file=sys.stderr)
     print(evo); print(cola)
