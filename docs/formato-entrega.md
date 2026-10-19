@@ -54,5 +54,8 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
 
 ## Conferência antes de entregar
 
-- Converter para PDF e contar páginas da ficha-cola (= nº de leitos); olhar TODAS as páginas, não uma amostra.
-- Abrir 1 página de cada arquivo e olhar.
+- `gerador/conferir.py` roda sozinho no fim do `gerar_docx.py`: PDF dos dois Word, nº de páginas da ficha-cola =
+  nº de leitos, Times New Roman, tamanhos da lista aprovada (10/9,5/9 e as exceções 8, 13, 20 pt e rótulos de
+  corpo - 1), nenhuma cor, nenhum `(revisar)`, nenhum travessão entre números, nenhuma seta ↑/↓ na evolução.
+  Erro = código de saída 4: não entregar.
+- Olhar TODAS as páginas (PNG em `saida/paginas/`), não uma amostra.

@@ -18,7 +18,9 @@ Uso:
 
 O ajuste (padrão) mede cada leito no LibreOffice para a ficha caber em 1 folha. Sem ajuste, a ficha sai com
 6 linhas de anotação e 4 de intercorrências em 10 pt, e pode estourar.
-Saída: 0 = ok; 2 = JSON sem bloco `ficha` ou sem LibreOffice; 3 = algum leito não coube em 1 folha.
+No fim roda gerador/conferir.py (fonte, tamanho, cor, texto proibido, 1 folha por leito, PNG de cada página).
+Saída: 0 = ok; 2 = JSON sem bloco `ficha` ou sem LibreOffice; 3 = algum leito não coube em 1 folha;
+4 = a conferência achou erro.
 Contrato do JSON: gerador/schema-plantao.md
 """
 import argparse
@@ -183,10 +185,15 @@ def main():
         print("\nRodapé (conferir — fora do bloco):")
         for w in avisos:
             print("- " + w)
+    import conferir
+    erros, avisos_conf, pngs = conferir.conferir(evo, cola, len(plantao["leitos"]))
+    print(conferir.relatorio(erros, avisos_conf, pngs))
     if nao_coube:
         print("\nERRO: leito(s) " + ", ".join(nao_coube) + " não couberam em 1 folha nem em 9 pt sem anotações. "
               "Encurte a prescrição desses leitos e gere de novo.", file=sys.stderr)
         sys.exit(3)
+    if erros:
+        sys.exit(4)
 
 
 if __name__ == "__main__":
