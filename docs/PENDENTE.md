@@ -2,15 +2,14 @@
 
 O que ficou em aberto entre sessões. Quem continuar o trabalho lê isto primeiro e risca o que fechar.
 
-Estado em 21/10/2026: PR [#2](https://github.com/doutortenente/plantao-ao-vivo/pull/2), branch
-`claude/wonderful-einstein-0bp9p1`, com o CI verde. As etapas 1 a 20 do plano de 19/10 estão feitas, e as lentes
-de segurança e de esteira da revisão final estão corrigidas, com teste. Nada disto vale no plantão antes do merge,
-porque o projeto do claude.ai lê a `main`.
+Estado em 21/10/2026: o PR [#2](https://github.com/doutortenente/plantao-ao-vivo/pull/2) entrou na `main`
+(commit `4db762b`). As etapas 1 a 20 do plano de 19/10 estão feitas, e as lentes de segurança e de esteira da
+revisão final estão corrigidas, com teste. O projeto do claude.ai já lê esta versão.
 
-## 1. Merge na `main`
+## 1. ~~Merge na `main`~~
 
-Só com o "prosseguir" do Dr. Nicolas (decisão de 19/10/2026). Antes do merge, conferir que o CI do último commit
-está verde. Se ele quiser, os achados da seção 2 podem ficar para um PR seguinte.
+~~Só com o "prosseguir" do Dr. Nicolas (decisão de 19/10/2026).~~ Feito em 21/10/2026, com o "prosseguir" dele e o
+CI verde. Os achados da seção 2 ficam para um PR seguinte.
 
 ## 2. Achados da revisão final ainda não conferidos (lente do gerador)
 
