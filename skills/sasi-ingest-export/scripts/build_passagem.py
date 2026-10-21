@@ -130,12 +130,28 @@ def _fmt(n, casas=None):
 # ── horários da folha (Mod. 0120-01): aferição q2h, 07 h a 05 h ─────────────
 SLOTS = ("07", "09", "11", "13", "15", "17", "19", "21", "23", "01", "03", "05")
 DIURNO, NOTURNO = set(SLOTS[:6]), set(SLOTS[6:])
-HORA = re.compile(r"^(\d{1,2})(?:\s*h|:\d{2})?$")
+HORA = re.compile(r"^(\d{1,2})(?:\s*h(?:\s*\d{2})?|:\d{2})?$")  # "7", "07", "7h", "7h30", "07:30"; 24 = 00
+AGREGADO = {"max", "min", "flag"}
 
 
 def _hora(k):
     m = HORA.match(str(k).strip())
-    return f"{int(m.group(1)):02d}" if m and int(m.group(1)) < 24 else None
+    return f"{int(m.group(1)) % 24:02d}" if m and int(m.group(1)) <= 24 else None
+
+
+def _valores(dados):
+    """Valores de uma série em dict que NÃO é por hora nem agregado (chave inválida): os valores, nunca as chaves."""
+    out = []
+    for v in dados.values():
+        out += v if isinstance(v, list) else [v]
+    return out
+
+
+def chaves_fora_de_hora(dados):
+    """Chaves de uma série em dict que não são hora da folha (o agregado max/min/flag não conta)."""
+    if not isinstance(dados, dict) or set(dados) <= AGREGADO:
+        return []
+    return [k for k in dados if not _hora(k)]
 
 
 def por_hora(dados):
@@ -149,13 +165,18 @@ def por_hora(dados):
     return horas, valores
 
 
-def _num(v):
-    """Converte célula em (valor_numérico, texto_exibido). '?' -> (None, '?')."""
+def _num(v, ml=False):
+    """Converte célula em (valor_numérico, texto_exibido). '?' -> (None, '?'). ml=True: "1.450" é mil e quatrocentos."""
     if v is None:
         return None, None
+    if isinstance(v, bool):
+        return None, "?"
     if isinstance(v, (int, float)):
         return float(v), None
-    s = str(v).strip().replace(",", ".")
+    s = str(v).strip().replace(" ", "")
+    if ml and re.fullmatch(r"[+-]?\d{1,3}(\.\d{3})+(,\d+)?", s):
+        s = s.replace(".", "")
+    s = s.replace(",", ".")
     m = re.fullmatch(r"([<>])\s*(\d+(?:\.\d+)?)", s)
     if m:  # "< 20" -> conta como 19,9 para flag; exibe "< 20"
         base = float(m.group(2))
@@ -193,17 +214,23 @@ def calc_balanco(ganhos, perdas):
             if it.get("serie") is not None:
                 serie = it["serie"]
                 ph = por_hora(serie)
-                vals = [_num(v) for v in (ph[1] if ph else serie)]
+                if isinstance(serie, dict) and not ph:
+                    avisos.append(f"'{nome}': série com chave que não é hora ({', '.join(map(str, chaves_fora_de_hora(serie)))})"
+                                  " — somados os valores, conferir")
+                    serie = _valores(serie)
+                elif not isinstance(serie, (dict, list)):
+                    avisos.append(f"'{nome}': série em formato inválido ({str(serie)[:30]}) — NÃO somado")
+                    continue
+                vals = [_num(v, ml=True) for v in (ph[1] if ph else serie)]
                 ileg = sum(1 for v, t in vals if v is None and t == "?")
                 ml = sum(v for v, _ in vals if v is not None)
                 if ileg:
                     avisos.append(f"'{nome}': {ileg} célula(s) ilegível(is) — soma pode estar subestimada")
             else:
-                ml = it.get("ml")
+                ml, _ = _num(it.get("ml"), ml=True)
                 if ml is None:
-                    avisos.append(f"'{nome}' sem volume — fora da conta")
+                    avisos.append(f"'{nome}' sem volume legível — fora da conta")
                     continue
-                ml = float(ml)
             cat = classify(nome)
             if cat is None:
                 avisos.append(f"'{nome}' fora do dicionário — NÃO somado")
@@ -232,6 +259,13 @@ def resumo_vital(nome, dados):
     lim = LIMIARES.get(nome, [])
     ph = por_hora(dados)
     horas_ileg = ""
+    if isinstance(dados, dict) and not ph and chaves_fora_de_hora(dados):
+        avisos.append(f"{nome}: série com chave que não é hora ({', '.join(map(str, chaves_fora_de_hora(dados)))}) "
+                      "— conferir")
+        dados = _valores(dados)
+    elif not isinstance(dados, (dict, list)):
+        avisos.append(f"{nome}: formato inválido ({str(dados)[:30]}) — fora do bloco")
+        return "?", "?", [], avisos, None
     if ph:
         horas_ileg = ", ".join(f"{_hora(k)} h" for k, v in dados.items()
                                if any(_num(x) == (None, "?") for x in (v if isinstance(v, list) else [v])))
@@ -239,11 +273,27 @@ def resumo_vital(nome, dados):
     if isinstance(dados, dict):
         vmax, tmax = _num(dados.get("max"))
         vmin, tmin = _num(dados.get("min"))
+        if "?" in (tmax, tmin):
+            avisos.append(f"{nome}: máximo ou mínimo ilegível no agregado")
+        # limiares que o próprio máx/mín cruzam: dizem a qual limiar um "flag": N se refere
+        cruzados = [label for comp, ref, label in lim
+                    if (comp == "lt" and vmin is not None and vmin < ref) or (comp == "gt" and vmax is not None
+                                                                              and vmax > ref)]
         fl = dados.get("flag")
-        if isinstance(fl, int) and fl and lim:
-            flags.append(f"[{fl}x {lim[0][2]}]")
+        if isinstance(fl, int) and not isinstance(fl, bool) and fl and lim:
+            rot = cruzados[0] if len(cruzados) == 1 else (lim[0][2] if len(lim) == 1 else None)
+            if rot:
+                flags.append(f"[{fl}x {rot}]")
+            else:
+                avisos.append(f"{nome}: flag {fl}x sem saber o limiar ({' ou '.join(l[2] for l in lim)}): fora do "
+                              "bloco, conferir")
+            if not cruzados and None not in (vmax, vmin):
+                avisos.append(f"{nome}: flag {fl}x, mas o máx/mín não passa do limiar: conferir")
         elif isinstance(fl, dict):
             flags += [f"[{n}x {k}]" for k, n in fl.items() if n]
+        for label in cruzados:
+            if not any(label in f for f in flags):
+                avisos.append(f"{nome}: o agregado passa do limiar {label} sem a contagem: conferir quantas vezes")
         return tmax or _fmt_v(nome, vmax), tmin or _fmt_v(nome, vmin), flags, avisos, None
     pares = [_num(v) for v in dados]
     ileg = sum(1 for v, t in pares if v is None and t == "?")
@@ -322,8 +372,13 @@ def compute_leito(leito, meta=None):
                            ("Perdas", bal["perda_total"], conf.get("perdas")),
                            ("Diurese", diur, conf.get("diurese")),
                            ("BH", bal["balanco"], conf.get("bh"))):
-        if inf is not None and abs(calc - float(inf)) > 0.5:
-            avisos.append(f"CONFERÊNCIA — {rot}: folha diz {_fmt(inf)}, células somam {_fmt(calc)}")
+        if inf is None:
+            continue
+        v_inf, _ = _num(inf, ml=True)
+        if v_inf is None:
+            avisos.append(f"CONFERÊNCIA — {rot}: rodapé ilegível (\"{inf}\"), não conferido")
+        elif abs(calc - v_inf) > 0.5:
+            avisos.append(f"CONFERÊNCIA — {rot}: folha diz {_fmt(v_inf)}, células somam {_fmt(calc)}")
     tem_bal = bool(leito.get("ganhos") or leito.get("perdas"))
     dieta = leito.get("dieta")
     if dieta or tem_bal:
@@ -376,6 +431,8 @@ def janela_efetiva(leito, meta):
     '19 - 05 h' (e ALERTA), só dia vira '07 - 17 h'. Recorte de turno só com meta.recorte ou leito.janela."""
     avisos = []
     declarada = leito.get("janela") or meta.get("janela") or "24 h"
+    if re.fullmatch(r"24\s*h(oras)?", str(declarada).strip(), re.I):  # "24h", "24 horas": o mesmo pedido
+        declarada = "24 h"
     recorte = leito.get("recorte") or meta.get("recorte")
     vitais = leito.get("vitais", {})
     horas = set()
@@ -392,13 +449,15 @@ def janela_efetiva(leito, meta):
         if sem_hora:
             avisos.append("séries sem hora: o motor não conferiu se a janela de 24 h está completa")
         return declarada, avisos
-    dia, noite = horas & DIURNO, horas & NOTURNO
+    dia = {h for h in horas if 7 <= int(h) <= 18}  # pela faixa, não só pelos horários ímpares da folha
+    noite = horas - dia
     principais = set()
     for nm in ("PAS", "PAM", "FC"):
         ph = por_hora(vitais.get(nm))
         if ph:
             principais.update(ph[0])
-    faltam = [h for h in SLOTS if h not in (principais or horas)]
+    ref = principais or horas
+    faltam = [h for h in SLOTS if h not in ref] if ref & set(SLOTS) else []  # só confere quem segue a folha
     if dia and noite:
         if faltam:
             avisos.append("janela 24 h com aferição faltando às " + ", ".join(f"{h} h" for h in faltam))
@@ -467,11 +526,14 @@ def dias_atb(texto, data, calculados=None):
             calculados[g] = n
         return f"(D{n}, I: {d}/{mes}" + (f"/{ano}" if ano else "") + ")"
 
-    partes = re.split(r"(;)", texto)
-    for i, trecho in enumerate(partes):
-        if trecho != ";" and not re.search(r"suspens", trecho, re.I):
-            partes[i] = ATB_DIA.sub(lambda m, t=trecho: troca(m, t), trecho)
-    return "".join(partes), avisos
+    def talvez(m):
+        # o ATB está suspenso se a ordem de suspender está na mesma oração dele (entre ";", ", " ou ". ")
+        antes = re.split(r";|[,.]\s", texto[:m.start()])[-1]
+        depois = re.split(r";|[,.]\s", texto[m.end():])[0]
+        if checagens.suspenso(antes) or checagens.suspenso(depois):
+            return m.group(0)
+        return troca(m, texto)
+    return ATB_DIA.sub(talvez, texto), avisos
 
 
 def _dia_uti(leito, data, L):
@@ -525,11 +587,13 @@ def preparar(payload):
         calculados, textos = {}, []  # textos: (onde, lista, índice) para conferir "(Dn)" e "D?" depois
 
         def passar(onde, valores, sufixo=""):
-            novos = []
+            novos = []  # o que não é texto passa como está: o validar acusa o tipo
             for t in valores:
-                t, av = dias_atb(t, data, calculados)
-                novos.append(t); avisos.extend(f"{L}: {a}{sufixo}" for a in av)
-            textos.extend((onde, t) for t in novos)
+                if isinstance(t, str):
+                    t, av = dias_atb(t, data, calculados)
+                    avisos.extend(f"{L}: {a}{sufixo}" for a in av)
+                    textos.append((onde, t))
+                novos.append(t)
             return novos
 
         for chave in TEXTOS_LEITO + ("plano_anterior", "laboratorio", "exame_fisico", "outros_balanco"):
@@ -537,7 +601,7 @@ def preparar(payload):
                 leito[chave] = leito[chave].split("\n")
         for chave in TEXTOS_LEITO:
             if isinstance(leito.get(chave), list):
-                leito[chave] = passar(chave, [t for t in leito[chave] if isinstance(t, str)])
+                leito[chave] = passar(chave, leito[chave])
         f = leito.get("ficha") if isinstance(leito.get("ficha"), dict) else {}
         for bloco in ("infusoes", "sistemas"):
             for linha in f.get(bloco) or []:
@@ -545,10 +609,10 @@ def preparar(payload):
                     continue
                 if str(linha[0]).strip().upper().startswith("SUSPENS"):
                     continue  # ATB suspenso: o D final fica como foi escrito
-                linha[1] = passar(f"ficha.{bloco}", [it for it in linha[1] if isinstance(it, str)], " (ficha)")
+                linha[1] = passar(f"ficha.{bloco}", linha[1], " (ficha)")
         for bloco in TEXTOS_FICHA:
             if isinstance(f.get(bloco), list):
-                f[bloco] = passar(f"ficha.{bloco}", [t for t in f[bloco] if isinstance(t, str)], " (ficha)")
+                f[bloco] = passar(f"ficha.{bloco}", f[bloco], " (ficha)")
         for onde, t in textos:
             for m in D_SOLTO.finditer(t):
                 g = checagens.droga_antes(t, m.start())
@@ -558,7 +622,7 @@ def preparar(payload):
                     trecho = t[max(0, m.start() - 30):m.end()].lstrip(" -;,")
                     avisos.append(f"{L}: `{onde}` tem \"…{trecho}\", mas a conta dá D{calculados[g]} para {g}: "
                                   "conferir")
-            if re.search(r"\(D\?,", t) and not re.search(r"suspens", t, re.I):
+            if re.search(r"\(D\?,", t) and not checagens.suspenso(t):
                 avisos.append(f"{L}: \"D?\" não calculado em `{onde}`: {t[:70]}")
     return dados, list(dict.fromkeys(avisos))
 

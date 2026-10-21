@@ -44,7 +44,7 @@ ITENS_FORA_DA_FICHA = re.compile(
 
 # PROFILAXIA na ficha = só TEV e LAMG (docs/formato-entrega.md).
 PROFILAXIA_TEV_LAMG = re.compile(
-    r"enoxaparina|clexane|heparina|\bhnf\b|fondaparinux|arixtra|dalteparina|fragmin|compress[ãa]o pneum|"
+    r"enoxa|\bhbpm\b|clexane|heparina|\bhnf\b|fondaparinux|arixtra|dalteparina|fragmin|compress[ãa]o pneum|"
     r"\bcpi\b|meia|pantopra|pantozol|omepra|esomepra|nexium|lansopra|ranitidina|famotidina|sucralfato|\bibp\b|"
     r"\btev\b|\blamg\b", re.I)
 SETAS = re.compile(r"[↑↓→]|(?<![<>=!])=(?![=>])")
@@ -89,6 +89,7 @@ def _tipos(leito, ficha, L):
         if not ok:
             erros.append(f"{L}: `ficha.{k}` tem de ser [[\"RÓTULO\", [\"item\", …]], …] (item único também vai "
                          "numa lista)")
+    erros += _series(leito, L)
     for k in ("vigiar", "exames", "lab"):
         v = ficha.get(k)
         if v is not None and not (isinstance(v, list) and all(isinstance(x, str) for x in v)):
@@ -96,6 +97,53 @@ def _tipos(leito, ficha, L):
     for k in ("alergia", "dx", "disp", "janela_controles", "janela_balanco", "lab_titulo"):
         if ficha.get(k) is not None and not isinstance(ficha[k], str):
             erros.append(f"{L}: `ficha.{k}` tem de ser texto")
+    return erros
+
+
+def _celula_ok(v):
+    return isinstance(v, (int, float, str)) and not isinstance(v, bool)
+
+
+def _serie_ok(serie, L, onde):
+    """Série por hora ({"07": 146}), lista ([146, "?"]) ou agregado ({"max", "min", "flag"})."""
+    if isinstance(serie, list):
+        return [] if all(_celula_ok(v) for v in serie) else [f"{L}: `{onde}` com célula que não é número nem texto"]
+    if isinstance(serie, dict):
+        if set(serie) <= motor.AGREGADO:
+            return []
+        ruins = motor.chaves_fora_de_hora(serie)
+        if ruins:
+            return [f"{L}: `{onde}` com chave que não é hora da folha: {', '.join(map(str, ruins))}"]
+        if not all(_celula_ok(v) or (isinstance(v, list) and all(_celula_ok(x) for x in v)) for v in serie.values()):
+            return [f"{L}: `{onde}` com célula que não é número nem texto"]
+        return []
+    return [f"{L}: `{onde}` tem de ser série por hora ({{\"07\": 146}}) ou lista, veio {type(serie).__name__}"]
+
+
+def _series(leito, L):
+    erros = []
+    vitais = leito.get("vitais")
+    if vitais is not None and not isinstance(vitais, dict):
+        erros.append(f"{L}: `vitais` tem de ser {{\"PAS\": {{\"07\": 146}}, …}}")
+    for nome, serie in (vitais or {}).items() if isinstance(vitais, dict) else []:
+        erros += _serie_ok(serie, L, f"vitais.{nome}")
+    for lado in ("ganhos", "perdas"):
+        itens = leito.get(lado)
+        if itens is None:
+            continue
+        if not isinstance(itens, list) or not all(isinstance(i, dict) for i in itens):
+            erros.append(f"{L}: `{lado}` tem de ser lista de {{\"nome\", \"serie\"}}")
+            continue
+        for i in itens:
+            if not isinstance(i.get("nome"), str):
+                erros.append(f"{L}: item de `{lado}` sem `nome` em texto")
+            if i.get("serie") is not None:
+                erros += _serie_ok(i["serie"], L, f"{lado}.{i.get('nome')}")
+            elif not _celula_ok(i.get("ml")):
+                erros.append(f"{L}: item de `{lado}` \"{i.get('nome')}\" sem `serie` nem `ml`")
+    conf = leito.get("conferencia_enfermagem")
+    if conf is not None and not (isinstance(conf, dict) and all(_celula_ok(v) for v in conf.values())):
+        erros.append(f"{L}: `conferencia_enfermagem` tem de ser {{\"ganhos\": 1840, …}}")
     return erros
 
 
@@ -132,7 +180,7 @@ def validar_leito(leito, meta):
             if "(revisar)" in txt.lower():
                 erros.append(f"{L}: \"(revisar)\" em `{campo}`: dúvida vai para o Conferir, nunca para o bloco")
     for campo in ("alergia", "diagnostico", "dispositivos", "dia_uti", "laboratorio", "terapias", "exame_fisico",
-                  "evolucao", "impressao", "conduta", "ficha"):
+                  "evolucao", "impressao", "conduta", "ficha", "sup_o2", "dieta", "outros_balanco", "evacuacao"):
         for txt in _textos(leito.get(campo, [])):
             if DUVIDA.search(txt):
                 avisos.append(f"{L}: \"?\" em `{campo}`: {txt[:70]}")

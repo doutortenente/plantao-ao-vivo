@@ -52,6 +52,10 @@ LAB_CURTO = ((("HB", "Hb"), ("LEUCO", "Leuco"), ("PLAQ", "Plaq")), (("UR", "Ur")
 UNIDADES = re.compile(r"\s*(g/dl|%|/mm3|mg/dl|mg/l|meq/l|mmol/l|mmhg|ng/ml|ng/l)\s*$", re.I)
 DUVIDA = re.compile(r"\s*\((?:revisar(?: ocr)?|confirmar)\)|\s*⚠\s*(?:BIC)?", re.I)
 MAX_PENDENCIAS = 7
+OUTRO_PACIENTE = re.compile(r"(?i)outro paciente|outra pessoa|paciente diferente")
+CONECTIVOS = {"DA", "DE", "DO", "DAS", "DOS", "E"}
+# legenda impressa das colunas Dil. e Infus. Rápida (mapa-folha.md): símbolo → ml
+LEGENDA = {"+": 10, "O": 20, "o": 20, "*": 50, "△": 100, "Δ": 100, "▲": 250}
 
 
 def _sem_acento(txt):
@@ -105,12 +109,17 @@ def _leito(ident):
 
 
 def _tokens(nome):
-    return {t for t in re.findall(r"[A-Z]+", _sem_acento(nome or "").upper()) if len(t) >= 3}
+    return {t for t in re.findall(r"[A-Z]+", _sem_acento(nome or "").upper()) if len(t) >= 3 and t not in CONECTIVOS}
 
 
 def identidade(leituras):
-    """Erros se leito ou nome diferem entre os documentos (ficha de um paciente com dado de outro)."""
+    """Erros se leito ou nome diferem entre os documentos (ficha de um paciente com dado de outro), ou se um
+    documento não tem identificação legível (não dá para saber de quem é)."""
     erros = []
+    for k, d in leituras.items():
+        i = (d or {}).get("identificacao") or {} if isinstance(d, dict) else {}
+        if not _leito(i) and not _tokens(i.get("nome")):
+            erros.append(f"{k}: sem leito nem nome legível: conferir se é do mesmo paciente")
     docs = [(k, d["identificacao"]) for k, d in leituras.items() if isinstance(d, dict) and d.get("identificacao")]
     leitos = {k: _leito(i) for k, i in docs if _leito(i)}
     if len(set(leitos.values())) > 1:
@@ -157,8 +166,10 @@ def vitais(afericoes, avisos):
         atual = out.setdefault(nome, {}).get(hora)
         out[nome][hora] = v if atual is None else (atual if isinstance(atual, list) else [atual]) + [v]
 
-    ordem = {h: i for i, h in enumerate(motor.SLOTS)}
-    for a in sorted(afericoes or [], key=lambda a: ordem.get(motor._hora(a.get("hora")), 99)):
+    def ordem(a):  # a folha vai das 07 h às 06 h: hora par entra no lugar dela, não no fim
+        h = motor._hora(a.get("hora"))
+        return (int(h) - 7) % 24 if h else 99
+    for a in sorted(afericoes or [], key=ordem):
         hora = motor._hora(a.get("hora"))
         if not hora:
             avisos.append(f"controles: hora \"{a.get('hora')}\" não reconhecida: linha fora da conta")
@@ -175,8 +186,9 @@ def vitais(afericoes, avisos):
     return out, (suportes[-1] if suportes else None)
 
 
-def balanco(colunas, avisos):
-    """(ganhos, perdas) no formato do schema, pela coluna impressa."""
+def balanco(colunas, avisos, erros=None):
+    """(ganhos, perdas) no formato do schema, pela coluna impressa. Coluna "outra" cujo rótulo o motor põe do outro
+    lado da conta vira erro (o BH sairia trocado)."""
     lados = {"ganhos": [], "perdas": []}
     for c in colunas or []:
         canon, lado = COLUNA[c["coluna"]]
@@ -191,9 +203,14 @@ def balanco(colunas, avisos):
             avisos.append(f"controles: rótulo \"{rot}\" da coluna {c['coluna']} mudaria o lado da conta: "
                           f"ficou \"{canon}\"")
             nome = canon
+        elif canon is None and motor.classify(nome) not in (None, lado[:-1]) and erros is not None:
+            erros.append(f"controles: coluna {c['coluna']} com rótulo \"{nome}\", que o motor soma do outro lado: "
+                         "conferir o balanço")
         serie = {}
         for cel in c.get("celulas") or []:
-            hora, v = motor._hora(cel.get("hora")), volume(cel.get("ml"))
+            cru = str(cel.get("ml") or "").strip()
+            hora = motor._hora(cel.get("hora"))
+            v = LEGENDA[cru] if c["coluna"] in ("Dil.", "Infus. Rápida") and cru in LEGENDA else volume(cel.get("ml"))
             if v is None:
                 continue
             if not hora:
@@ -228,8 +245,10 @@ def item(it, avisos):
     partes = [limpar(it.get(k), avisos, "prescrição") for k in ("nome", "dose", "via", "frequencia")]
     txt = " ".join(p for p in partes if p)
     if it.get("grupo") == "ATB":
-        ini = limpar(it.get("inicio"))
-        txt += f" (I: {ini})" if ini and re.fullmatch(r"\d{1,2}/\d{1,2}(/\d{2,4})?", ini) else " (D?)"
+        cru = str(it.get("inicio") or "")
+        ini = limpar(cru, avisos, "prescrição: início do ATB")
+        certo = ini and re.fullmatch(r"\d{1,2}/\d{1,2}(/\d{2,4})?", ini) and not DUVIDA.search(cru)
+        txt += f" (I: {ini})" if certo else " (D?)"  # data em dúvida: o motor não conta o D
     hor = limpar(it.get("horarios"), avisos, "prescrição")
     return txt + (f" => {hor}" if hor else "")
 
@@ -261,24 +280,32 @@ def _leitos_citados(texto):
     return {m.zfill(2) for m in re.findall(r"(?i)\bleito\s*:?\s*(\d{1,3})", texto or "")}
 
 
-def laboratorio(texto, lido, n_leito, anterior, avisos):
-    """Linhas de Laboratório (BRIEFING §1). Laudo de outro leito, ou de vários, não é usado."""
+def laboratorio(texto, lido, n_leito, anterior, avisos, paciente=None):
+    """(linhas de Laboratório (BRIEFING §1), data do laudo dd/mm/aaaa ou None). Laudo de outro leito, de vários
+    leitos ou de outro paciente não é usado. Laudo digital e escaneado juntos: valem os dois (o digital primeiro)."""
+    valores, data_lab = {}, None
     if texto:
         citados = _leitos_citados(texto)
+        nome = re.search(r"(?im)\bpaciente\s*:\s*(.+?)(?:\s{2,}|\s+leito\b|$)", texto)
         if citados and (len(citados) > 1 or n_leito not in citados):
             avisos.append(f"labs: laudo cita o(s) leito(s) {', '.join(sorted(citados))}: não usado, ler no chat")
-            return []
-        linhas, av = labs.ler_laudo(texto, anterior)
-        avisos += [f"labs: {a}" for a in av]
-        return linhas
+        elif nome and paciente and _tokens(nome.group(1)) and not _tokens(nome.group(1)) & paciente:
+            avisos.append("labs: o laudo é de outro paciente: não usado, ler no chat")
+        else:
+            valores, av = labs.extrair(texto)
+            avisos += [f"labs: {a}" for a in av]
+            if not valores:
+                avisos.append("labs: nenhum analito reconhecido no laudo: ler o PDF no chat")
+            d = re.search(r"(?i)\b(?:data|coleta|colhido em)\b[^\d\n]{0,20}(\d{2}/\d{2}/\d{2,4})", texto)
+            data_lab = d.group(1) if d else None
     if lido:
-        valores = {}
         for e in lido.get("exames") or []:
             v = limpar(e.get("valor"), avisos, "labs")
-            if v:
-                valores[SIGLA_LABS.get(e["sigla"], e["sigla"])] = v
-        return labs.montar(valores, labs.anteriores(anterior))
-    return []
+            k = SIGLA_LABS.get(e["sigla"], e["sigla"])
+            if v and k not in valores:
+                valores[k] = v
+        data_lab = data_lab or limpar((lido.get("identificacao") or {}).get("data"))
+    return (labs.montar(valores, labs.anteriores(anterior)) if valores else []), data_lab
 
 
 def lab_curto(linhas):
@@ -314,16 +341,25 @@ def montar(leituras, contexto):
     def primeiro(campo):
         return next((limpar(i.get(campo)) for i in idents if limpar(i.get(campo))), None)
 
+    for k, d in docs.items():
+        for campo, v in ((d.get("identificacao") or {}).items()):
+            if v and DUVIDA.search(str(v)):
+                avisos.append(f"{k}: dúvida de leitura em {campo}: {str(v)[:40]}")
+        if any(OUTRO_PACIENTE.search(str(p)) for p in d.get("pendencias") or []):
+            erros.append(f"{k}: a leitura achou página de outro paciente: conferir os anexos")
+
     n_leito = next((_leito(i) for i in idents if _leito(i)), None)
     if not n_leito:
         erros.append("leito não identificado em nenhum documento")
+    if contexto.get("data") and not _data(contexto["data"], hoje):
+        erros.append(f"data informada no disparo inválida ({contexto['data']})")
     data = data_do_plantao(contexto.get("data"), docs, hoje, avisos)
     if not data:
         erros.append("data do plantão não encontrada (informe no disparo ou na prescrição)")
     m = re.search(r"UTI\D*(\d+)", _sem_acento(primeiro("unidade") or "").upper())
     if not m:
         avisos.append("unidade (UTI N) não encontrada no cabeçalho")
-    idade = re.sub(r"\D", "", primeiro("idade") or "")
+    idade = (re.match(r"\D*(\d{1,3})", primeiro("idade") or "") or [None, ""])[1]  # "68a 3m" → 68
     sexo = (primeiro("sexo") or "")[:1].upper()
     cabecalho = {}
     for campo, chave in (("diagnostico", "diagnostico"), ("alergias", "alergia"), ("dispositivos", "dispositivos")):
@@ -333,25 +369,40 @@ def montar(leituras, contexto):
         cabecalho[chave] = v or "?"
 
     sv, sup = vitais(ctl.get("afericoes"), avisos)
-    ganhos, perdas = balanco(ctl.get("balanco"), avisos)
+    ganhos, perdas = balanco(ctl.get("balanco"), avisos, erros)
+    paciente = _tokens(primeiro("nome"))
     infusoes, sistemas, terapias, vigiar = prescricao(rx, avisos)
 
     anterior = {}
     if contexto.get("evolucao_anterior"):
         lidos, av = evolucao_anterior.ler(contexto["evolucao_anterior"].splitlines())
-        if n_leito in lidos:
+        cab = ""
+        for l in contexto["evolucao_anterior"].splitlines():
+            mm = evolucao_anterior.LEITO.match(l)
+            if mm and (mm.group(1) or mm.group(2)).zfill(2) == n_leito:
+                cab = l
+                break
+        nome_ant = _tokens(re.sub(r"^\s*(?:LEITO\s+)?\d{1,3}\s*[-–—]?\s*", "", cab).split(" — ")[0]
+                           .split(" - ")[0])
+        if n_leito in lidos and nome_ant and paciente and not nome_ant & paciente:
+            avisos.append(f"evolução anterior do leito {n_leito} é de outro paciente: exame físico, plano e labs "
+                          "anteriores não copiados")
+        elif n_leito in lidos:
             anterior = lidos[n_leito]
             avisos += [a for a in av if a.startswith(f"L{n_leito}:")]
         else:
             avisos.append(f"evolução anterior sem o leito {n_leito}: exame físico e plano anterior não copiados")
-    laboratorio_ = laboratorio(leituras.get("labs_texto"), docs.get("labs"), n_leito,
-                               anterior.get("laboratorio_anterior"), avisos)
+    laboratorio_, data_lab = laboratorio(leituras.get("labs_texto"), docs.get("labs"), n_leito,
+                                         anterior.get("laboratorio_anterior"), avisos, paciente)
+    d_lab = _data(data_lab, hoje) if data_lab else None
+    if d_lab and data and (data - d_lab).days > 1:
+        avisos.append(f"labs: laudo de {d_lab:%d/%m}, {(data - d_lab).days} dias antes do plantão")
     avisos.append("dia de UTI: sem a data de admissão na UTI (preencher admissao_uti)")
 
     leito = {
         "leito": n_leito or "?", "nome": primeiro("nome") or "?",
         "idade_sexo": f"{idade}{sexo}" or "?", "dia_uti": "D? UTI", **cabecalho,
-        "dieta": limpar(rx.get("dieta")) or limpar(ctl.get("dieta")),
+        "dieta": limpar(rx.get("dieta"), avisos, "prescrição") or limpar(ctl.get("dieta"), avisos, "controles"),
         "vitais": sv, "sup_o2": sup, "ganhos": ganhos, "perdas": perdas,
         "conferencia_enfermagem": rodape(ctl.get("rodape"), avisos),
         "evacuacao": limpar(ctl.get("evacuacao"), avisos, "controles"),
@@ -359,7 +410,7 @@ def montar(leituras, contexto):
         "exame_fisico": anterior.get("exame_fisico") or [], "plano_anterior": anterior.get("plano_anterior") or [],
         "avisos": avisos,
         "ficha": {"infusoes": infusoes, "sistemas": sistemas, "vigiar": vigiar, "lab": lab_curto(laboratorio_),
-                  "lab_titulo": f"LABORATÓRIO {data:%d/%m}" if data else "LABORATÓRIO"},
+                  "lab_titulo": f"LABORATÓRIO {(d_lab or data):%d/%m}" if (d_lab or data) else "LABORATÓRIO"},
     }
     leito = {k: v for k, v in leito.items() if v not in (None, {}, [])} | {"avisos": avisos, "ficha": leito["ficha"]}
     d_rx = _data((rx.get("identificacao") or {}).get("data"), hoje) or data

@@ -118,5 +118,31 @@ class RevisaoDe19Out(unittest.TestCase):
         self.assertTrue(any('"D?" sem data de início' in a for a in avisos), avisos)
 
 
+class RevisaoDe21Out(unittest.TestCase):
+    """Achados da revisão adversarial final (21/10/2026)."""
+
+    def test_forma_farmaceutica_suspensao_tem_o_d_contado(self):
+        txt, _ = m.dias_atb("ATB: Bactrim suspensão oral 20 ml (I: 30/12)", DIA)
+        self.assertEqual(txt, "ATB: Bactrim suspensão oral 20 ml (D2, I: 30/12)")
+
+    def test_suspensa_so_na_propria_oracao(self):
+        txt, _ = m.dias_atb("ATB: Azitromicina (D?, I: 30/12) suspensa; Tazocin (D?, I: 30/12)", DIA)
+        self.assertEqual(txt, "ATB: Azitromicina (D?, I: 30/12) suspensa; Tazocin (D2, I: 30/12)")
+
+    def test_suspenso_na_frase_seguinte_nao_trava_o_d(self):
+        txt, _ = m.dias_atb("ATB: Meropenem 1 g EV 8/8h (D?, I: 30/12). Azitromicina suspensa ontem.", DIA)
+        self.assertIn("Meropenem 1 g EV 8/8h (D2, I: 30/12).", txt)
+
+    def test_d_solto_e_da_droga_da_propria_oracao(self):
+        prep, avisos = m.preparar(exemplo(lambda l: l["conduta"].append(
+            "- Ceftriaxona (D?, I: 30/12) + Metronidazol (D3)")))
+        self.assertIn("Ceftriaxona (D2, I: 30/12) + Metronidazol (D3)", prep["leitos"][0]["conduta"][-1])
+        self.assertFalse(any("ceftriaxona" in a.lower() and "D3" in a for a in avisos), avisos)
+
+    def test_item_que_nao_e_texto_passa_para_o_validar(self):
+        prep, _ = m.preparar(exemplo(lambda l: l["terapias"].append(123)))
+        self.assertEqual(prep["leitos"][0]["terapias"][-1], 123)
+
+
 if __name__ == "__main__":
     unittest.main()

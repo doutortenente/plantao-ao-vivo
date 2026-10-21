@@ -42,6 +42,15 @@ class Mensagem(unittest.TestCase):
         self.assertNotIn("alergia a Dipirona e dipirona", txt)
         self.assertIn("3 alerta(s) já dado(s)", txt)
 
+    def test_alerta_de_outro_plantao_volta(self):  # revisão de 21/10: a pasta saida/ é a mesma todo dia
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "mensagem.md").write_text(entrega.mensagem(EXEMPLO, AVISOS, []), encoding="utf-8")
+            outro = dict(EXEMPLO, meta=dict(EXEMPLO["meta"], data="02/01/2026"))
+            txt = entrega.mensagem(outro, AVISOS, [], historico=Path(tmp))
+        self.assertIn("- L99: alergia a Dipirona e dipirona prescrito (dipirona)", txt)
+        self.assertNotIn("já dado(s)", txt)
+        self.assertTrue(txt.rstrip().endswith("<!-- plantão: UTI 2 02/01/2026 diurno -->"), txt[-80:])
+
 
 class Historico(unittest.TestCase):
     def test_guarda_e_compara(self):

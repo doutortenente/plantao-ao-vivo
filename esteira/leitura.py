@@ -4,12 +4,14 @@ leitura.py — lê os scans de UM leito com a API do Claude (visão) e devolve o
 
 Quem soma, conta flag e calcula dia é o motor (build_passagem.py); quem monta o JSON do plantão é o montar.py.
 Prompt de sistema: esteira/doutrina-leitura.md (o teste de doutrina também o lê). Saída presa a um JSON schema
-(structured outputs): a resposta sempre tem o formato pedido, e "?" / null / "pendencias" carregam as dúvidas.
+(structured outputs): a resposta sempre tem o formato pedido, e "?" / "" / "pendencias" carregam as dúvidas.
 
 Chamada (conferida com a skill claude-api e o SDK anthropic 1.15.0):
   - modelo claude-opus-5-5 (MODELO_LEITURA sobrescreve), effort high, raciocínio sempre ligado no modelo;
   - fallbacks "default" no servidor (beta server-side-fallback-2026-07-01): recusa de política é refeita em outro
-    modelo dentro da mesma chamada; a resposta válida é o último bloco de texto depois do último bloco "fallback";
+    modelo dentro da mesma chamada. No streaming, a recusa no meio da resposta guarda o texto parcial, marca o ponto
+    com um bloco "fallback" e o outro modelo CONTINUA o texto: o JSON é a emenda dos blocos de texto; se a emenda
+    não for JSON (o outro modelo recomeçou), vale o texto depois do último "fallback";
   - streaming (resposta longa), max_tokens 64000 (o raciocínio conta dentro dele);
   - recusa ou resposta cortada → LeituraFalhou: nada é inventado para tapar o buraco.
 Imagens: preparar.recortes_para_leitura (JPEG, até 2576 px, 3,75 MP e 5 MB). Mais de 20 imagens num pedido baixam
@@ -31,13 +33,10 @@ class LeituraFalhou(Exception):
     pass
 
 
-# ── schemas (structured outputs: todo objeto fechado, toda chave obrigatória, dúvida = null ou "?") ──────────
+# ── schemas (structured outputs: todo objeto fechado, toda chave obrigatória, dúvida = "?", vazio = "") ───────
+# Sem anyOf/null: a API limita os campos de tipo união por pedido, e só a folha de controle teria 22.
 def _txt():
     return {"type": "string"}
-
-
-def _nulo():
-    return {"anyOf": [{"type": "string"}, {"type": "null"}]}
 
 
 def _lista(item):
@@ -52,7 +51,7 @@ def _enum(valores):
     return {"type": "string", "enum": list(valores)}
 
 
-IDENTIFICACAO = _obj(leito=_nulo(), nome=_nulo(), idade=_nulo(), sexo=_nulo(), unidade=_nulo(), data=_nulo())
+IDENTIFICACAO = _obj(leito=_txt(), nome=_txt(), idade=_txt(), sexo=_txt(), unidade=_txt(), data=_txt())
 
 # colunas impressas do Mod. 0120-01 (página 2); o montar.py dá o nome que o motor conhece (CANON)
 COLUNAS = ("VO", "Dieta", "SNE", "Água", "Med", "Endovenoso", "Infus. Rápida", "Dil.",
@@ -65,17 +64,17 @@ SIGLAS = ("HB", "HT", "PLAQ", "LEUCO", "SEG", "BAST", "UR", "CR", "NA", "K", "MG
 SCHEMA = {
     "controles": _obj(
         identificacao=IDENTIFICACAO,
-        afericoes=_lista(_obj(hora=_txt(), t=_nulo(), fr=_nulo(), fc=_nulo(),
-                              pa=_lista(_obj(pas=_nulo(), pad=_nulo(), pam=_nulo())),
-                              dx=_nulo(), spo2=_nulo(), suporte=_nulo())),
-        balanco=_lista(_obj(coluna=_enum(COLUNAS), rotulo=_nulo(),
+        afericoes=_lista(_obj(hora=_txt(), t=_txt(), fr=_txt(), fc=_txt(),
+                              pa=_lista(_obj(pas=_txt(), pad=_txt(), pam=_txt())),
+                              dx=_txt(), spo2=_txt(), suporte=_txt())),
+        balanco=_lista(_obj(coluna=_enum(COLUNAS), rotulo=_txt(),
                             celulas=_lista(_obj(hora=_txt(), ml=_txt())))),
-        rodape=_obj(ganhos_24h=_nulo(), perdas_24h=_nulo(), diurese_24h=_nulo(), bh_24h=_nulo()),
-        evacuacao=_nulo(), dieta=_nulo(), pendencias=_lista(_txt())),
+        rodape=_obj(ganhos_24h=_txt(), perdas_24h=_txt(), diurese_24h=_txt(), bh_24h=_txt()),
+        evacuacao=_txt(), dieta=_txt(), pendencias=_lista(_txt())),
     "prescricao": _obj(
-        identificacao=IDENTIFICACAO, diagnostico=_nulo(), alergias=_nulo(), dispositivos=_nulo(), dieta=_nulo(),
-        itens=_lista(_obj(nome=_txt(), dose=_nulo(), via=_nulo(), frequencia=_nulo(), horarios=_nulo(),
-                          grupo=_enum(GRUPOS), inicio=_nulo())),
+        identificacao=IDENTIFICACAO, diagnostico=_txt(), alergias=_txt(), dispositivos=_txt(), dieta=_txt(),
+        itens=_lista(_obj(nome=_txt(), dose=_txt(), via=_txt(), frequencia=_txt(), horarios=_txt(),
+                          grupo=_enum(GRUPOS), inicio=_txt())),
         suspensos=_lista(_txt()), ordens=_lista(_txt()), pendencias=_lista(_txt())),
     "labs": _obj(
         identificacao=IDENTIFICACAO,
@@ -123,7 +122,7 @@ def conteudo(paginas, tipo):
 
 
 def resposta(msg):
-    """JSON da resposta. Com fallback, vale o texto que veio depois do último bloco 'fallback'."""
+    """JSON da resposta. Com fallback: a emenda parcial + continuação; senão, o texto depois do último 'fallback'."""
     if msg.stop_reason == "refusal":
         det = getattr(msg, "stop_details", None)
         raise LeituraFalhou("recusa do modelo" + (f" ({det.category})" if det and getattr(det, "category", None)
@@ -132,13 +131,18 @@ def resposta(msg):
         raise LeituraFalhou("resposta cortada (max_tokens)")
     blocos = list(msg.content)
     ult = max((i for i, b in enumerate(blocos) if b.type == "fallback"), default=-1)
-    textos = [b.text for b in blocos[ult + 1:] if b.type == "text"]
-    if not textos:
+    depois = [b.text for b in blocos[ult + 1:] if b.type == "text"]
+    if not depois:
         raise LeituraFalhou("resposta sem texto")
-    try:
-        return json.loads(textos[-1])
-    except json.JSONDecodeError as e:
-        raise LeituraFalhou(f"resposta fora do JSON ({e.msg})") from None
+    candidatos = ["".join(b.text for b in blocos if b.type == "text")] if ult >= 0 else []
+    candidatos += ["".join(depois), depois[-1]]
+    erro = None
+    for txt in dict.fromkeys(candidatos):
+        try:
+            return json.loads(txt)
+        except json.JSONDecodeError as e:
+            erro = erro or e
+    raise LeituraFalhou(f"resposta fora do JSON ({erro.msg})")
 
 
 def ler(cli, tipo, paginas):

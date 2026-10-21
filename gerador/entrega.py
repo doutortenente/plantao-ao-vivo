@@ -7,7 +7,9 @@ entrega.py — o fim do plantão no chat, montado pelo programa (chamado pelo ge
   diff_por_leito()    o que mudou no texto da evolução desde a versão anterior, leito a leito
   mensagem()          rascunho de <saida>/mensagem.md, no formato das instruções do projeto:
                       1ª linha = o que saiu e quantos itens para conferir; alertas uma vez só (os já dados numa
-                      entrega anterior não voltam); "Conferir" por leito; conduta com as linhas de meta numérica.
+                      entrega anterior DO MESMO PLANTÃO não voltam; de outro dia ou turno, voltam todos); "Conferir"
+                      por leito; conduta com as linhas de meta numérica. A última linha é um comentário HTML com o
+                      plantão (unidade, data, turno), que não aparece no markdown.
 """
 import datetime as dt
 import difflib
@@ -54,10 +56,17 @@ def diff_por_leito(antes, depois):
     return mudou
 
 
-def _alertas_ja_dados(historico):
+def _plantao(plantao):
+    m = plantao.get("meta") or {}
+    return f"<!-- plantão: {m.get('unidade', '')} {m.get('data', '')} {m.get('turno', '')} -->"
+
+
+def _alertas_ja_dados(historico, plantao):
     if not historico or not (Path(historico) / "mensagem.md").exists():
         return set()
     txt = (Path(historico) / "mensagem.md").read_text(encoding="utf-8")
+    if _plantao(plantao) not in txt:  # entrega de outro plantão: o alerta é novo para este
+        return set()
     bloco = txt.split("**Alertas**", 1)[1].split("\n\n**", 1)[0] if "**Alertas**" in txt else ""
     return {l[2:].strip() for l in bloco.splitlines() if l.startswith("- ")}
 
@@ -74,7 +83,7 @@ def mensagem(plantao, avisos, arquivos, erros_conferencia=(), historico=None):
             conferir.setdefault(leito, []).append(txt)
     for l in plantao["leitos"]:
         alertas += [f"L{l['leito']}: {a}" for a in l.get("alertas", [])]
-    vistos, novos = _alertas_ja_dados(historico), []
+    vistos, novos = _alertas_ja_dados(historico, plantao), []
     for a in alertas:
         if a not in vistos and a not in novos:
             novos.append(a)
@@ -110,4 +119,4 @@ def mensagem(plantao, avisos, arquivos, erros_conferencia=(), historico=None):
                 conduta.append(f"- L{l['leito']} {tema}: {resto}".replace(" :", ":"))
     if conduta:
         linhas += ["**Conduta (metas)**"] + conduta
-    return "\n".join(linhas).rstrip() + "\n"
+    return "\n".join(linhas).rstrip() + "\n\n" + _plantao(plantao) + "\n"

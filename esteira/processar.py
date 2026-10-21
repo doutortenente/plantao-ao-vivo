@@ -28,6 +28,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -59,7 +60,7 @@ TIPOS = {".docx": "application/vnd.openxmlformats-officedocument.wordprocessingm
 
 def segredo(nome):
     bruto = os.environ.get("SEGREDOS", "")
-    valor = (json.loads(bruto) if bruto else {}).get(nome) or os.environ.get(nome)
+    valor = os.environ.get(nome) or (json.loads(bruto) if bruto else {}).get(nome)
     if not valor:
         sys.exit(f"falta o segredo {nome}")
     return valor
@@ -149,21 +150,28 @@ def ler_documentos(cli, arquivos, pasta):
     for chave, tipo in (("controles", "controles"), ("prescricao", "prescricao"), ("exames", "labs")):
         pdfs = [a for a in arquivos.get(chave, []) if a.suffix.lower() == ".pdf"]
         outros = [a for a in arquivos.get(chave, []) if a.suffix.lower() != ".pdf"]
-        if outros:
-            avisos.append(f"{chave}: {len(outros)} anexo(s) que não são PDF ficaram de fora (ler no chat)")
+        if outros:  # foto do celular etc.: a ficha sairia sem o documento, com cara de pronta
+            erros.append(f"{chave}: {len(outros)} anexo(s) que não são PDF não foram lidos: mandar em PDF ou ler "
+                         "no chat")
         if tipo == "labs":
             texto = "\n".join(t for t in (_texto_do_pdf(p) for p in pdfs) if len(re.sub(r"\W", "", t)) >= 50)
             if texto:
                 leituras["labs_texto"] = texto
                 pdfs = [p for p in pdfs if len(re.sub(r"\W", "", _texto_do_pdf(p))) < 50]  # só os escaneados
         if not pdfs:
-            if tipo != "labs" or not leituras["labs_texto"]:
+            if tipo != "labs":  # sem a folha ou sem a prescrição não há ficha
+                erros.append(f"{chave}: sem anexo em PDF: ficha não gerada")
+            elif not leituras["labs_texto"]:
                 avisos.append(f"{chave}: sem anexo em PDF")
             continue
         paginas = []
-        for i, pdf in enumerate(pdfs):
-            paginas += [(len(paginas) + p, imgs)
-                        for p, imgs in preparar.recortes_para_leitura(pdf, pasta / "recortes" / chave / f"{i:02d}")]
+        try:
+            for i, pdf in enumerate(pdfs):
+                paginas += [(len(paginas) + p, imgs) for p, imgs in
+                            preparar.recortes_para_leitura(pdf, pasta / "recortes" / chave / f"{i:02d}")]
+        except Exception as e:  # PDF corrompido, poppler que falha: o documento não é lido, os outros seguem
+            erros.append(f"{chave}: PDF não recortado ({type(e).__name__}): não lido")
+            continue
         try:
             leituras[tipo], _ = leitura.ler(cli, tipo, paginas)
         except leitura.LeituraFalhou as e:
@@ -229,11 +237,21 @@ def etapa3(cli, campos, arquivos, pasta, contexto):
     rascunho.write_text(json.dumps(plantao, ensure_ascii=False, indent=2), encoding="utf-8")
     if erros:  # leitura falhou ou identificação não bate: o rascunho volta, a ficha não sai
         return [rascunho], erros, avisos + [f"L{leito['leito']}: {a}" for a in leito.get("avisos", [])]
-    gerados, e, a = gerar_ficha(plantao, pasta)
-    return gerados + [rascunho], erros + e, avisos + a
+    try:
+        gerados, e, a = gerar_ficha(plantao, pasta)
+    except Exception as ex:  # LibreOffice, poppler: o rascunho volta assim mesmo
+        return [rascunho], [f"ficha não gerada ({type(ex).__name__}: {ex})"], avisos
+    if e:  # ficha reprovada na conferência não volta: não pode ser impressa por engano
+        return [rascunho], erros + e, avisos + a
+    return gerados + [rascunho], erros, avisos + a
+
+
+def _interrompido(*_):
+    raise KeyboardInterrupt
 
 
 def main():
+    signal.signal(signal.SIGTERM, _interrompido)  # cancelamento do Actions: o status volta "falhou", não "lendo"
     record_id = os.environ.get("RECORD_ID", "")
     if not re.fullmatch(r"rec[A-Za-z0-9]{14}", record_id):
         sys.exit("RECORD_ID inválido")
@@ -268,8 +286,9 @@ def main():
                     devolvidos.append(arq)
                 except Exception as e:
                     erros.append(f"não consegui devolver {arq.suffix} ({type(e).__name__})")
-    except Exception as e:
-        erros.append(f"erro: {type(e).__name__}: {e}")
+    except (Exception, KeyboardInterrupt) as e:  # KeyboardInterrupt: job cancelado ou estourou o tempo
+        erros.append("interrompido antes do fim (job cancelado ou tempo esgotado): disparar de novo"
+                     if isinstance(e, KeyboardInterrupt) else f"erro: {type(e).__name__}: {e}")
     finally:
         status = "falhou" if (erros or falhas) else "pronto"
         texto = relatorio(devolvidos, erros, avisos, linhas, gerados)

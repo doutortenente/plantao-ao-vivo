@@ -32,8 +32,10 @@ Sem a chave da API, a esteira fica como estava: só baixa e confere os anexos, e
    da base.
 3. **Variável no GitHub.** Ainda em Secrets and variables → Actions, aba *Variables*, crie `AIRTABLE_CAMPO_SAIDA` com
    esse `fld…`.
-4. **Automação no Airtable.** Gatilho "quando o Status virar *enviado*". Ação "Run script" com `recordId` como
-   variável de entrada:
+4. **Automação no Airtable.** Primeiro, crie a opção *enviado* no campo Status (hoje ele tem aguardando, lendo,
+   pronto e falhou). O Dr. marca *enviado* depois de anexar tudo, e só isso dispara a esteira: não use *pronto* nem
+   *falhou* como gatilho, porque a esteira grava esses dois e o disparo entraria em laço. Gatilho "quando o Status
+   virar *enviado*". Ação "Run script" com `recordId` como variável de entrada:
 
    ```js
    const { recordId } = input.config();
@@ -62,7 +64,7 @@ prescrição (ou da folha + 1 dia, com aviso) e o turno é diurno.
 ## O que volta no campo Avisos
 
 - **ERROS:** a ficha não saiu. Os casos são leitura recusada ou cortada, identificação diferente entre os documentos,
-  validação e conferência.
+  página de outro paciente, folha ou prescrição sem PDF (foto não é lida: mandar em PDF), validação e conferência.
 - **ALERTAS:** cruzamentos de segurança (alergia × prescrição, TEV, duplicidade, suspenso).
 - **CONFERIR:** dúvidas de leitura, células ilegíveis, rodapé que não bate com a soma das células, dias de ATB sem
   início e itens que ficaram fora da ficha.

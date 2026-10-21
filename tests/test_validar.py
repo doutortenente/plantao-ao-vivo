@@ -107,5 +107,33 @@ class RevisaoDe19Out(unittest.TestCase):
         self.assertEqual([e for e in erros if "(revisar)" in e], [])
 
 
+class RevisaoDe21Out(unittest.TestCase):
+    """Achados da revisão adversarial final (21/10/2026): série fora do formato barra a ficha em vez de quebrar."""
+
+    def test_series_fora_do_formato_sao_erro(self):
+        casos = (
+            (lambda l, d: l["vitais"].__setitem__("PAS", "146"), "`vitais.PAS` tem de ser série por hora"),
+            (lambda l, d: l["vitais"].__setitem__("FC", {"manhã": 90}), "chave que não é hora da folha: manhã"),
+            (lambda l, d: l["vitais"].__setitem__("FC", {"07": True}), "célula que não é número nem texto"),
+            (lambda l, d: l.__setitem__("ganhos", "SF 500"), "`ganhos` tem de ser lista"),
+            (lambda l, d: l["perdas"].append({"nome": "dreno"}), "\"dreno\" sem `serie` nem `ml`"),
+            (lambda l, d: l.__setitem__("conferencia_enfermagem", {"bh": [1, 2]}), "`conferencia_enfermagem`"),
+        )
+        for mudar, trecho in casos:
+            erros, _ = com(mudar)
+            self.assertTrue(any(trecho in e for e in erros), (trecho, erros))
+
+    def test_interrogacao_nas_linhas_que_o_motor_imprime(self):
+        _, avisos = com(lambda l, d: l.update(sup_o2="VM PCV, PEEP 8, FiO2 ?%", dieta="enteral ? ml/h",
+                                               outros_balanco=["Noradrenalina: ? -> 5 -> 3 ml/h"]))
+        for campo in ("sup_o2", "dieta", "outros_balanco"):
+            self.assertTrue(any(f"`{campo}`" in a for a in avisos), (campo, avisos))
+
+    def test_agregado_e_lista_continuam_aceitos(self):
+        erros, _ = com(lambda l, d: (l["vitais"].__setitem__("Dx", {"max": 180, "min": 90, "flag": 0}),
+                                     l["vitais"].__setitem__("TAX", [36.5, "?"])))
+        self.assertFalse(any("vitais" in e for e in erros), erros)
+
+
 if __name__ == "__main__":
     unittest.main()

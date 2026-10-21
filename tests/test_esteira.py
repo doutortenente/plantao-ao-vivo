@@ -97,6 +97,8 @@ class Schema(unittest.TestCase):
         def andar(no, onde):
             if isinstance(no, dict):
                 self.assertFalse({"minimum", "maximum", "minLength", "maxLength", "minItems"} & set(no), onde)
+                self.assertNotIn("anyOf", no, onde)  # a API limita os campos de tipo união por pedido
+                self.assertNotEqual(no.get("type"), "null", onde)
                 if no.get("type") == "object":
                     self.assertIs(no.get("additionalProperties"), False, onde)
                     self.assertEqual(sorted(no["required"]), sorted(no["properties"]), onde)
@@ -162,6 +164,14 @@ class Chamada(unittest.TestCase):
                                 SimpleNamespace(type="fallback"), SimpleNamespace(type="text", text='{"ok": 1}')])
         self.assertEqual(leitura.resposta(msg), {"ok": 1})
 
+    def test_fallback_no_meio_continua_o_texto_parcial(self):
+        msg = mensagem(content=[SimpleNamespace(type="text", text='{"leito": "0'), SimpleNamespace(type="fallback"),
+                                SimpleNamespace(type="thinking"), SimpleNamespace(type="text", text='7", "ok": 1}')])
+        self.assertEqual(leitura.resposta(msg), {"leito": "07", "ok": 1})
+        with self.assertRaises(leitura.LeituraFalhou):
+            leitura.resposta(mensagem(content=[SimpleNamespace(type="fallback"),
+                                               SimpleNamespace(type="text", text='{"cortado')]))
+
     def test_erro_da_api_vira_falha(self):
         erro = RuntimeError("sobrecarga"); erro.status_code = 529
         with tempfile.TemporaryDirectory() as tmp:
@@ -196,6 +206,14 @@ class Montar(unittest.TestCase):
         self.assertEqual(pl["meta"], {"unidade": "UTI 2", "data": "01/01/2026", "turno": "diurno", "janela": "24 h",
                                       "data_prescricao": "01/01"})
         self.assertEqual((l["leito"], l["idade_sexo"], l["dia_uti"]), ("07", "68M", "D? UTI"))
+
+    def test_vazio_vale_como_ausente(self):
+        def vazio(no):
+            if isinstance(no, dict):
+                return {k: ("" if v is None else vazio(v)) for k, v in no.items()}
+            return [vazio(v) for v in no] if isinstance(no, list) else no
+        pl, erros = montar.montar(vazio(leituras()), dict(CONTEXTO))
+        self.assertEqual((pl, erros), montar.montar(leituras(), dict(CONTEXTO)))
 
     def test_conta_e_do_motor(self):
         pl, l, _ = self.montado()
@@ -312,6 +330,88 @@ class Montar(unittest.TestCase):
         self.assertTrue(any("deduzida da folha" in a for a in l["avisos"]))
 
 
+class MontarRevisaoDe21Out(unittest.TestCase):
+    """Achados da revisão adversarial final (21/10/2026)."""
+
+    def montado(self, mudar=None, **contexto):
+        pl, erros = montar.montar(leituras(mudar), dict(CONTEXTO, **contexto))
+        return pl["leitos"][0], erros
+
+    def test_conectivo_nao_casa_nomes_diferentes(self):
+        def mudar(d):
+            for k, nome in (("prescricao", "ANTONIO DOS SANTOS"), ("controles", "MARIA DOS ANJOS"),
+                            ("labs", "ANTONIO DOS SANTOS")):
+                d[k]["identificacao"]["nome"] = nome
+        _, erros = self.montado(mudar)
+        self.assertIn("nome do paciente diferente entre controles e prescricao", erros)
+
+    def test_documento_sem_identificacao_e_erro(self):
+        def mudar(d):
+            d["labs"]["identificacao"].update(leito=None, nome=None)
+        _, erros = self.montado(mudar)
+        self.assertTrue(any("labs: sem leito nem nome legível" in e for e in erros), erros)
+
+    def test_laudo_de_outro_paciente_nao_e_usado(self):
+        def mudar(d):
+            d["labs"] = None
+            d["labs_texto"] = "Paciente: OUTRA PESSOA QUALQUER   Leito: 07\nData: 01/01/2026\nHemoglobina 10,8 g/dL\n"
+        l, _ = self.montado(mudar)
+        self.assertNotIn("laboratorio", l)
+        self.assertIn("labs: o laudo é de outro paciente: não usado, ler no chat", l["avisos"])
+
+    def test_idade_com_meses(self):
+        l, _ = self.montado(lambda d: d["prescricao"]["identificacao"].__setitem__("idade", "68a 3m"))
+        self.assertEqual(l["idade_sexo"], "68M")
+
+    def test_simbolo_da_legenda_vira_ml(self):
+        def mudar(d):
+            d["controles"]["balanco"].append({"coluna": "Infus. Rápida", "rotulo": None, "celulas": [
+                {"hora": "9", "ml": "△"}, {"hora": "11", "ml": "▲"}, {"hora": "13", "ml": "+"}]})
+        l, _ = self.montado(mudar)
+        self.assertIn({"nome": "infusão rápida", "serie": {"09": 100, "11": 250, "13": 10}}, l["ganhos"])
+
+    def test_coluna_outra_do_lado_errado_e_erro(self):
+        def mudar(d):
+            d["controles"]["balanco"].append({"coluna": "outra (ganho)", "rotulo": "diurese", "celulas": [
+                {"hora": "9", "ml": "100"}]})
+        _, erros = self.montado(mudar)
+        self.assertTrue(any("motor soma do outro lado" in e for e in erros), erros)
+
+    def test_evolucao_anterior_de_outro_paciente_nao_e_copiada(self):
+        outra = "LEITO 07 — JOSE PEREIRA\nExame físico:\n- SNC: vígil\nPlano terapêutico:\n1. Resp: manter\n"
+        l, _ = self.montado(evolucao_anterior=outra)
+        self.assertNotIn("exame_fisico", l)
+        self.assertTrue(any("é de outro paciente" in a for a in l["avisos"]))
+
+    def test_data_informada_invalida_e_erro(self):
+        _, erros = self.montado(data="31/02/2026")
+        self.assertIn("data informada no disparo inválida (31/02/2026)", erros)
+
+    def test_duvida_fora_do_texto_da_ficha_vai_para_o_conferir(self):
+        def mudar(d):
+            d["prescricao"]["itens"][1]["inicio"] = "30/12 (confirmar)"
+            d["prescricao"]["dieta"] = "Enteral 50 ml/h (confirmar)"
+            d["prescricao"]["identificacao"]["idade"] = "68 (revisar)"
+        l, _ = self.montado(mudar)
+        self.assertIn("Tazocin 4,5 g EV 6/6 h (D?) => 06-12-18-24", l["ficha"]["infusoes"][1][1])
+        self.assertEqual(l["dieta"], "Enteral 50 ml/h")
+        for trecho in ("início do ATB: dúvida", "prescrição: dúvida de leitura tirada do texto: Enteral",
+                       "prescricao: dúvida de leitura em idade"):
+            self.assertTrue(any(trecho in a for a in l["avisos"]), (trecho, l["avisos"]))
+
+    def test_pagina_de_outro_paciente_e_erro(self):
+        _, erros = self.montado(lambda d: d["controles"]["pendencias"].append(
+            "página 2 é de outro paciente, leito 08"))
+        self.assertIn("controles: a leitura achou página de outro paciente: conferir os anexos", erros)
+
+    def test_laudo_antigo_avisa_e_titulo_tem_a_data_do_laudo(self):
+        def mudar(d):
+            d["labs"]["identificacao"]["data"] = "28/12/2025"
+        l, _ = self.montado(mudar)
+        self.assertEqual(l["ficha"]["lab_titulo"], "LABORATÓRIO 28/12")
+        self.assertTrue(any("laudo de 28/12, 4 dias antes" in a for a in l["avisos"]), l["avisos"])
+
+
 # ── ficha e esteira inteira ────────────────────────────────────────────────────────────────────────────────
 @unittest.skipUnless(TEM_PDF, "sem LibreOffice/poppler")
 class Ficha(unittest.TestCase):
@@ -399,6 +499,54 @@ class Esteira(unittest.TestCase):
         self.assertEqual(codigo, 1)
         self.assertIn("falta a variável AIRTABLE_CAMPO_SAIDA", gravados[-1]["fldyWHVHultgXHW9Z"])
         self.assertEqual(enviados, [])
+
+    def test_ficha_reprovada_nao_volta(self):
+        import processar
+        reprovada = lambda pl, pasta: ([pdf_minimo(pasta / "f.docx"), pdf_minimo(pasta / "f.pdf")],
+                                       ["ficha-cola com 2 página(s): tem de ser 1 folha"], [])
+        with mock.patch.object(processar, "gerar_ficha", reprovada):
+            codigo, gravados, enviados, _ = self.rodar(self.respostas())
+        self.assertEqual((codigo, gravados[-1]["fldMKAeMcwDEIYrWP"]), (1, "falhou"))
+        self.assertIn("2 página(s)", gravados[-1]["fldyWHVHultgXHW9Z"])
+        self.assertEqual([e[1] for e in enviados], [".json"])
+
+    def test_ficha_que_quebra_devolve_o_rascunho(self):
+        import processar
+        with mock.patch.object(processar, "gerar_ficha", mock.Mock(side_effect=OSError("soffice"))):
+            codigo, gravados, enviados, _ = self.rodar(self.respostas())
+        self.assertEqual(codigo, 1)
+        self.assertIn("ficha não gerada (OSError: soffice)", gravados[-1]["fldyWHVHultgXHW9Z"])
+        self.assertEqual([e[1] for e in enviados], [".json"])
+
+    def test_pdf_que_nao_recorta_nao_derruba_os_outros(self):
+        import preparar
+        original = preparar.recortes_para_leitura
+
+        def recortes(pdf, destino, *a, **k):
+            if "prescricao" in str(pdf):
+                raise RuntimeError("pdftoppm")
+            return original(pdf, destino, *a, **k)
+        with mock.patch.object(preparar, "recortes_para_leitura", recortes):
+            codigo, gravados, enviados, _ = self.rodar(self.respostas())
+        self.assertEqual(codigo, 1)
+        self.assertIn("prescricao: PDF não recortado (RuntimeError): não lido", gravados[-1]["fldyWHVHultgXHW9Z"])
+        self.assertEqual([e[1] for e in enviados], [".json"])
+
+    def test_foto_no_lugar_do_pdf_nao_sai_como_pronta(self):
+        import processar
+        foto = {processar.CAMPO["controles"]: [{"url": "https://x/controles", "filename": "folha.jpg", "size": None}]}
+        codigo, gravados, enviados, _ = self.rodar(self.respostas(), campos_extra=foto)
+        self.assertEqual((codigo, gravados[-1]["fldMKAeMcwDEIYrWP"]), (1, "falhou"))
+        self.assertIn("controles: 1 anexo(s) que não são PDF não foram lidos", gravados[-1]["fldyWHVHultgXHW9Z"])
+        self.assertIn("controles: sem anexo em PDF: ficha não gerada", gravados[-1]["fldyWHVHultgXHW9Z"])
+        self.assertNotIn(".pdf", [e[1] for e in enviados])
+
+    def test_job_cancelado_termina_em_falhou(self):
+        import processar
+        with mock.patch.object(processar, "etapa3", mock.Mock(side_effect=KeyboardInterrupt)):
+            codigo, gravados, enviados, _ = self.rodar(self.respostas())
+        self.assertEqual((codigo, gravados[-1]["fldMKAeMcwDEIYrWP"]), (1, "falhou"))
+        self.assertIn("interrompido antes do fim", gravados[-1]["fldyWHVHultgXHW9Z"])
 
     def test_sem_chave_so_baixa(self):
         codigo, gravados, enviados, _ = self.rodar({}, chave="")

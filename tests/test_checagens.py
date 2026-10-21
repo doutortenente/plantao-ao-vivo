@@ -179,5 +179,83 @@ class RevisaoDe19Out(unittest.TestCase):
         self.assertIsInstance(C.checar(leito(lambda l: l["ficha"].__setitem__("sistemas", [[None, ["x"]]]))), list)
 
 
+class RevisaoDe21Out(unittest.TestCase):
+    """Achados da revisão adversarial final (21/10/2026)."""
+
+    def test_forma_farmaceutica_suspensao_continua_prescrita(self):
+        def mudar(l):
+            l["alergia"] = "Sulfa"; l["terapias"].append("ATB: Bactrim suspensão oral 20 ml 12/12h")
+        self.assertTrue(any("sulfametoxazol prescrito" in a for a in C.checar(leito(mudar))))
+        self.assertFalse(C.suspenso("Bactrim suspensão oral"))
+        self.assertEqual(C.prescritas_em("Bactrim 800/160 mg · Azitromicina suspensa"), ["sulfametoxazol"])
+        self.assertTrue(C.suspenso("Azitromicina SUSPENSA"))
+
+    def test_suspender_com_condicao_depois_nao_e_suspensao(self):
+        self.assertEqual(C.suspensos_no_plano(["- Suspender enoxaparina se plaquetas < 50.000"]), set())
+        self.assertEqual(C.suspensos_no_plano(["- Caso piore, suspender azitromicina"]), set())
+        self.assertEqual(C.suspensos_no_plano(["- Suspender Clexane 12 h antes da traqueostomia"]), set())
+
+    def test_tev_sem_contraindicacao_nao_dispensa_o_alerta(self):
+        def mudar(l):
+            _sem_tev(l); l["conduta"] = ["4. Profilaxias: TEV sem contraindicação; LAMG: Pantoprazol"]
+        self.assertTrue(any("sem profilaxia de TEV" in a for a in C.checar(leito(mudar))))
+
+    def test_heparina_de_selo_nao_e_profilaxia(self):
+        def mudar(l):
+            _sem_tev(l); l["terapias"].append("RENAL: Heparina 5.000 UI no selo do cateter de HD")
+        self.assertTrue(any("sem profilaxia de TEV" in a for a in C.checar(leito(mudar))))
+
+    def test_justificativa_na_oracao_que_prescreve_nao_vale(self):
+        def mudar(l):
+            _sem_tev(l); l["conduta"] = ["4. Profilaxias: TEV: Enoxaparina 40 mg/dia, baixo risco"]
+        self.assertTrue(any("sem profilaxia de TEV" in a for a in C.checar(leito(mudar))))
+
+    def test_aliases_de_uti(self):
+        for alergia, droga, generico in (("Penicilina", "Pip/tazo 4,5 g EV 6/6h", "piperacilina"),
+                                         ("Penicilina", "Amox/clav 875 mg VO", "amoxicilina"),
+                                         ("Metronidazol", "Flagyl 500 mg EV 8/8h", "metronidazol"),
+                                         ("Clindamicina", "Dalacin 600 mg EV", "clindamicina")):
+            def mudar(l, a=alergia, d=droga):
+                l["alergia"] = a; l["terapias"].append("ATB: " + d)
+            self.assertTrue(any(f"{generico} prescrito" in a for a in C.checar(leito(mudar))), droga)
+
+    def test_lista_depois_do_verbo_e_plural_antes(self):
+        casos = {
+            "1. Infeccioso: suspendo azitromicina e claritromicina; mantenho Tazocin.": {"azitromicina",
+                                                                                      "claritromicina"},
+            "- Suspender: dipirona, cetoprofeno e tramadol.": {"dipirona", "cetoprofeno", "tramadol"},
+            "- Azitromicina e claritromicina suspensas.": {"azitromicina", "claritromicina"},
+            "- Suspendo azitromicina 500 mg EV e vancomicina (D5), mantenho meropenem": {"azitromicina",
+                                                                                        "vancomicina"},
+            "- Azitromicina suspensa e Tazocin mantido": {"azitromicina"},
+        }
+        for linha, esperado in casos.items():
+            self.assertEqual(C.suspensos_no_plano([linha]), esperado, linha)
+
+    def test_alergia_escrita_com_nao(self):
+        for alergia, alerta in (("Não tolera dipirona", True), ("Não pode usar dipirona", True),
+                                ("Não há alergias conhecidas", False), ("Sem alergias conhecidas", False)):
+            def mudar(l, a=alergia):
+                l["alergia"] = a; l["terapias"].append("Dipirona 1 g EV 6/6 h")
+            self.assertEqual(any("dipirona prescrito" in a for a in C.checar(leito(mudar))), alerta, alergia)
+
+    def test_abreviacoes_de_alergia_e_de_droga(self):
+        for alergia, droga, generico in (("PNC", "Tazocin 4,5 g EV", "piperacilina"),
+                                         ("AINH", "Cetoprofeno 100 mg EV", "cetoprofeno"),
+                                         ("Sulfa", "SMX-TMP 800/160 mg VO", "sulfametoxazol"),
+                                         ("Cefalosporinas", "Ceftriaxone 2 g EV", "ceftriaxona"),
+                                         ("Opioides", "Fentanest 50 mcg/h", "fentanil"),
+                                         ("Penicilina", "Pipetazo 4,5 g EV", "piperacilina")):
+            def mudar(l, a=alergia, d=droga):
+                l["alergia"] = a; l["terapias"].append(d)
+            self.assertTrue(any(f"{generico} prescrito" in a for a in C.checar(leito(mudar))), droga)
+
+    def test_alergia_com_reacao_entre_parenteses_ou_travessao(self):
+        for alergia in ("Dipirona (urticária).", "Dipirona - anafilaxia"):
+            def mudar(l, a=alergia):
+                l["alergia"] = a; l["terapias"].append("Dipirona 1 g EV 6/6 h")
+            self.assertTrue(any("dipirona prescrito" in a for a in C.checar(leito(mudar))), alergia)
+
+
 if __name__ == "__main__":
     unittest.main()

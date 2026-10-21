@@ -39,6 +39,17 @@ class Janela(unittest.TestCase):
         self.assertEqual(r["janela"], "12 h noturno (19 - 05 h)")
         self.assertFalse(any("ALERTA: janela" in a for a in r["avisos"]))
 
+    def test_horas_pares_contam_pela_faixa(self):  # revisão de 21/10: 08-18 h é dia, mesmo fora dos horários
+        janela, avisos = m.janela_efetiva(leito(["08", "10", "12", "14", "16", "18", "20", "22", "00", "02", "04",
+                                                 "06"]), {"data": "01/01/2026"})
+        self.assertEqual((janela, avisos), ("24 h", []))
+
+    def test_24h_escrito_de_outro_jeito_tambem_e_conferido(self):
+        for escrito in ("24h", "24 horas", "24 H"):
+            janela, avisos = m.janela_efetiva(leito(SLOTS[6:]), {"janela": escrito})
+            self.assertEqual(janela, "19 - 05 h", escrito)
+            self.assertTrue(any("faltou o diurno" in a for a in avisos), escrito)
+
     def test_lista_sem_hora_avisa(self):
         r = m.compute_leito({"leito": "1", "nome": "X", "vitais": {"PAS": [120, 110]}}, {})
         self.assertTrue(any("séries sem hora" in a for a in r["avisos"]))

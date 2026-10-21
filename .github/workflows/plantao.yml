@@ -1,5 +1,5 @@
 # Esteira do plantão — casca fixa. Toda a lógica mora em esteira/processar.py.
-# Segredos do repositório (só estes chegam ao job):
+# Segredos do repositório (só estes, e só no passo "Processar a linha"):
 #   AIRTABLE_TOKEN     obrigatório.
 #   ANTHROPIC_API_KEY  liga a leitura automática dos scans; sem ele, a esteira só baixa e confere os anexos.
 # Variável do repositório: AIRTABLE_CAMPO_SAIDA = ID (fld…) do campo de anexos onde voltam a ficha e o rascunho.
@@ -40,8 +40,6 @@ jobs:
       RECORD_ID: ${{ inputs.record_id }}
       DATA_PLANTAO: ${{ inputs.data }}
       TURNO: ${{ inputs.turno }}
-      AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       AIRTABLE_CAMPO_SAIDA: ${{ vars.AIRTABLE_CAMPO_SAIDA }}
     steps:
       - name: Validar entrada
@@ -61,5 +59,8 @@ jobs:
           sudo apt-get install -y -q --no-install-recommends libreoffice-writer poppler-utils fonts-liberation
           pip install -r esteira/requirements.txt
 
-      - name: Processar a linha
+      - name: Processar a linha  # os segredos só neste passo (nada de chave durante o apt/pip)
+        env:
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python esteira/processar.py

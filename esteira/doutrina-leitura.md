@@ -18,8 +18,8 @@ aparece duas vezes: registre uma vez só.
 
 DOUTRINA ZERO ALUCINAÇÃO (obrigatória):
 
-1. Transcreva só o que está escrito. Valor ilegível ou duvidoso = "?". Campo vazio ou inexistente = null (ou lista
-   vazia). Nunca estime, nunca complete por inferência, nunca calcule, nunca some, nunca converta unidade.
+1. Transcreva só o que está escrito. Valor ilegível ou duvidoso = "?". Campo vazio ou inexistente = "" (texto vazio)
+   ou lista vazia. Nunca estime, nunca complete por inferência, nunca calcule, nunca some, nunca converta unidade.
 2. Copie cada número exatamente como escrito, com a vírgula ou o ponto decimal da folha.
 3. Fonte digitada vale mais que manuscrita. Se conflitarem, use a digitada e descreva o conflito em "pendencias".
 4. Carimbos e assinaturas não são dados.
@@ -43,10 +43,12 @@ FOLHA DE CONTROLE (Mod. 0120-01; 2 páginas por leito):
   impressa ("coluna"), o rótulo manuscrito do cabeçalho dela se houver ("rotulo", ex.: NORA, SF, HC) e as células
   com a hora da linha e o volume em ml como escrito. Só volume em ml entra nas células; episódio de evacuação
   ("1x ++P") vai em "evacuacao".
+- Nas colunas Infus. Rápida e Dil., a célula pode trazer o símbolo da legenda impressa (+ 10, O 20, * 50, △ 100,
+  ▲ 250): copie o símbolo, sem converter em ml.
 - Rodapés (só para conferência, a conta é a soma das células): Ganhos e Perdas das 24 h, D: (diurese 24 h) e BH:.
   Copie como escritos, com o sinal.
 - "evacuacao": episódios + quantidade + qualidade (P pastosa, L líquida, E endurecida, ME melena, SC sangue/coágulos;
-  + pequena, ++ média, +++ grande). Sem registro legível: null.
+  + pequena, ++ média, +++ grande). Sem registro legível: "".
 - "dieta": a nutrição pelas colunas de ganho (ex.: VO, SNE, VO + SNE).
 
 PRESCRIÇÃO MÉDICA:
@@ -61,11 +63,11 @@ PRESCRIÇÃO MÉDICA:
   horário fixo), PROFILAXIA (só TEV e lesão aguda de mucosa gástrica: heparina, enoxaparina, IBP, compressão
   pneumática), SN (se necessário, a critério médico), OUTRO (soro de manutenção, vitamina, tópico, colírio).
   Reposição de eletrólito, bicarbonato e quelante vão em RENAL.
-- "inicio": só para ATB, a data de início impressa (dd/mm). Sem data impressa: null. Não converta "D3" em data.
+- "inicio": só para ATB, a data de início impressa (dd/mm). Sem data impressa: "". Não converta "D3" em data.
 - Anotação à mão de suspender, riscado ou X: a droga sai de "itens" e entra em "suspensos". "Modificado para": use a
   versão modificada.
 - "ordens": cuidados e solicitações escritos na prescrição (coletas, exames, cabeceira, curativo), como escritos.
-- "diagnostico", "alergias", "dispositivos": como escritos; null se não constam.
+- "diagnostico", "alergias", "dispositivos": como escritos; "" se não constam.
 
 LABORATÓRIO (laudo escaneado ou anotação à mão):
 
@@ -75,6 +77,7 @@ LABORATÓRIO (laudo escaneado ou anotação à mão):
 - Amostra de máquina de diálise (AMOSTRA MAQUINA) não é do paciente: fica de fora.
 
 IDENTIFICAÇÃO (todo documento): leito, nome como escrito, idade, sexo (M ou F), unidade (ex.: UTI ADULTO 2) e a data
-do documento (dd/mm/aaaa) pela etiqueta ou cabeçalho. Página de outro paciente: registre em "pendencias".
+do documento (dd/mm/aaaa) pela etiqueta ou cabeçalho. Página de outro paciente: não transcreva os dados dela e
+registre em "pendencias" uma frase com as palavras "outro paciente" (ex.: "página 2 é de outro paciente, leito 08").
 
 Responda só com o JSON do formato pedido.
