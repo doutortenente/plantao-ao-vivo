@@ -99,10 +99,21 @@ Origem: `doutortenente/claude-workspace`. O que estava desatualizado ou errado e
 Revisão adversarial das etapas 1 a 8, com cada achado reproduzido antes de corrigir: commit
 `fix(motor): corrige os achados da revisão adversarial`.
 
+## Revisão adversarial final (21/10/2026)
+
+Cada achado foi reproduzido antes de corrigir e ganhou teste (commit `fix(revisao): …`). O que muda no uso:
+
+- `mensagem.md`: alerta já dado só deixa de se repetir no mesmo plantão e numa rodada entregue. Antes, o alerta
+  de TEV ou de alergia sumia do rascunho do dia seguinte.
+- Segurança: "suspensão oral" é forma farmacêutica, não ordem de suspender. "Não tolera X" conta como alergia.
+  "Suspendo X e Y" suspende os dois. Heparina de selo de cateter não é profilaxia de TEV. Novas abreviações: PNC,
+  AINH, Pip/Tazo, SMX-TMP, Enoxa, HBPM, Flagyl, Dalacin, Fentanest, Ceftriaxone.
+- Motor: "1.450" no rodapé = 1450 ml; janela "24h" e "24 horas" é conferida; vital só com máx/mín é conferido
+  contra o limiar.
+- Esteira: foto no lugar do PDF, página de outro paciente e folha ou prescrição faltando = erro (status
+  "falhou"). Ficha reprovada na conferência não volta para o Airtable. O disparo precisa da opção "enviado" no
+  Status, que ainda não existe na tabela.
+
 ## Pendente (não resolvido aqui)
 
-- `labs.py` é beta até ser calibrado com um PDF real de laboratório.
-- Esteira: falta criar o segredo, o campo de saída e a automação no Airtable (`esteira/README.md`). Também falta
-  conferir no primeiro disparo se o upload do Airtable acrescenta arquivos ou substitui os anteriores.
-- O JSON da página `extracao-web` não monta o bloco `ficha`: quem monta é o Claude no chat, a partir de
-  `prescricao_lida`.
+Lista viva em `docs/PENDENTE.md`.

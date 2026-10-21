@@ -38,7 +38,7 @@ LAB_ALIAS = {
     "TROPONINAI": "Troponina", "DDIMERO": "D-dímero", "INR": "INR", "RNI": "INR",
 }
 UNIDADE = {"HB": "g/dl", "HT": "%", "PLAQ": "/mm3", "LEUCO": "/mm3", "UR": "mg/dl", "CR": "mg/dl"}
-NUMERO = re.compile(r"(?<![\w,.])([<>]\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d+)?|-?\d+(?:,\d+)?)(?![\w])")
+NUMERO = re.compile(r"(?<![\w,.])((?<!-)[<>]\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d+)?|-?\d+(?:,\d+)?)(?![\w])")
 NOME_INICIO = re.compile(r"^\s*([A-Za-zÀ-ú][A-Za-zÀ-ú0-9 .\-()]{0,40}?)\s*(?:[:.]{1,}|\s{2,}|\s(?=[<>]?\s*-?\d))")
 
 

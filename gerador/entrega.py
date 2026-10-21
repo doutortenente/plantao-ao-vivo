@@ -65,7 +65,7 @@ def _alertas_ja_dados(historico, plantao):
     if not historico or not (Path(historico) / "mensagem.md").exists():
         return set()
     txt = (Path(historico) / "mensagem.md").read_text(encoding="utf-8")
-    if _plantao(plantao) not in txt:  # entrega de outro plantão: o alerta é novo para este
+    if _plantao(plantao) not in txt or "**Não entregar ainda" in txt:  # outro plantão, ou rodada não entregue
         return set()
     bloco = txt.split("**Alertas**", 1)[1].split("\n\n**", 1)[0] if "**Alertas**" in txt else ""
     return {l[2:].strip() for l in bloco.splitlines() if l.startswith("- ")}

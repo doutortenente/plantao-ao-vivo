@@ -47,12 +47,14 @@ Admissão de leito novo: só `skills/admissao-uti/SKILL.md` (não a `sasi-ingest
    Saída ≠ 0 = não entregar.
 2. Olhar TODOS os PNG das páginas.
 3. Mandar os dois `.docx` (e o `.pdf` da ficha). No chat, partir do `mensagem.md`: alertas críticos uma vez só (os
-   `ALERTA:` de segurança no topo), rodapé "Conferir", bloco final de conduta com metas numéricas.
+   `ALERTA:` de segurança no topo), rodapé "Conferir", bloco final de conduta com metas numéricas. O `mensagem.md`
+   só deixa de repetir alerta já dado no MESMO plantão e numa rodada entregue; plantão novo traz todos de novo.
 
 Admissão: `python3 gerador/gerar_admissao.py nota.txt saida/`. Sai em A4, margens 1,25 / 1,34 / 2,5 cm, com o nome
 `DD-MM-AA-utiN-admissao-leitoLL.docx`.
 
 ## Git
 
-Commit direto na `main`. Mensagem `tipo(escopo): o que mudou`. Nunca versionar JSON de plantão real nem os Word
-gerados (`.gitignore`).
+Mudança de código entra por branch + PR com CI; o merge na `main` só com o "prosseguir" dele (decisão de
+19/10/2026). Mensagem `tipo(escopo): o que mudou`. Nunca versionar JSON de plantão real nem os Word gerados
+(`.gitignore`). O que ficou em aberto entre sessões está em `docs/PENDENTE.md`: ler antes de continuar.

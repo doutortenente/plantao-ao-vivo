@@ -45,5 +45,11 @@ class Labs(unittest.TestCase):
         self.assertTrue(any("K aparece com 4,8 e 5,9" in a for a in avisos))
 
 
+class RevisaoDe21Out(unittest.TestCase):
+    def test_seta_da_evolucao_anterior_nao_vira_maior_que(self):
+        self.assertEqual(labs.anteriores(["HB: 11,2 -> 10,8 g/dl | PLAQ: 210.000 -> 180.000 /mm3", "PCR: < 5 mg/l"]),
+                         {"HB": "10,8", "PLAQ": "180.000", "PCR": "< 5"})
+
+
 if __name__ == "__main__":
     unittest.main()

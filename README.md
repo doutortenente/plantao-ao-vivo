@@ -41,7 +41,9 @@ python3 gerador/validar.py plantao.json                         # só validar
 ```
 
 Esteira (opcional): uma linha do Airtable dispara `.github/workflows/plantao.yml`, que lê os scans com a API do
-Claude e devolve a ficha-cola na linha (`esteira/README.md`).
+Claude e devolve a ficha-cola na linha (`esteira/README.md`). Folha e prescrição vão em PDF: foto não é lida.
+
+O que falta e os achados ainda não conferidos: `docs/PENDENTE.md`.
 
 ## Estrutura
 
@@ -51,6 +53,7 @@ docs/
   BRIEFING.md                   formato do texto clínico — fonte única
   formato-entrega.md            como ficam os dois Word
   DECISOES.md                   decisões do operador e correções feitas neste repo
+  PENDENTE.md                   o que ficou em aberto entre sessões (ler antes de continuar)
   instrucoes-projeto.md         texto das instruções do projeto no claude.ai (versionado)
 skills/
   plantao/                      orquestrador do plantão
