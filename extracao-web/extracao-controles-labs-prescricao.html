@@ -156,8 +156,9 @@ footer p{margin:0 0 8px;max-width:66ch}
     <div class="res-head">
       <p class="sitrep" id="sitrep"></p>
       <button type="button" class="btn" id="copyall">Copiar todos os leitos</button>
+      <button type="button" class="btn" id="copyjson">Copiar JSON do plantão</button>
     </div>
-    <p class="hint">Os blocos são editáveis: corrija um <b>?</b> antes de copiar, se precisar.</p>
+    <p class="hint">Os blocos são editáveis: corrija um <b>?</b> antes de copiar, se precisar. O JSON do plantão sai da leitura (não das edições) e é a entrada do motor no chat: lá ele refaz as contas e confere.</p>
     <div id="beds"></div>
     <div id="gpend"></div>
     <div class="conduta" id="conduta"></div>
@@ -165,7 +166,7 @@ footer p{margin:0 0 8px;max-width:66ch}
 </main>
 
 <footer class="wrap">
-  <p>Regras: modelo da controles-vitais-janela (exemplo resolvido) e prescrição em 7 blocos do modo D. Ilegível vira <b>?</b>, ausente é omitido. Máx–Mín, contagens e somas são feitas pela página, não pelo modelo.</p>
+  <p>Regras: modelo da controles-vitais-janela (exemplo resolvido) e prescrição em 7 blocos do modo D. Ilegível vira <b>?</b>, ausente é omitido; dúvida vai para as pendências, nunca para o bloco. Máx - Mín, contagens e somas das células são feitas pela página, não pelo modelo; o rodapé da folha só confere.</p>
   <p>Flags críticos fora do bloco: PAM &lt; 65 em 3 ou mais aferições ou PAM ≤ 55; FC &gt; 100 em 3 ou mais com PAM &lt; 65; SpO2 &lt; 92 em 2 ou mais com O2; Dx &gt; 250 em 2 ou mais; BIC compatível com vasoativa. Oligúria por mL/kg/h não é calculada porque a folha não traz peso.</p>
   <p>Cada página lida usa o seu limite de uso do Claude.</p>
 </footer>
@@ -364,6 +365,7 @@ async function pageImages(pg){
 }
 
 /* ---------------------------------------------------------------- prompt */
+var COLUNAS = ["VO","Dieta","SNE","Água","Med","Endovenoso","Infus. Rápida","Dil.","Diurese","SNG/SNE","Evacuação","Resíduo Gástrico","Dreno/SVD","outra (ganho)","outra (perda)"];
 var BLOCOS = ["Cardiovascular e Hemodinâmica","SNC e Psiquiatria","Gastrointestinal e Endócrino","Infeccioso e Respiratório","Hematológico e Profilaxias","Nutrição, Eletrólitos e Soluções","Sintomáticos e Se Necessário (SN)"];
 
 function buildPrompt(desc){
@@ -396,11 +398,9 @@ desc,
 "",
 "REGRAS DO TIPO balanco:",
 "- dieta: tipo de nutrição pelas colunas de ganhos (ex.: VO, SNE, VO + SNE).",
-"- Rodapés (só para conferência; a diurese é somada pelas células): ganhos_6_18 (Ganhos 6h-18h), ganhos_19_6 (Ganhos 19h-6h), balanco_6_18 (Balanço 6h-18h), balanco_19_6 (Balanço 19h-6h), diurese_24h (D:), bh_24h (BH:). Mantenha o sinal.",
-"- diurese_registros: cada valor da coluna Diurese com a hora.",
+"- balanco: uma entrada por COLUNA preenchida de Ganhos e de Perdas: coluna = a coluna impressa, exatamente um destes nomes: " + COLUNAS.map(function(c){ return "\"" + c + "\""; }).join(", ") + "; rotulo = o rótulo manuscrito do cabeçalho dela, se houver (ex.: NORA, SF, HC; ilegível = \"?\"); celulas = cada volume em ml com a hora da linha, como escrito. Só volume em ml entra nas células.",
+"- rodape (só para conferência; a conta é a soma das células): ganhos_24h, perdas_24h, diurese_24h (D:), bh_24h (BH:). Mantenha o sinal.",
 "- evacuacao: episódios + quantidade + qualidade, ex.: 1x (++, pastosa). Legenda: P pastosa, L líquida, E endurecida, ME melena, SC sangue/coágulos; + pequena, ++ média, +++ grande. Sem registro legível: \"s/ registro legível\".",
-"- residuo_gastrico e drenos: valor e descrição, se houver.",
-"- infusoes: cada rótulo de bomba (BIC) da coluna Endovenoso. Rótulo ilegível = \"BIC ilegível\". confirmar = true se o nome for compatível mas incerto (ex.: NORA = noradrenalina). vasoativa = true se o rótulo for compatível com droga vasoativa.",
 "",
 "REGRAS DO TIPO prescricao:",
 "- diagnostico, alergias, dieta_prescrita: como escritos; null se não constam.",
@@ -420,8 +420,8 @@ desc,
 "{\"tipo\": \"sv|balanco|prescricao|labs|outro\", \"pacientes\": [{",
 "  \"leito\": texto|null, \"nome\": texto|null, \"idade\": texto|null, \"sexo\": \"M\"|\"F\"|null, \"unidade\": texto|null, \"data_folha\": texto|null,",
 "  \"afericoes\": [{\"hora\": texto, \"t\": texto|null, \"fr\": texto|null, \"fc\": texto|null, \"pa\": [{\"pas\": texto|null, \"pad\": texto|null, \"pam\": texto|null}], \"dx\": texto|null, \"spo2\": texto|null, \"suporte\": texto|null}],",
-"  \"dieta\": texto|null, \"ganhos_6_18\": texto|null, \"ganhos_19_6\": texto|null, \"balanco_6_18\": texto|null, \"balanco_19_6\": texto|null, \"diurese_24h\": texto|null, \"bh_24h\": texto|null,",
-"  \"diurese_registros\": [{\"hora\": texto, \"ml\": texto}], \"evacuacao\": texto|null, \"residuo_gastrico\": texto|null, \"drenos\": [texto], \"infusoes\": [{\"rotulo\": texto, \"confirmar\": booleano, \"vasoativa\": booleano}],",
+"  \"dieta\": texto|null, \"balanco\": [{\"coluna\": texto, \"rotulo\": texto|null, \"celulas\": [{\"hora\": texto, \"ml\": texto}]}],",
+"  \"rodape\": {\"ganhos_24h\": texto|null, \"perdas_24h\": texto|null, \"diurese_24h\": texto|null, \"bh_24h\": texto|null}, \"evacuacao\": texto|null,",
 "  \"diagnostico\": texto|null, \"alergias\": texto|null, \"dieta_prescrita\": texto|null, \"itens\": [{\"texto\": texto, \"bloco\": texto, \"revisar_ocr\": booleano}], \"suspensos\": [texto], \"procedimentos\": [texto], \"recomendacoes\": [texto], \"safety\": texto|null,",
 "  \"exames\": [{\"nome\": texto, \"unidade\": texto|null, \"serie\": [{\"data\": texto|null, \"valor\": texto}]}],",
 "  \"pendencias\": [texto]",
@@ -555,6 +555,16 @@ function num(raw){
   if (/^[-+]?\d+(\.\d+)?$/.test(c)) return {ok:true, v:parseFloat(c), raw:s.replace(/\u2212/g, "-")};
   return {ok:false, raw:s, why:"caractere misturado"};
 }
+/* volume em ml: "1.840" é mil oitocentos e quarenta; "+ 540" e "-300" com sinal */
+function vol(raw){
+  if (raw === null || raw === undefined) return null;
+  var s = String(raw).trim().replace(/\u2212/g, "-").replace(/\s+/g, "").replace(/ml$/i, "");
+  if (!s) return null;
+  if (s === "?") return {ok:false, raw:s, why:"ilegível"};
+  if (/^[-+]?(\d{1,3}(\.\d{3})+|\d+)(,\d+)?$/.test(s)) return {ok:true, v:parseFloat(s.replace(/\./g, "").replace(",", ".")), raw:s};
+  return {ok:false, raw:s, why:"caractere misturado"};
+}
+function horaKey(h){ var v = horaNum(h); return v === null ? null : (v < 10 ? "0" : "") + v; }
 function horaNum(h){ var n = num(h); if (!n || !n.ok) return null; var v = Math.round(n.v); return v === 24 ? 0 : v; }
 function horaOrd(h){ var v = horaNum(h); return v === null ? 99 : (v < 7 ? v + 24 : v); }
 function naJanela(h, jan){
@@ -563,6 +573,13 @@ function naJanela(h, jan){
   return jan === "d" ? (v >= 7 && v <= 18) : (v >= 19 || v <= 6);
 }
 function fmtNum(v){ return (Math.round(v * 100) / 100).toString().replace(".", ","); }
+/* volume como o motor (_fmt): inteiro com ponto de milhar, decimal com 1 casa e vírgula */
+function fmtMl(v){
+  var inteiro = Math.trunc(Math.abs(v)), dec = Math.round((Math.abs(v) - inteiro) * 10);
+  if (dec === 10){ inteiro++; dec = 0; }
+  var s = String(inteiro).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return (v < 0 ? "-" : "") + s + (Number.isInteger(v) ? "" : "," + dec);
+}
 function normLeito(x){
   if (x === null || x === undefined) return null;
   var m = String(x).match(/\d+/);
@@ -581,15 +598,23 @@ function firstVal(list, key){
   return {v: v, conflito: conflito};
 }
 
+/* limiares do motor (build_passagem.LIMIARES, BRIEFING §2); Dx < 70 e TAX > 37,8 desde 11/10/2026 */
 var VP = [
-  {k:"pas", lab:"PAS",  unit:"mmHg", op:"<", t:90,   abs:[50,260]},
-  {k:"pad", lab:"PAD",  unit:"mmHg", op:"<", t:50,   abs:null},
-  {k:"pam", lab:"PAM",  unit:"mmHg", op:"<", t:65,   abs:[30,200]},
-  {k:"fc",  lab:"FC",   unit:"bpm",  op:">", t:100,  abs:[20,250]},
-  {k:"fr",  lab:"FR",   unit:"rpm",  op:">", t:20,   abs:[4,80]},
-  {k:"spo2",lab:"SpO2", unit:"%",    op:"<", t:92,   abs:[50,100]},
-  {k:"t",   lab:"TAX",  unit:"°C",   op:"<", t:35.5, abs:[30,43]}
+  {k:"pas", lab:"PAS",  unit:"mmHg", lim:[["<", 90]],              abs:[50,260]},
+  {k:"pad", lab:"PAD",  unit:"mmHg", lim:[["<", 50]],              abs:null},
+  {k:"pam", lab:"PAM",  unit:"mmHg", lim:[["<", 65]],              abs:[30,200]},
+  {k:"fc",  lab:"FC",   unit:"bpm",  lim:[[">", 100]],             abs:[20,250]},
+  {k:"fr",  lab:"FR",   unit:"rpm",  lim:[[">", 20]],              abs:[4,80]},
+  {k:"spo2",lab:"SpO2", unit:"%",    lim:[["<", 92]],              abs:[50,100]},
+  {k:"t",   lab:"TAX",  unit:"ºC",   lim:[["<", 35.5], [">", 37.8]], abs:[30,43]}
 ];
+var DX_LIM = [[">", 180], ["<", 70]];
+function flagsTxt(vals, lim){
+  return lim.map(function(l){
+    var c = vals.filter(function(v){ return passa(v, l[0], l[1]); }).length;
+    return c ? " [" + c + "x " + l[0] + " " + fmtNum(l[1]) + "]" : "";
+  }).join("");
+}
 function passa(v, op, t){ return op === "<" ? v < t : v > t; }
 
 function coleta(afs, k){
@@ -603,7 +628,10 @@ function coleta(afs, k){
   });
   return out;
 }
-function revisar(v, abs){ return abs && (v < abs[0] || v > abs[1]) ? " (revisar)" : ""; }
+/* valor fora do plausível: a dúvida vai para as pendências, o número fica como escrito */
+function plausivel(lab, x, abs, pend){
+  if (abs && (x.n.v < abs[0] || x.n.v > abs[1])) pend.push(lab + " " + x.n.raw + (x.hora ? " (" + x.hora + " h)" : "") + " fora do plausível: conferir na folha.");
+}
 function horasTxt(list){
   var hs = list.map(function(x){ return x.hora ? x.hora + " h" : "hora ?"; });
   return hs.join(", ");
@@ -615,38 +643,21 @@ function linhaVital(p, vals, pend){
   var ileg = vals.filter(function(x){ return !x.n.ok; });
   if (ileg.length){
     var mist = ileg.filter(function(x){ return x.n.why !== "ilegível"; }).map(function(x){ return "\"" + x.n.raw + "\""; });
-    pend.push(p.lab + ": " + ileg.length + " leitura(s) sem número legível (" + horasTxt(ileg) + ")" + (mist.length ? ", lido " + mist.join(", ") : "") + "; ficou fora do Máx–Mín.");
+    pend.push(p.lab + ": " + ileg.length + " leitura(s) sem número legível (" + horasTxt(ileg) + ")" + (mist.length ? ", lido " + mist.join(", ") : "") + "; ficou fora do Máx - Mín.");
   }
-  if (!leg.length) return {s: p.lab + ": ? " + p.unit, cnt:0, leg:[]};
+  if (!leg.length) return {s: p.lab + ": ? " + p.unit, leg:[]};
   var mx = leg[0], mn = leg[0];
-  leg.forEach(function(x){ if (x.n.v > mx.n.v) mx = x; if (x.n.v < mn.n.v) mn = x; });
-  var cnt = leg.filter(function(x){ return passa(x.n.v, p.op, p.t); }).length;
-  var s = p.lab + ": " + mx.n.raw + revisar(mx.n.v, p.abs) + " - " + mn.n.raw + revisar(mn.n.v, p.abs) + " " + p.unit;
-  if (cnt > 0) s += " [" + cnt + "x " + p.op + " " + p.t + "]";
-  return {s:s, cnt:cnt, leg:leg};
+  leg.forEach(function(x){ if (x.n.v > mx.n.v) mx = x; if (x.n.v < mn.n.v) mn = x; plausivel(p.lab, x, p.abs, pend); });
+  var base = p.lab + ": " + mx.n.raw + " - " + mn.n.raw + " " + p.unit, fl = flagsTxt(leg.map(function(x){ return x.n.v; }), p.lim);
+  return {s:base + fl, base:base, fl:fl, leg:leg};
 }
 
-function somaCampos(vals, rotulos, pend, oque){
-  var present = [], faltando = [];
-  vals.forEach(function(v, i){
-    var n = num(v);
-    if (!n) faltando.push(rotulos[i] + " sem registro");
-    else if (!n.ok) faltando.push(rotulos[i] + " ilegível");
-    else present.push(n.v);
-  });
-  if (!present.length && faltando.length === vals.length && faltando.every(function(f){ return /sem registro/.test(f); })) return null;
-  if (faltando.length){ pend.push(oque + ": " + faltando.join("; ") + "."); return "?"; }
-  return fmtNum(present.reduce(function(a, b){ return a + b; }, 0));
-}
-
-function fmtBH(raw, pend){
-  var n = num(raw);
-  if (!n) return null;
-  if (!n.ok){ pend.push("BH ilegível (\"" + n.raw + "\")."); return "?"; }
-  var abs = n.raw.replace(/^[-+]\s*/, "");
-  var sign = n.v < 0 ? "- " : (n.v > 0 ? "+ " : "");
-  return sign + abs + revisar(n.v, [-5000, 5000]);
-}
+/* coluna impressa → nome que o motor conhece (CANON) e lado da conta; igual ao esteira/montar.py */
+var COLUNA = {"VO":["ingesta VO","g"], "Dieta":["dieta","g"], "SNE":["dieta SNE","g"], "Água":["água","g"], "Med":["medicação","g"],
+  "Endovenoso":["EV","g"], "Infus. Rápida":["infusão rápida","g"], "Dil.":["diluição","g"], "Diurese":["diurese","p"],
+  "SNG/SNE":["débito SNG/SNE","p"], "Evacuação":["evacuação","p"], "Resíduo Gástrico":["resíduo gástrico","p"],
+  "Dreno/SVD":["dreno","p"], "outra (ganho)":[null,"g"], "outra (perda)":[null,"p"]};
+var VASOATIVA = /nora|adren|vaso|dobu|dopa|milri|levosi|nitrop|tridil/i;
 
 var LAB_ALIAS = {HGB:"HB",HEMOGLOBINA:"HB",HEMATOCRITO:"HT",PLAQUETAS:"PLAQ",PLT:"PLAQ",LEUCOCITOS:"LEUCO",LEUC:"LEUCO",SEGMENTADOS:"SEG",BASTONETES:"BAST",UREIA:"UR",CREATININA:"CR",CREAT:"CR",MAGNESIO:"MG",SODIO:"NA",POTASSIO:"K",FOSFORO:"P",CALCIOIONICO:"CAI",CAIONICO:"CAI",LACTATO:"LACTATO",LAC:"LACTATO",PCO2:"PCO2",PO2:"PO2",HCO3:"HCO3",BE:"BE",SBE:"BE",SATO2:"SATO2",PH:"PH"};
 var LAB_UNIT = {HB:"g/dl",HT:"%",PLAQ:"/mm3",LEUCO:"/mm3",UR:"mg/dl",CR:"mg/dl",MG:"mg/dl",NA:"mEq/L",CAI:"mmol/L",K:"mEq/L",P:"mg/dl"};
@@ -721,7 +732,7 @@ function assemble(){
       var leito = normLeito(pc.leito), nome = pc.nome ? String(pc.nome).trim() : null;
       var key = leito ? "L" + leito : (nome ? "N" + normNome(nome) : "P" + pg.id + "_" + i);
       if (!pts[key]){
-        pts[key] = {key:key, leito:leito, nomes:[], idade:[], sexo:[], unidade:[], datasSV:[], sv:[], bal:[], presc:[], labs:[], pend:[], src:[]};
+        pts[key] = {key:key, leito:leito, nomes:[], idade:[], sexo:[], unidade:[], datasSV:[], datasRx:[], sv:[], bal:[], presc:[], labs:[], pend:[], src:[]};
         ordem.push(key);
       }
       var P = pts[key];
@@ -734,7 +745,7 @@ function assemble(){
       P.src.push(pg.label);
       if (tipo === "sv"){ P.sv.push(pc); if (pc.data_folha) P.datasSV.push(String(pc.data_folha).trim()); }
       else if (tipo === "balanco") P.bal.push(pc);
-      else if (tipo === "prescricao") P.presc.push(pc);
+      else if (tipo === "prescricao"){ P.presc.push(pc); if (pc.data_folha) P.datasRx.push(String(pc.data_folha).trim()); }
       else if (tipo === "labs") P.labs = P.labs.concat(arr(pc.exames));
     });
   });
@@ -751,10 +762,10 @@ function assemble(){
     list.forEach(function(x){ c[x] = (c[x] || 0) + 1; if (best === null || c[x] > c[best]) best = x; });
     return best;
   }
-  var unidades = [], datas = [];
-  ordem.forEach(function(k){ unidades = unidades.concat(pts[k].unidade); datas = datas.concat(pts[k].datasSV); });
+  var unidades = [], datas = [], datasRx = [];
+  ordem.forEach(function(k){ unidades = unidades.concat(pts[k].unidade); datas = datas.concat(pts[k].datasSV); datasRx = datasRx.concat(pts[k].datasRx); });
   var sitrep = "SITREP — " + (moda(unidades) || "unidade ?") + " — " + (moda(datas) || "data ?") + " — " + beds.length + (beds.length === 1 ? " LEITO" : " LEITOS") + " — janela " + janTxt;
-  return {beds:beds, gpend:gpend, sitrep:sitrep};
+  return {beds:beds, gpend:gpend, sitrep:sitrep, jan:jan, janTxt:janTxt, unidade:moda(unidades), dataFolha:moda(datas), dataRx:moda(datasRx)};
 }
 
 function buildBed(P, jan, janTxt){
@@ -791,7 +802,7 @@ function buildBed(P, jan, janTxt){
       });
       /* 11/10/2026: AA/cateter entre parênteses no SpO2; VM em linha própria depois do Dx (BRIEFING §2) */
       var ehVM = sups.some(function(x){ return /PCV|VCV|PSV|PEEP|FiO2|VM|IOT|TQT/i.test(x); });
-      if (sups.length && !ehVM) s += " (" + sups.join(" -> ") + ")";
+      if (sups.length && !ehVM) s = r.base + " (" + sups.join(" -> ") + ")" + r.fl;  /* como o motor: suporte antes do flag */
       else if (sups.length && ehVM) supVM = "Sup O2: " + sups.join(" -> ");
       else if (supIleg) pend.push("Sup O2 ilegível.");
     }
@@ -800,84 +811,87 @@ function buildBed(P, jan, janTxt){
 
   var dxv = coleta(afs, "dx"), linhaDx = null, dxCnt250 = 0;
   if (dxv.length){
-    var leg = dxv.filter(function(x){ return x.n.ok; }).sort(function(a, b){ return b.n.v - a.n.v; });
+    var leg = dxv.filter(function(x){ return x.n.ok; }).sort(function(a, b){ return b.n.v - a.n.v; });  /* como o motor */
     var ileg = dxv.filter(function(x){ return !x.n.ok; });
-    var partes = leg.map(function(x){ return x.n.raw + revisar(x.n.v, [20, 800]); }).concat(ileg.map(function(){ return "?"; }));
-    var c180 = leg.filter(function(x){ return x.n.v > 180; }).length;
+    leg.forEach(function(x){ plausivel("Dx", x, [20, 800], pend); });
+    var partes = leg.map(function(x){ return x.n.raw; }).concat(ileg.map(function(){ return "?"; }));
     dxCnt250 = leg.filter(function(x){ return x.n.v > 250; }).length;
-    linhaDx = "Dx: " + partes.join(" / ") + " mg/dl" + (c180 ? " [" + c180 + "x > 180]" : "");
+    linhaDx = "Dx: " + partes.join(" / ") + " mg/dl" + flagsTxt(leg.map(function(x){ return x.n.v; }), DX_LIM);
     if (ileg.length) pend.push("Dx: " + ileg.length + " valor(es) ilegível(is) (" + horasTxt(ileg) + ").");
   }
 
-  /* balanço */
+  /* balanço: a conta é a soma das CÉLULAS (BRIEFING §4); o rodapé da folha só confere */
   function bf(key){
     var r = firstVal(P.bal, key);
     if (r.conflito) pend.push("Balanço: valores diferentes entre páginas para " + key.replace(/_/g, " ") + " (" + r.conflito.join(" / ") + ").");
     return r.v;
   }
-  var linhasB = [];
-  if (P.bal.length){
-    var dieta = bf("dieta");
-    var ingesta = jan === "24" ? somaCampos([bf("ganhos_6_18"), bf("ganhos_19_6")], ["Ganhos 6h-18h", "Ganhos 19h-6h"], pend, "Ingesta")
-                : (jan === "d" ? somaCampos([bf("ganhos_6_18")], ["Ganhos 6h-18h"], pend, "Ingesta") : somaCampos([bf("ganhos_19_6")], ["Ganhos 19h-6h"], pend, "Ingesta"));
-    var di = [];
-    if (dieta) di.push("Dieta: " + dieta);
-    if (ingesta !== null) di.push("Ingesta: " + ingesta + " ml");
-    if (di.length) linhasB.push(di.join(" | "));
-    var evac = bf("evacuacao");
-    if (evac) linhasB.push("Evacuação: " + evac);
-
-    var regs = [];
-    P.bal.forEach(function(pc){ regs = regs.concat(arr(pc.diurese_registros)); });
-    var regsJan = regs.filter(function(r){ return naJanela(r.hora, jan); });
-    var diurese = null;
-    function somaRegs(list, motivo){
-      if (!list.length) return null;
-      var ns = list.map(function(r){ return num(r.ml); });
-      if (ns.some(function(n){ return !n || !n.ok; })){ pend.push("Diurese: " + motivo + " e há registro ilegível na coluna."); return "?"; }
-      pend.push("Diurese: " + motivo + "; somada da coluna pela página.");
-      return fmtNum(ns.reduce(function(a, n){ return a + n.v; }, 0));
-    }
-    if (jan === "24"){
-      /* 11/10/2026: diurese = soma das células (BRIEFING §4); o "D:" escrito à mão só confere */
-      var d24 = num(bf("diurese_24h"));
-      diurese = somaRegs(regs, "24 h");
-      if (diurese === null && d24 && d24.ok){ diurese = d24.raw; pend.push("Diurese: sem células legíveis; usado o D: da folha."); }
-      else if (diurese !== null && diurese !== "?" && d24 && d24.ok && Math.abs(num(diurese).v - d24.v) > 0.5)
-        pend.push("Diurese: células somam " + diurese + " ml; D: da folha diz " + d24.raw + " ml.");
-    } else {
-      diurese = somaRegs(regsJan, "janela de 12 h");
-    }
-    if (diurese !== null) linhasB.push("Diurese: " + diurese + " ml");
-
-    var bhRaw = jan === "24" ? bf("bh_24h") : (jan === "d" ? bf("balanco_6_18") : bf("balanco_19_6"));
-    var bh = fmtBH(bhRaw, pend);
-    if (bh !== null) linhasB.push("BH: " + bh + " ml");
-  }
-
-  var outros = [], dvaLinhas = [], dvaNomes = [];
-  var res = firstVal(P.bal, "residuo_gastrico").v;
-  if (res) outros.push("Resíduo gástrico: " + res);
+  var linhasB = [], ganhos = [], perdas = [], bics = [], dvaNomes = [], conf = {};
+  var somaG = 0, somaP = 0, diur = null, evacMl = 0, outrasP = [], celIleg = 0;
+  /* dieta: a da prescrição (digitada) vale mais que a das colunas da folha (manuscrita) */
+  var dieta = firstVal(P.presc, "dieta_prescrita").v || (P.bal.length ? bf("dieta") : null);
+  var evac = P.bal.length ? bf("evacuacao") : null;
   P.bal.forEach(function(pc){
-    arr(pc.drenos).forEach(function(d){ if (d) outros.push(String(d)); });
-    arr(pc.infusoes).forEach(function(b){
-      if (!b || !b.rotulo) return;
-      if (b.vasoativa){ dvaLinhas.push("⚠ BIC c/ rótulo compatível com " + b.rotulo + " (CONFIRMAR)"); dvaNomes.push(b.rotulo); }
-      else outros.push("BIC: " + b.rotulo + (b.confirmar ? " (CONFIRMAR)" : ""));
+    arr(pc.balanco).forEach(function(c){
+      if (!c || !c.coluna) return;
+      var map = COLUNA[c.coluna] || [null, /perda/i.test(c.coluna) ? "p" : "g"];
+      var rot = c.rotulo ? String(c.rotulo).trim() : "";
+      if (c.coluna === "Endovenoso" && rot){
+        bics.push(rot);
+        if (VASOATIVA.test(rot)){ dvaNomes.push(rot); pend.push("BIC \"" + rot + "\": rótulo manuscrito compatível com vasoativa; confirmar a droga e a dose."); }
+      }
+      var nome = !map[0] ? (rot || "?") : (c.coluna === "Dreno/SVD" && /svd/i.test(rot) ? "diurese (SVD)" : map[0] + (rot ? " " + rot : ""));
+      if (!map[0] && !rot) pend.push("Balanço: coluna sem rótulo legível (" + c.coluna + "); o motor não soma item sem nome conhecido.");
+      var serie = {}, soma = 0, ileg = [];
+      arr(c.celulas).forEach(function(cel){
+        if (!cel || !naJanela(cel.hora, jan)) return;
+        var n = vol(cel.ml), h = horaKey(cel.hora);
+        if (!n) return;
+        var val = n.ok ? n.v : "?";
+        if (!n.ok) ileg.push(cel.hora ? cel.hora + " h" : "hora ?"); else soma += n.v;
+        if (h) serie[h] = serie[h] === undefined ? val : [].concat(serie[h], [val]);
+      });
+      if (!Object.keys(serie).length && !soma && !ileg.length) return;
+      if (ileg.length){ celIleg += ileg.length; pend.push(nome + ": " + ileg.length + " célula(s) ilegível(is) (" + ileg.join(", ") + "); a soma pode estar subestimada."); }
+      (map[1] === "g" ? ganhos : perdas).push({nome: nome, serie: serie});
+      if (map[1] === "g"){ somaG += soma; return; }
+      somaP += soma;
+      if (/diur|urin|svd/i.test(nome)) diur = (diur || 0) + soma;
+      else if (/evacua/i.test(nome)) evacMl += soma;
+      else outrasP.push([nome.charAt(0).toUpperCase() + nome.slice(1), soma]);
     });
   });
+  if (P.bal.length){
+    var di = [];
+    if (dieta) di.push("Dieta: " + dieta);
+    if (ganhos.length) di.push("Ingesta hídrica: " + fmtMl(somaG) + " ml");
+    if (di.length) linhasB.push(di.join(" | "));
+    if (evac || evacMl) linhasB.push("Evacuação: " + [evac, evacMl ? fmtMl(evacMl) + " ml" : ""].filter(Boolean).join(", "));
+    if (diur !== null) linhasB.push("Diurese: " + fmtMl(diur) + " ml");
+    outrasP.forEach(function(o){ linhasB.push(o[0] + ": " + fmtMl(o[1]) + " ml"); });
+    if (bics.length) linhasB.push("BIC: " + bics.join(" · "));
+    if (ganhos.length || perdas.length){
+      var bh = somaG - somaP;
+      linhasB.push("BH: " + (bh < 0 ? "- " : "+ ") + fmtMl(Math.abs(bh)) + " ml");
+    }
+    if (jan === "24"){
+      var rod = firstVal(P.bal, "rodape").v || {};
+      [["ganhos_24h", "Ganhos", somaG, "ganhos"], ["perdas_24h", "Perdas", somaP, "perdas"], ["diurese_24h", "Diurese", diur, "diurese"], ["bh_24h", "BH", somaG - somaP, "bh"]].forEach(function(r){
+        var n = vol(rod[r[0]]);
+        if (!n) return;
+        if (!n.ok){ pend.push("Rodapé " + r[1] + " ilegível (\"" + n.raw + "\"): não conferido."); return; }
+        conf[r[3]] = n.v;
+        if (r[2] !== null && Math.abs(n.v - r[2]) > 0.5) pend.push("Conferência: rodapé " + r[1] + " diz " + n.raw + ", células somam " + fmtMl(r[2]) + " ml.");
+      });
+    }
+  }
 
-  if (linhasV.length || linhaDx || linhasB.length || outros.length || dvaLinhas.length){
+  if (linhasV.length || linhaDx || linhasB.length){
     L.push("Sinais vitais + balanço " + janTxt + ":");
     linhasV.forEach(function(s){ L.push(s); });
     if (linhaDx) L.push(linhaDx);
     if (supVM) L.push(supVM);
     linhasB.forEach(function(s){ L.push(s); });
-    if (outros.length || dvaLinhas.length){
-      L.push("");
-      if (outros.length) L.push("Drenos/Resíduo gástrico/Infusões: " + outros.join("; "));
-      dvaLinhas.forEach(function(s){ L.push(s); });
-    }
     L.push("");
   }
   if (P.sv.length && !P.bal.length) pend.push("Sem folha de balanço pareada para este leito.");
@@ -888,6 +902,7 @@ function buildBed(P, jan, janTxt){
   if (labs.length){ L.push("Laboratório:"); labs.forEach(function(s){ L.push(s); }); L.push(""); }
 
   /* prescrição */
+  var cab = {diagnostico: null, alergia: null}, prescLida = {};
   if (P.presc.length){
     function pf(key, rot){
       var r = firstVal(P.presc, key);
@@ -898,12 +913,14 @@ function buildBed(P, jan, janTxt){
     L.push("DIAGNÓSTICO IDENTIFICADO: " + (pf("diagnostico", "diagnóstico") || "(não consta na imagem)"));
     L.push("ALERGIAS: " + (pf("alergias", "alergias") || "(não consta)"));
     L.push("DIETA: " + (pf("dieta_prescrita", "dieta") || "(não consta)"));
+    cab.diagnostico = firstVal(P.presc, "diagnostico").v; cab.alergia = firstVal(P.presc, "alergias").v;
     var porBloco = {}, semBloco = [], susp = [], proc = [], rec = [], safety = [];
     BLOCOS.forEach(function(b){ porBloco[b] = []; });
     P.presc.forEach(function(pc){
       arr(pc.itens).forEach(function(it){
         if (!it || !it.texto) return;
-        var t = String(it.texto).trim() + (it.revisar_ocr ? " (REVISAR OCR)" : "");
+        var t = String(it.texto).trim();
+        if (it.revisar_ocr) pend.push("Prescrição: leitura incerta, conferir na folha: " + t + ".");
         if (porBloco[it.bloco]) porBloco[it.bloco].push(t); else semBloco.push(t);
       });
       arr(pc.suspensos).forEach(function(x){ if (x) susp.push(String(x)); });
@@ -912,7 +929,9 @@ function buildBed(P, jan, janTxt){
       if (pc.safety) safety.push(String(pc.safety));
     });
     function bloco(nome, itens){ if (!itens.length) return; L.push(""); L.push(nome + ":"); itens.forEach(function(t){ L.push("- " + t); }); }
-    BLOCOS.forEach(function(b){ bloco(b, porBloco[b]); });
+    BLOCOS.forEach(function(b){ bloco(b, porBloco[b]); if (porBloco[b].length) prescLida[b] = porBloco[b]; });
+    if (semBloco.length) prescLida["Não classificado"] = semBloco;
+    if (susp.length) prescLida["Suspensos à mão"] = susp;
     bloco("Não classificado (conferir)", semBloco);
     bloco("Suspensos à mão", susp);
     bloco("Procedimentos", proc);
@@ -939,8 +958,61 @@ function buildBed(P, jan, janTxt){
   if (dxCnt250 >= 2) flags.push("Dx > 250 em " + dxCnt250 + "x");
   uniq(dvaNomes).forEach(function(n){ flags.push("BIC compatível com vasoativa: " + n); });
 
-  return {P:P, titulo:titulo, texto:L.join("\n"), pend:uniq(pend), flags:flags};
+  /* JSON do leito no formato do gerador/schema-plantao.md: números crus, por hora; a conta oficial é do motor */
+  var vitais = {};
+  function poe(nome, x, val){
+    var h = horaKey(x.hora); if (!h) return;
+    vitais[nome] = vitais[nome] || {};
+    vitais[nome][h] = vitais[nome][h] === undefined ? val : [].concat(vitais[nome][h], [val]);
+  }
+  VP.concat([{k:"dx", lab:"Dx"}]).forEach(function(p){
+    coleta(afs, p.k).forEach(function(x){ poe(p.lab, x, x.n.ok ? x.n.v : "?"); });
+  });
+  var sups = afs.map(function(a){ return a.suporte ? String(a.suporte).trim() : ""; }).filter(function(t){ return t && t !== "?"; });
+  var leito = {leito: P.leito || "?", nome: nomes[0] || "?", idade_sexo: (String(idade).replace(/\D/g, "") + sexo.charAt(0)) || "?",
+    diagnostico: cab.diagnostico || "?", alergia: cab.alergia || "?", dieta: dieta || undefined,
+    vitais: vitais, sup_o2: sups.length ? sups[sups.length - 1] : undefined, ganhos: ganhos, perdas: perdas,
+    conferencia_enfermagem: Object.keys(conf).length ? conf : undefined, evacuacao: evac || undefined,
+    outros_balanco: bics.length ? ["BIC: " + bics.join(" · ")] : undefined,
+    laboratorio: labs.length ? labs : undefined, avisos: uniq(pend),
+    prescricao_lida: Object.keys(prescLida).length ? prescLida : undefined};
+  if (jan !== "24") leito.recorte = {d:"diurno", n:"noturno"}[jan];
+
+  return {P:P, titulo:titulo, texto:L.join("\n"), pend:uniq(pend), flags:flags, json:leito};
 }
+
+/* ----------------------------------------------------- JSON do plantão */
+function dataISO(d){
+  var m = String(d || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return m ? new Date(Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1]))) : null;
+}
+function dataBR(dt){
+  function z(n){ return (n < 10 ? "0" : "") + n; }
+  return z(dt.getUTCDate()) + "/" + z(dt.getUTCMonth() + 1) + "/" + dt.getUTCFullYear();
+}
+function jsonOrdenado(v, ind){
+  ind = ind || "";
+  if (Array.isArray(v)) return "[" + v.map(function(x){ return jsonOrdenado(x, ind + " "); }).join(", ") + "]";
+  if (!v || typeof v !== "object") return JSON.stringify(v);
+  var ks = Object.keys(v).filter(function(k){ return v[k] !== undefined; });
+  if (ks.length && ks.every(function(k){ return horaNum(k) !== null; })) ks.sort(function(a, b){ return horaOrd(a) - horaOrd(b); });
+  return "{" + ks.map(function(k){ return "\n" + ind + " " + JSON.stringify(k) + ": " + jsonOrdenado(v[k], ind + " "); }).join(",") + "\n" + ind + "}";
+}
+function plantaoJSON(R){
+  var avisos = [], data = dataISO(R.dataRx);
+  if (!data && dataISO(R.dataFolha)){
+    data = new Date(dataISO(R.dataFolha).getTime() + 86400000);
+    avisos.push("data do plantão deduzida da folha de controle (" + R.dataFolha + " + 1 dia): conferir");
+  }
+  var uti = String(R.unidade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().match(/UTI\D*(\d+)/);
+  var meta = {unidade: uti ? "UTI " + uti[1] : "UTI ?", data: data ? dataBR(data) : "", turno: R.jan === "n" ? "noturno" : "diurno",
+              janela: R.jan === "24" ? "24 h" : R.janTxt, data_prescricao: data ? dataBR(data).slice(0, 5) : ""};
+  if (R.jan !== "24") meta.recorte = {d:"diurno", n:"noturno"}[R.jan];
+  var leitos = R.beds.map(function(b){ return JSON.parse(JSON.stringify(b.json)); });
+  if (avisos.length && leitos.length) leitos[0].avisos = avisos.concat(leitos[0].avisos);
+  return {meta: meta, leitos: leitos};
+}
+window.__extracao = {S: S, assemble: assemble, plantaoJSON: plantaoJSON, jsonOrdenado: jsonOrdenado};  /* para o teste da página */
 
 /* --------------------------------------------------------------- saída */
 function assembleAndRender(){
@@ -993,6 +1065,7 @@ document.addEventListener("click", function(e){
   var b = e.target.closest("button[data-copy]");
   if (b){ var ta = $("blk" + b.getAttribute("data-copy")); if (ta) copyText(ta.value, b); return; }
   if (e.target.id === "copycf"){ copyText($("cf").value, e.target); return; }
+  if (e.target.id === "copyjson" && S.results){ copyText(jsonOrdenado(plantaoJSON(S.results)), e.target); return; }
   if (e.target.id === "copyall" && S.results){
     var all = S.results.beds.map(function(bd, i){ var ta = $("blk" + i); return ta ? ta.value : bd.texto; }).join("\n\n");
     copyText(all, e.target);

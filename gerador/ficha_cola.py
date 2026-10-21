@@ -4,12 +4,14 @@ Cabeçalho: leito + nome + Dx + dispositivos | alergia + plantão.
 Corpo: CONTROLES + LAB | PRESCRIÇÃO (infusões/terapias + por sistemas) | PENDÊNCIAS + EXAMES + ANOTAÇÕES.
 Rodapé de trabalho: grade de controles do plantão | intercorrências.
 Preto no branco, Times New Roman, fios cinza entre linhas para guiar a leitura."""
-import json, re, shutil, subprocess, sys, tempfile
+import json, re, subprocess, sys, tempfile
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "skills" / "sasi-ingest-export" / "scripts"))
 import build_passagem as motor  # noqa: E402
+import estilo as E  # noqa: E402
+import office  # noqa: E402
 
 from docx import Document  # noqa: E402
 from docx.enum.section import WD_ORIENT  # noqa: E402
@@ -19,10 +21,10 @@ from docx.oxml import OxmlElement  # noqa: E402
 from docx.oxml.ns import qn  # noqa: E402
 from docx.shared import Cm, Pt  # noqa: E402
 
-FONTE = "Times New Roman"
-S = {"tam": 10, "ls": 1.05}
-CINZA = "A6A6A6"
-CFG = {"tam": 10}
+FONTE = E.FONTE
+S = {"tam": E.CORPO, "ls": E.ENTRELINHA_FICHA}
+CINZA = E.PAPEL_CINZA
+CFG = {"tam": E.CORPO}
 
 
 def T(p, txt, b=False, tam=None, it=False):
@@ -38,7 +40,7 @@ def rico(p, txt, tam=None, b_all=False):
             T(p, parte, b=b_all or i % 2 == 1, tam=tam)
 
 
-def borda_p(p, lado="bottom", sz=6, cor="000000"):
+def borda_p(p, lado="bottom", sz=6, cor=E.PAPEL_TINTA):
     pPr = p._p.get_or_add_pPr()
     b = pPr.find(qn("w:pBdr"))
     if b is None:
@@ -98,8 +100,8 @@ def borda_cel(cell, **lados):
 
 
 
-W = 27.7
-WL, WM = 8.3, 11.0
+W = E.LARGURA_UTIL
+WL, WM = E.COL_CONTROLES, E.COL_PRESCRICAO
 WR = W - WL - WM
 
 
@@ -125,7 +127,7 @@ def sec(cell, txt, first=False, before=5):
     p = P(cell, first=first, after=3, before=0 if first else before)
     p.paragraph_format.keep_with_next = True
     t(p, txt, b=True, tam=S["tam"])
-    borda_p(p, "bottom", 8)
+    borda_p(p, "bottom", E.FIO_TITULO)
     return p
 
 
@@ -148,7 +150,7 @@ def encolher(p):
 
 
 def grade(cell_or_doc, rows, cols, larg, linhas=True):
-    bd = {"insideH": (2, CINZA), "bottom": (2, CINZA), "top": (2, CINZA)} if linhas else None
+    bd = {"insideH": (E.FIO_GUIA, CINZA), "bottom": (E.FIO_GUIA, CINZA), "top": (E.FIO_GUIA, CINZA)} if linhas else None
     g = tabela(cell_or_doc, rows, cols, larg, bd)
     if hasattr(cell_or_doc, "paragraphs"):
         encolher(cell_or_doc.paragraphs[-1])
@@ -172,6 +174,28 @@ def droga(p, item):
             t(p, m.group(1), b=True); t(p, m.group(2) + m.group(3))
         else:
             t(p, seg)
+
+
+# ── dados do cabeçalho: uma fonte só ────────────────────────────────────────
+# alergia, Dx e dispositivos moram no leito (alergia, diagnostico, dispositivos); o bloco `ficha` só sobrescreve
+# quando precisa de um texto mais curto. Divergência entre os dois vira erro/aviso no gerador/validar.py.
+CABECALHO = {"alergia": "alergia", "dx": "diagnostico", "disp": "dispositivos"}
+
+
+def dado(leito, chave):
+    v = leito["ficha"].get(chave)
+    return v if v not in (None, "") else (leito.get(CABECALHO[chave]) or "")
+
+
+def janelas(leito, meta, jan=None):
+    """Títulos de CONTROLES e BALANÇO. Sem `janela_controles`/`janela_balanco` no bloco, saem da janela que o motor
+    conferiu (24 h = 07 - 05 h)."""
+    f = leito["ficha"]
+    jan = jan or leito.get("janela") or meta.get("janela") or "24 h"
+    d = motor._data(meta.get("data"))
+    padrao_c = f"{d:%d/%m}  ·  07 - 05 h" if jan == "24 h" and d else (jan if jan != "24 h" else "07 - 05 h")
+    padrao_b = "07 - 05 h" if jan == "24 h" else jan
+    return f.get("janela_controles") or padrao_c, f.get("janela_balanco") or padrao_b
 
 
 # ── colunas ────────────────────────────────────────────────────────────────
@@ -208,8 +232,8 @@ def linhas_controle(r, leito):
     return vit, bal
 
 
-def col_controles(C, r, leito):
-    sec(C, f"CONTROLES  {leito['ficha']['janela_controles']}", first=True)
+def col_controles(C, r, leito, jan_c, jan_b):
+    sec(C, f"CONTROLES  {jan_c}", first=True)
     vit, bal = linhas_controle(r, leito)
     pares = [("PAS", "FR"), ("PAD", "SpO2"), ("PAM", "TAX"), ("FC", None)]
     w = [1.0, 1.75, 1.3] * 2
@@ -225,7 +249,7 @@ def col_controles(C, r, leito):
             if fl:
                 q = P(c2, True, 0); q.alignment = 2; t(q, fl, b=True, tam=S["tam"] - 1)
     for row in g.rows:
-        borda_cel(row.cells[3], left=(4, CINZA))
+        borda_cel(row.cells[3], left=(E.FIO_SECAO, CINZA))
     if "Dx" in vit:
         val, fl = vit["Dx"]
         g2 = grade(C, 1, 3, [1.05, 5.1, 2.15])
@@ -234,7 +258,7 @@ def col_controles(C, r, leito):
         if fl:
             q = P(g2.rows[0].cells[2], True, 0); q.alignment = 2; t(q, fl, b=True, tam=S["tam"] - 1)
 
-    subsec(C, f"BALANÇO  {leito['ficha']['janela_balanco']}")
+    subsec(C, f"BALANÇO  {jan_b}")
     curtos = [(k, v) for k, v in bal if k != "Evacuação"]
     evac = [v for k, v in bal if k == "Evacuação"]
     n = (len(curtos) + 1) // 2
@@ -245,7 +269,7 @@ def col_controles(C, r, leito):
         t(P(c0, True, 0), k, b=True)
         t(P(c1, True, 0), v + ("" if k in ("Evacuação",) else " ml"), b=(k == "BH"))
     for row in g3.rows[:n]:
-        borda_cel(row.cells[2], left=(4, CINZA))
+        borda_cel(row.cells[2], left=(E.FIO_SECAO, CINZA))
     if evac:
         rr = g3.rows[n].cells
         t(P(rr[0], True, 0), "Evac.", b=True)
@@ -256,7 +280,7 @@ def col_controles(C, r, leito):
         q = P(C, after=2.5); rk(q, linha.replace(" | ", "   |   "))
 
 
-def bloco_rx(C, linhas, w_rot=2.35):
+def bloco_rx(C, linhas, w_rot=E.RX_ROTULO):
     g = grade(C, len(linhas), 2, [w_rot, WM - 0.6 - w_rot])
     for i, (rot, itens) in enumerate(linhas):
         c0, c1 = g.rows[i].cells
@@ -299,58 +323,58 @@ def col_acao(C, leito, n_anot):
 def linhas(cell, n):
     for k in range(n):
         q = P(cell, after=0, before=11)
-        t(q, " ", tam=6); borda_p(q, "bottom", 4, "8C8C8C")
+        t(q, " ", tam=E.PAUTA); borda_p(q, "bottom", E.FIO_SECAO, E.PAPEL_CINZA_ANOTACAO)
         q.paragraph_format.right_indent = Cm(0.01 * (k % 2))
 
 
 # ── página ─────────────────────────────────────────────────────────────────
 def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
-    f = leito["ficha"]
     r = motor.compute_leito(leito, meta)
     if not primeiro:
         q = doc.add_paragraph(); q.paragraph_format.page_break_before = True
-        q.paragraph_format.space_after = Pt(0); t(q, " ", tam=2)
+        q.paragraph_format.space_after = Pt(0); t(q, " ", tam=E.ESPACADOR)
 
-    wbox, wdir = 2.0, 4.4
+    wbox, wdir = E.CAIXA_LEITO, E.CABECALHO_DIREITA
     h = tabela(doc, 1, 3, [wbox, W - wbox - wdir, wdir])
     a, b, c = h.rows[0].cells
     for cc in (a, b, c):
         cc.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-    borda_cel(a, top=(12, "000000"), left=(12, "000000"), bottom=(12, "000000"), right=(12, "000000"))
+    caixa = (E.FIO_CAIXA, E.PAPEL_TINTA)
+    borda_cel(a, top=caixa, left=caixa, bottom=caixa, right=caixa)
     margens(a, 20, 40, 20, 40); margens(b, 0, 200, 0, 100); margens(c, 0, 100, 0, 0)
-    q = P(a, True, 0); q.alignment = 1; t(q, "LEITO", b=True, tam=8)
-    q = P(a, after=0); q.alignment = 1; t(q, leito["leito"], b=True, tam=20)
+    q = P(a, True, 0); q.alignment = 1; t(q, "LEITO", b=True, tam=E.LEITO_ROTULO)
+    q = P(a, after=0); q.alignment = 1; t(q, leito["leito"], b=True, tam=E.LEITO)
     nome = leito["nome"].title().replace(" Da ", " da ").replace(" De ", " de ")
     q = P(b, True, 1)
-    t(q, nome, b=True, tam=13)
+    t(q, nome, b=True, tam=E.NOME)
     t(q, f"     {leito['idade_sexo']}  ·  {leito['dia_uti'].split(' (')[0]}", tam=S["tam"])
     q = P(b, after=1); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
-    t(q, "Dx:  ", b=True); rk(q, f["dx"])
+    t(q, "Dx:  ", b=True); rk(q, dado(leito, "dx"))
     q = P(b, after=0); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
-    t(q, "Disp.:  ", b=True); rk(q, f["disp"])
+    t(q, "Disp.:  ", b=True); rk(q, dado(leito, "disp"))
     q = P(c, True, 2); t(q, "Alergia:  ", b=True)
-    al = f["alergia"]
+    al = dado(leito, "alergia")
     t(q, al.upper() if al.lower() != "nega" else "nega", b=al.lower() != "nega")
     q = P(c, after=0); t(q, f"{meta['turno'].capitalize()}  ·  {meta['data']}")
     q = doc.add_paragraph(); q.paragraph_format.space_after = Pt(4); q.paragraph_format.space_before = Pt(2)
-    t(q, " ", tam=2); borda_p(q, "bottom", 12)
+    t(q, " ", tam=E.ESPACADOR); borda_p(q, "bottom", E.FIO_CAIXA)
 
-    body = tabela(doc, 1, 3, [WL, WM, WR], {"insideV": (4, "000000")})
-    E, M, D = body.rows[0].cells
-    margens(E, 0, 0, 0, 150); margens(M, 0, 150, 0, 150); margens(D, 0, 150, 0, 0)
-    col_controles(E, r, leito)
-    col_rx(M, leito, meta)
-    col_acao(D, leito, n_anot)
+    body = tabela(doc, 1, 3, [WL, WM, WR], {"insideV": (E.FIO_SECAO, E.PAPEL_TINTA)})
+    esq, meio, dir_ = body.rows[0].cells
+    margens(esq, 0, 0, 0, 150); margens(meio, 0, 150, 0, 150); margens(dir_, 0, 150, 0, 0)
+    col_controles(esq, r, leito, *janelas(leito, meta, r["janela"]))
+    col_rx(meio, leito, meta)
+    col_acao(dir_, leito, n_anot)
 
     q = doc.add_paragraph(); q.paragraph_format.space_before = Pt(6); q.paragraph_format.space_after = Pt(4)
-    t(q, " ", tam=2); borda_p(q, "bottom", 8)
-    wl = 13.3
-    bt = tabela(doc, 1, 2, [wl, W - wl], {"insideV": (4, "000000")})
+    t(q, " ", tam=E.ESPACADOR); borda_p(q, "bottom", E.FIO_TITULO)
+    wl = E.FAIXA_CONTROLES
+    bt = tabela(doc, 1, 2, [wl, W - wl], {"insideV": (E.FIO_SECAO, E.PAPEL_TINTA)})
     L, R = bt.rows[0].cells
     margens(L, 0, 0, 0, 150); margens(R, 0, 150, 0, 0)
     sec(L, "CONTROLES DO PLANTÃO", first=True)
-    g = tabela(L, 6, 9, [2.1] + [1.4] * 8,
-               {k: (4, "000000") for k in ("top", "left", "bottom", "right", "insideH", "insideV")})
+    g = tabela(L, 6, 9, [E.GRADE_ROTULO] + [E.GRADE_CELULA] * 8,
+               {k: (E.FIO_SECAO, E.PAPEL_TINTA) for k in ("top", "left", "bottom", "right", "insideH", "insideV")})
     encolher(L.paragraphs[-1])
     for i, rot in enumerate(("Hora", "PA (PAM)", "FC", "SpO2 / FiO2", "Diurese", "Dx")):
         cel = g.rows[i].cells[0]; margens(cel, 15, 60, 15, 40)
@@ -375,7 +399,6 @@ ORDEM = {
 
 def sanear(doc):
     """Reordena pPr/tcPr/tblPr na ordem do schema OOXML (o Word é estrito; o LibreOffice não)."""
-    W_NS = qn("w:p")[:-1]
     for tag, ordem in ORDEM.items():
         pos = {qn("w:" + n): i for i, n in enumerate(ordem.split())}
         for el in doc.element.body.iter(qn("w:" + tag)):
@@ -394,40 +417,40 @@ def sanear(doc):
 def gerar(plantao, caminho, cfg=None, folga=0.0):
     meta = plantao["meta"]
     doc = Document()
-    st = doc.styles["Normal"]; st.font.name = FONTE; st.font.size = Pt(10)
+    st = doc.styles["Normal"]; st.font.name = FONTE; st.font.size = Pt(E.CORPO)
     st.element.rPr.rFonts.set(qn("w:eastAsia"), FONTE)
     st.paragraph_format.space_after = Pt(0); st.paragraph_format.space_before = Pt(0)
     s = doc.sections[0]; s.orientation = WD_ORIENT.LANDSCAPE
-    s.page_width, s.page_height = Cm(29.7), Cm(21.0)
-    s.left_margin = s.right_margin = Cm(1.0); s.top_margin = Cm(0.8)
-    s.bottom_margin = Cm(0.7 + folga)
-    s.header_distance = s.footer_distance = Cm(0.3)
+    s.page_width, s.page_height = Cm(E.A4_LONGO), Cm(E.A4_CURTO)
+    s.left_margin = s.right_margin = Cm(E.MARGEM_FICHA_LATERAL); s.top_margin = Cm(E.MARGEM_FICHA_TOPO)
+    s.bottom_margin = Cm(E.MARGEM_FICHA_PE + folga)
+    s.header_distance = s.footer_distance = Cm(E.DISTANCIA_CABECALHO)
     for i, leito in enumerate(plantao["leitos"]):
-        n_anot, n_inter, tam = (cfg or {}).get(leito["leito"], (6, 4, 10))
+        n_anot, n_inter, tam = (cfg or {}).get(leito["leito"], (6, 4, E.CORPO))
         S["tam"] = tam
         pagina(doc, meta, leito, n_anot, n_inter, i == 0)
     body = doc.element.body
     if body[0].tag == qn("w:p") and not "".join(body[0].itertext()).strip():
         body.remove(body[0])
-    S["tam"] = 10
+    S["tam"] = E.CORPO
     sanear(doc)
     doc.save(caminho)
 
 
 def n_paginas(docx):
-    subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", str(Path(docx).parent), str(docx)],
-                   check=True, capture_output=True, timeout=180)
-    out = subprocess.run(["pdfinfo", str(Path(docx).with_suffix(".pdf"))], capture_output=True, text=True).stdout
+    pdf = office.para_pdf(docx, timeout=180)
+    out = subprocess.run(["pdfinfo", str(pdf)], capture_output=True, text=True).stdout
     return int(re.search(r"Pages:\s+(\d+)", out).group(1))
 
 
-def ajustar(plantao, folga=1.5):
-    res = {}
+def ajustar(plantao, folga=E.FOLGA_MEDICAO):
+    """Devolve (cfg por leito, leitos que não couberam nem em 9 pt sem anotações)."""
+    res, nao_coube = {}, []
     with tempfile.TemporaryDirectory() as tmp:
         for leito in plantao["leitos"]:
             um = {"meta": plantao["meta"], "leitos": [leito]}
             achou = None
-            for tam in (10, 9.5, 9):
+            for tam in E.AJUSTE:
                 for n_anot, n_inter in ((14, 5), (12, 5), (10, 5), (9, 4), (8, 4), (7, 4), (6, 4), (5, 4),
                                         (4, 3), (3, 3), (2, 3), (1, 3), (0, 3)):
                     fx = Path(tmp) / "x.docx"
@@ -437,12 +460,16 @@ def ajustar(plantao, folga=1.5):
                 if achou:
                     break
             res[leito["leito"]] = achou or (0, 2, 9)
+            if not achou:
+                nao_coube.append(leito["leito"])
             print(leito["leito"], res[leito["leito"]], "OK" if achou else "NAO COUBE", file=sys.stderr)
-    return res
+    return res, nao_coube
 
 
 if __name__ == "__main__":
-    pl = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-    cfg = ajustar(pl)
+    pl, _ = motor.preparar(json.loads(Path(sys.argv[1]).read_text(encoding="utf-8")))  # dias de ATB e de UTI
+    cfg, nao_coube = ajustar(pl)
     gerar(pl, sys.argv[2], cfg)
     print(sys.argv[2])
+    if nao_coube:
+        sys.exit("NAO COUBE em 1 folha: leito(s) " + ", ".join(nao_coube))

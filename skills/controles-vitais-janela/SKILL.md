@@ -11,8 +11,8 @@ description: >
   plantão", "sumário por janela", "formata por janela", "extrai os parâmetros",
   "passa o mapa de sinais vitais", "24h", "12h", "turno noturno/diurno" — mesmo
   sem citar a palavra "skill". Opera em ZERO ALUCINAÇÃO: campo sem fonte legível
-  vira `?`, nunca é inventado. NÃO gera JSON Supabase nem nota de evolução de
-  prontuário — para isso use sasi-ingest-export. Esta skill produz APENAS o
+  vira `?`, nunca é inventado. NÃO gera a evolução do dia (isso é skills/plantao)
+  nem JSON Supabase (sasi-ingest-export, só com pedido explícito). Esta skill produz APENAS o
   sumário tático por janela em texto copiável + flags + conduta isolada.
 ---
 
@@ -41,7 +41,8 @@ gestão do plantão: quem só lê a paisagem perde o predador escondido no mato.
 
 **Escopo:** transcrição + sumário por janela. NADA além disso.
 
-- Quer JSON pro Supabase ou nota de evolução? → `sasi-ingest-export`.
+- Quer a evolução do dia e a ficha-cola? → `skills/plantao`.
+- Quer JSON pro Supabase (pedido explícito de ingest/"salvar no Supabase")? → `sasi-ingest-export`.
 - Quer nota de admissão? → `admissao-uti`.
 
 ---
@@ -52,7 +53,7 @@ gestão do plantão: quem só lê a paisagem perde o predador escondido no mato.
 2. Sinal vital sempre em **Máx - Mín** (ex.: FC 110 - 72), SEM EXCEÇÃO — inclusive SpO2.
 3. Valor de fonte digitada > manuscrita em caso de conflito. Registrar discrepância.
 4. Rótulo de bomba/droga (BIC) só é nomeado se legível; senão `BIC ilegível`. Se compatível mas incerto (ex.: "NORA" ≈
-   noradrenalina) → nomear + `CONFIRMAR`.
+   noradrenalina) → nomear como escrito no bloco e pôr a dúvida no Conferir (fora do bloco).
 5. PAM em parênteses é o valor mais confiável (calculado). Em conflito Sist/Diast vs PAM, ancorar na PAM e marcar o
    resto como incerto.
 
@@ -131,8 +132,8 @@ limpa quando 0 — sinal alto).
 | FC            | `[Nx > 100]`  |
 | FR            | `[Nx > 20]`   |
 | SpO2          | `[Nx < 92]`   |
-| TAX           | `[Nx < 35,5]` |
-| Dx (glicemia) | `[Nx > 180]`  |
+| TAX           | `[Nx < 35,5]` e `[Nx > 37,8]` |
+| Dx (glicemia) | `[Nx > 180]` e `[Nx < 70]`   |
 
 `Dx` lista os valores aferidos separados por ` / ` (maior → menor), ex.:
 `Dx: 337 / 246 mg/dl [2x > 180]`.
@@ -150,7 +151,7 @@ explicação dentro do output clínico.
 - Títulos de seção: só a primeira letra maiúscula ("Sinais vitais 24 h", "Laboratório").
 - Abreviaturas SEMPRE maiúsculas: PAS, PAD, PAM, FC, FR, SpO2, TAX, DX, BH, HB, HT, PLAQ, LEUCO, UR, CR, MG, NA, CAI, K,
   P.
-- Intervalos estritamente `[Máximo]–[Mínimo]` (ex.: `PAS: 120–80`).
+- Intervalos estritamente `[Máximo] - [Mínimo]`, com espaço-hífen-espaço (ex.: `PAS: 120 - 80`). Nunca `–` nem `—`.
 - Dextros: `Dx: v1 / v2 / v3 mg/dl` (maior → menor).
 - Observação original ao lado do item, entre parênteses (ex.: `(1x < 92)`, `Cateter nasal O2 2L`).
 - Unidades obrigatórias (padrão UTI se faltar): mmHg, bpm, rpm, %, ºC, mg/dl, mEq/L, mmol/L, ml, /mm3.
@@ -193,7 +194,8 @@ Outros:
 
 - Linha sem violação → omitir o colchete.
 - Seção (Laboratório / Outros) sem nenhum dado → omitir a seção inteira.
-- BIC suspeita de droga vasoativa → linha em "Outros": `⚠ BIC c/ rótulo compatível com X (CONFIRMAR)`.
+- BIC suspeita de droga vasoativa → no Conferir (fora do bloco): "BIC com rótulo compatível com X". No bloco, só o
+  rótulo como está escrito.
 
 ### Validação de sanidade (HITL) — registrar NO RODAPÉ (fora do bloco) quando:
 
@@ -242,10 +244,11 @@ digitada + manuscritos) e reorganiza as terapias ATIVAS por aparelho/sistema. Um
 ### Zero alucinação (mesma doutrina)
 
 - Fonte digitada > manuscrita. Marca como escrita + genérico entre parênteses só se o mapeamento for SEGURO; incerto →
-  `(CONFIRMAR)`.
+  só a marca como escrita, e a dúvida no Conferir.
 - Droga ilegível → `?`. Nunca inventar dose/via/frequência.
 - ATB SEMPRE com início (`I: dd/mm` ou `D0`). DVA/BIC SEMPRE sinalizada.
-- Diluição/dose: conferir e marcar `(revisar)` se fora do racional (ex.: Nora > 2 mcg/kg/min).
+- Diluição/dose: conferir e, se fora do racional (ex.: Nora > 2 mcg/kg/min), pôr no Conferir. Nunca `(revisar)` no
+  bloco.
 
 ### Ordem canônica (omitir sistema vazio)
 
@@ -329,7 +332,7 @@ Regras:
 4. Passar as séries cruas ao motor (`skills/sasi-ingest-export/scripts/build_passagem.py`): ele faz Máx - Mín,
    flags e balanço somando CÉLULAS. O LLM não faz conta.
 5. Extrair Sup O2 / Dieta / células de ganho e perda / Evacuação; rodapé da folha só para conferência.
-6. Detectar BIC/DVA e dispositivos; marcar `CONFIRMAR` se incerto.
+6. Detectar BIC/DVA e dispositivos; incerto vai para o Conferir.
 7. Montar blocos limpos → comentário tático + flags vermelhos → CONDUTA FINAL isolada.
 
 Worked example completo em `references/exemplo-resolvido.md`. Entrega em Word (evolução + ficha-cola):

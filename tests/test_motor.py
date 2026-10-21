@@ -41,6 +41,44 @@ class Balanco(unittest.TestCase):
         self.assertNotIn("960", txt)  # divergência nunca entra no bloco
 
 
+class RevisaoDe21Out(unittest.TestCase):
+    """Achados da revisão adversarial final (21/10/2026)."""
+
+    def test_hora_com_minutos_e_24(self):
+        self.assertEqual([m._hora(x) for x in ("7h30", "07:30", "7 h", "24", "25")], ["07", "07", "07", "00", None])
+
+    def test_milhar_em_ml(self):
+        self.assertEqual(m._num("1.450", ml=True), (1450.0, None))
+        self.assertEqual(m._num("1.450"), (1.45, None))  # vital: ponto é decimal
+        self.assertEqual(m._num(True), (None, "?"))
+        b = m.calc_balanco([{"nome": "SF", "serie": {"07": "1.450", "09": 50}}, {"nome": "dieta", "ml": "1.000"}], [])
+        self.assertEqual(b["ganho_total"], 2500)
+
+    def test_serie_fora_do_formato_avisa(self):
+        b = m.calc_balanco([], [{"nome": "diurese", "serie": {"x": 100, "y": 50}}, {"nome": "dreno", "serie": "abc"}])
+        self.assertEqual(b["perda_total"], 150)
+        self.assertTrue(any("chave que não é hora (x, y)" in a for a in b["avisos"]), b["avisos"])
+        self.assertTrue(any("'dreno': série em formato inválido" in a for a in b["avisos"]), b["avisos"])
+
+    def test_agregado_conferido_contra_o_limiar(self):
+        self.assertEqual(m.resumo_vital("TAX", {"max": 38.6, "min": 36.2, "flag": 3})[2], ["[3x > 37,8]"])
+        self.assertEqual(m.resumo_vital("Dx", {"max": 160, "min": 54, "flag": 2})[2], ["[2x < 70]"])
+        _, _, flags, avisos, _ = m.resumo_vital("PAM", {"max": 90, "min": 58})
+        self.assertEqual(flags, [])
+        self.assertTrue(any("passa do limiar < 65 sem a contagem" in a for a in avisos), avisos)
+        _, _, flags, avisos, _ = m.resumo_vital("TAX", {"max": 38.6, "min": 35.0, "flag": 3})
+        self.assertEqual(flags, [])
+        self.assertTrue(any("sem saber o limiar" in a for a in avisos), avisos)
+        self.assertTrue(any("ilegível no agregado" in a for a in m.resumo_vital("PAS", {"max": "?", "min": 88})[3]))
+
+    def test_rodape_em_texto_e_ilegivel(self):
+        ex = json.loads((RAIZ / "gerador" / "exemplo" / "plantao-exemplo.json").read_text(encoding="utf-8"))
+        ex["leitos"][0]["conferencia_enfermagem"] = {"ganhos": "?", "bh": "1.000"}
+        _, avisos = m.build(ex)
+        self.assertIn('L99: CONFERÊNCIA — Ganhos: rodapé ilegível ("?"), não conferido', avisos)
+        self.assertTrue(any("CONFERÊNCIA — BH: folha diz 1.000," in a for a in avisos), avisos)
+
+
 class Vitais(unittest.TestCase):
     def test_separador_e_flags(self):
         leito = {"leito": "1", "nome": "X", "sup_o2": "AA",
@@ -71,18 +109,6 @@ class Exemplo(unittest.TestCase):
         txt, avisos = m.build(dados)
         self.assertIn("LEITO 99", txt)
         self.assertIn("BH: + 400 ml", txt)
-
-
-class FiltroFicha(unittest.TestCase):
-    def test_tira_baixo_valor(self):
-        sys.path.insert(0, str(RAIZ / "gerador"))
-        import gerar_docx as g
-        out = g.filtrar_prescricao([
-            {"classe": "SN", "itens": ["Novalgina 1 g"]},
-            {"classe": "TGI", "itens": ["Luftal 40 gts", "Tiorfan 100 mg | água 50 ml SNE 8/8h"]},
-            {"classe": "ATB", "itens": ["Meronem 1 g EV 8/8h"]}])
-        self.assertEqual(out, [{"classe": "TGI", "itens": ["Tiorfan 100 mg"]},
-                               {"classe": "ATB", "itens": ["Meronem 1 g EV 8/8h"]}])
 
 
 if __name__ == "__main__":

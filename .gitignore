@@ -2,6 +2,11 @@ saida/
 entrada/
 *.plantao.json
 *-plantao.json
+# dados do plantão soltos na raiz ou com nome curto (plantao.json, leito02.json, nota.txt)
+/*.json
+plantao*.json
+leito*.json
+nota*.txt
 *.docx
 *.pdf
 !gerador/exemplo/*.json

@@ -113,85 +113,22 @@ Plano terapêutico e Condutas:
 
 ## Entrega
 
-1. Escrever a nota em texto (nota.txt) e gerar o Word com o script abaixo: `python3 gerar_admissao.py nota.txt DD-MM-AA-utiN-admissao-leitoLL.docx`.
-2. Converter para PDF e olhar as páginas antes de mandar. Se passar de uma folha, o plano vai inteiro para a segunda; isso é aceitável.
+1. Escrever a nota em texto (nota.txt) e gerar o Word: `python3 gerador/gerar_admissao.py nota.txt saida/`. O nome
+   sai do cabeçalho (`DD-MM-AA-utiN-admissao-leitoLL.docx`); o script já gera o PDF, conta as páginas e confere fonte,
+   tamanho, cor, `(revisar)`, `?` e reticências (saída ≠ 0 = corrigir antes de mandar).
+2. Olhar as páginas do PDF antes de mandar. Se passar de uma folha, o plano vai inteiro para a segunda; isso é aceitável.
 3. Mandar o .docx. No chat vão só duas coisas:
    - até 3 linhas de alerta, apenas o que muda conduta ou impediu preencher, sem repetir;
    - a **Conduta destilada**: ações-chave, doses e metas que tenham fonte.
    A nota inteira não vai para o chat, salvo se ele pedir o texto.
 
 Formato, igual ao Word das evoluções dele:
-- Página Carta; margens esq. 1,25, dir. 1,34, sup. e inf. 2,5 cm.
+- Página A4 (decisão de 19/10/2026); margens esq. 1,25, dir. 1,34, sup. e inf. 2,5 cm.
 - Times New Roman 10 em tudo, espaçamento simples, linha em branco entre seções.
 - Negrito só em: as duas linhas de cabeçalho, a frase "Paciente de...", os títulos de seção, os rótulos em linha (Admissão, HPMA, Antecedentes, Medicamentos, ALERGIAS), os rótulos dos sinais vitais, o nome do exame complementar e os sistemas numerados do plano.
 - Sem cor, caixa, filete, rodapé ou escore.
 
-```python
-# Uso: python3 gerar_admissao.py nota.txt saida.docx [margem_sup_inf_cm]
-import re, sys
-from docx import Document
-from docx.shared import Pt, Cm
-from docx.oxml.ns import qn
-
-PLANO = "Plano terapêutico e Condutas:"
-SECOES = ("Dispositivos:", "Uso:", "Sinais Vitais admissão:", "Exame Físico Geral:",
-          "Exames Complementares:", PLANO)
-EM_LINHA = re.compile(r"^(Admissão \([^)]*\):|HPMA:|Antecedentes:|Medicamentos de uso domiciliar:|ALERGIAS:)")
-
-
-def gerar(txt, saida, margem=2.5):
-    doc = Document()
-    st = doc.styles["Normal"]
-    st.font.name = "Times New Roman"; st.font.size = Pt(10)
-    st.element.rPr.rFonts.set(qn("w:eastAsia"), "Times New Roman")
-    pf = st.paragraph_format
-    pf.space_before = Pt(0); pf.space_after = Pt(0); pf.line_spacing = 1.0
-    s = doc.sections[0]
-    s.page_width, s.page_height = Cm(21.59), Cm(27.94)
-    s.left_margin, s.right_margin = Cm(1.25), Cm(1.34)
-    s.top_margin = s.bottom_margin = Cm(margem)
-    secao, cab = None, 0
-    for linha in open(txt, encoding="utf-8").read().rstrip().split("\n"):
-        p = doc.add_paragraph()
-        if secao == PLANO:
-            p.paragraph_format.keep_with_next = True  # plano não se parte entre páginas
-        if not linha.strip():
-            continue
-
-        def run(t, negrito=False):
-            r = p.add_run(t); r.bold = negrito
-            r.font.name = "Times New Roman"; r.font.size = Pt(10)
-
-        if linha.strip() in SECOES:
-            secao = linha.strip(); run(linha.strip(), True)
-            if secao == PLANO:
-                p.paragraph_format.keep_with_next = True
-            continue
-        if cab < 2:  # "LL - NOME" e "ADMISSÃO UTI N - DD-MM-AA"
-            cab += 1; run(linha, True); continue
-        if linha.startswith("Paciente de"):
-            run(linha, True); continue
-        m = None
-        if secao is None:
-            m = EM_LINHA.match(linha)
-        elif secao == "Sinais Vitais admissão:":
-            m = re.match(r"^[^:]{1,10}:", linha)
-        elif secao == "Exames Complementares:" and linha.startswith("- "):
-            m = re.match(r"^- [^:]{1,80}:", linha)
-        elif secao == PLANO:
-            m = re.match(r"^\d+\. [^:]{1,40}:", linha)
-            if not m and re.match(r"^\d+\. ", linha):
-                run(linha, True); continue
-        if m:
-            run(m.group(0), True); run(linha[m.end():])
-        else:
-            run(linha)
-    doc.save(saida)
-
-
-if __name__ == "__main__":
-    gerar(sys.argv[1], sys.argv[2], float(sys.argv[3]) if len(sys.argv) > 3 else 2.5)
-```
+O gerador é `gerador/gerar_admissao.py` (era um bloco de código aqui; virou arquivo testado em 19/10/2026).
 
 ## Exemplo: admissão real do leito 02 (10/10/26) no modelo
 
