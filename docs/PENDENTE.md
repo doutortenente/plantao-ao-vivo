@@ -54,7 +54,18 @@ exemplo e passa.
   `admissao-uti`), que competem com elas.
 - O `api/tokens.md` do design system se regenera ao abrir a página do artefato.
 
-## 5. Limites conhecidos (não são erro)
+## 5. Peso e bombas (PR `claude/peso-doses-por-kg`, 01/11/2026)
+
+- [ ] Merge na `main` só com o "prosseguir" dele.
+- [ ] Olhar com ele a primeira ficha real com peso: o peso na linha do nome, a linha `Débito` no balanço, a
+  `ClCr` no lab, o VC na linha VM e as bombas como "Marca (genérico)". Mudou alguma coisa do modelo de 12/10:
+  ele aprova ou pede ajuste.
+- [ ] A esteira (Airtable) leva o peso da evolução anterior, mas não monta `infusoes_continuas` (a prescrição
+  lida não separa ampolas e diluente); a página `extracao-web` não lê nenhum dos dois. O Claude completa no chat;
+  sem eles, tudo sai como antes (sem nada por kg).
+- [ ] A nota de admissão (`gerar_admissao.py`) não escreve a linha "Peso:": o peso do 1º dia entra no JSON à mão.
+
+## 6. Limites conhecidos (não são erro)
 
 - O JSON da página `extracao-web` não monta o bloco `ficha`: quem monta é o Claude no chat, a partir de
   `prescricao_lida`.

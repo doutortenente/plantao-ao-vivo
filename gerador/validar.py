@@ -27,7 +27,9 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "skills" / "sasi-ingest-export" / "scripts"))
+import bic  # noqa: E402
 import build_passagem as motor  # noqa: E402
+import peso as PESO  # noqa: E402
 
 META_OBRIGATORIO = ("unidade", "data", "turno", "data_prescricao")
 LEITO_OBRIGATORIO = ("leito", "nome", "idade_sexo", "dia_uti")
@@ -55,6 +57,8 @@ TEXTO = ("leito", "nome", "idade_sexo", "dia_uti", "alergia", "diagnostico", "di
 LISTA = ("laboratorio", "terapias", "exame_fisico", "evolucao", "impressao", "conduta", "alertas", "avisos",
          "outros_balanco", "plano_anterior")
 FORA_DO_BLOCO = ("avisos", "alertas")  # rodapé e chat: aqui "(revisar)" não faz mal
+# faixas do app calculadoras-uti (FX e VF em docs/index.html): fora delas o app também recusa a conta
+FAIXA = {"kg": (30, 250), "altura_cm": (120, 230), "ampolas": (0.1, 50), "ml": (0, 1000), "ml_h": (0, 999)}
 
 
 def _textos(valor):
@@ -147,6 +151,140 @@ def _series(leito, L):
     return erros
 
 
+def _numero(v):
+    """Número de um campo do JSON (aceita "66,5"); outra coisa -> None."""
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, str):
+        try:
+            return float(v.strip().replace(",", "."))
+        except ValueError:
+            return None
+    return None
+
+
+def _na_faixa(v, chave):
+    lo, hi = FAIXA[chave]
+    return v is not None and lo <= v <= hi
+
+
+def _horas_balanco(valor, onde):
+    h = _numero(valor)
+    if h is None or not 1 <= h <= 24:
+        return [f"{onde}: `horas_balanco` tem de ser número de 1 a 24 (as horas que o balanço cobre; veio {valor!r})"]
+    return []
+
+
+def _peso(leito, meta, L):
+    """`peso` = {"kg", "altura_cm" (opcional), "fonte", "data" dd/mm/aaaa}: sem fonte e data o motor não usa."""
+    p = leito.get("peso")
+    if p is None:
+        return [], []
+    if not isinstance(p, dict):
+        return [f"{L}: `peso` tem de ser {{\"kg\": 66, \"altura_cm\": 153, \"fonte\": \"EcoTT\", "
+                "\"data\": \"06/12/2025\"}"], []
+    erros, avisos = [], []
+    kg = p.get("kg")
+    if isinstance(kg, str) and kg.strip() == "?":
+        avisos.append(f"{L}: `peso` ilegível (\"?\"): nada por kg foi calculado")
+    elif not _na_faixa(_numero(kg), "kg"):
+        erros.append(f"{L}: `peso`: kg tem de ser número de 30 a 250 (veio {kg!r})")
+    alt = p.get("altura_cm")
+    if alt is not None and not _na_faixa(_numero(alt), "altura_cm"):
+        erros.append(f"{L}: `peso`: altura_cm tem de ser número de 120 a 230 (veio {alt!r})")
+    fonte = p.get("fonte")
+    if not (isinstance(fonte, str) and fonte.strip() not in ("", "?")):
+        erros.append(f"{L}: `peso` sem `fonte` (balança, EcoTT, admissão…): sem fonte o motor não usa o peso")
+    d = PESO.data(p.get("data"))
+    if d is None:
+        erros.append(f"{L}: `peso`: data tem de ser dd/mm/aaaa (veio {p.get('data')!r})")
+    else:
+        hoje = motor._data(meta.get("data"))
+        if hoje and d > hoje:
+            erros.append(f"{L}: `peso`: data {p['data'].strip()} depois do plantão ({meta['data']})")
+    return erros, avisos
+
+
+# item da prescrição que não é a bomba rodando: "a critério médico", "se necessário", "SOS", "sem uso"
+SE_PRECISAR = re.compile(r"\bACM\b|\bSOS\b|sem uso|se necess|a crit[ée]rio", re.I)
+
+
+def _infusoes(leito, ficha, L):
+    """`infusoes_continuas`: droga da tabela, diluição da prescrição e vazão; e nada repetido à mão ao lado."""
+    itens = leito.get("infusoes_continuas")
+    if itens is not None and not (isinstance(itens, list) and all(isinstance(i, dict) for i in itens)):
+        return [f"{L}: `infusoes_continuas` tem de ser lista de {{\"droga\", \"ampolas\", \"diluente_ml\", …}}"], []
+    erros, avisos, ids = [], [], []
+    for it in itens or []:
+        nome = it.get("droga")
+        onde = f"{L}: `infusoes_continuas` ({nome})"
+        d = bic.achar(nome)
+        if d is None:
+            erros.append(f"{onde}: droga fora da tabela das calculadoras ({', '.join(sorted(bic.TABELA))}): "
+                         "deixe-a na linha manual da ficha e no texto")
+            continue
+        if d["id"] in ids:
+            avisos.append(f"{onde}: {d['nome']} duas vezes em `infusoes_continuas` (troca de diluição?): conferir")
+        ids.append(d["id"])
+        amp = _numero(it.get("ampolas"))
+        if not _na_faixa(amp, "ampolas"):
+            erros.append(f"{onde}: `ampolas` tem de ser número de 0,1 a 50 (veio {it.get('ampolas')!r})")
+            amp = None
+        dil, vf = it.get("diluente_ml"), it.get("volume_final_ml")
+        if dil is None and vf is None:
+            erros.append(f"{onde}: falta `diluente_ml ou volume_final_ml` (da prescrição): sem isso não há "
+                         "concentração")
+        elif dil is not None and vf is not None:
+            erros.append(f"{onde}: `diluente_ml` e `volume_final_ml` juntos: use um dos dois")
+        else:
+            chave, v = ("diluente_ml", dil) if dil is not None else ("volume_final_ml", vf)
+            n = _numero(v)
+            ml_amp = _numero(it.get("ml_por_ampola")) or d["ml"]
+            if not _na_faixa(n, "ml"):
+                erros.append(f"{onde}: `{chave}` tem de ser número de 0 a 1.000 ml (veio {v!r})")
+            elif chave == "volume_final_ml" and n > 0 and amp and n < amp * ml_amp:
+                erros.append(f"{onde}: `volume_final_ml` ({motor._fmt(n)} ml) menor que o das ampolas "
+                             f"({motor._fmt(amp * ml_amp)} ml)")
+        for k in ("mg_por_ampola", "ml_por_ampola"):
+            if it.get(k) is not None and not (_numero(it[k]) or 0) > 0:
+                erros.append(f"{onde}: `{k}` tem de ser número > 0 (veio {it[k]!r})")
+        mlh = it.get("ml_h")
+        if isinstance(mlh, (dict, list)):
+            e = _serie_ok(mlh, L, f"infusoes_continuas.{nome}.ml_h")
+            erros += e
+            celulas = (motor.por_hora(mlh) or (None, []))[1] if isinstance(mlh, dict) else mlh
+            fora = [v for v in celulas if _numero(v) is not None and not _na_faixa(_numero(v), "ml_h")]
+            if not e and fora:
+                erros.append(f"{onde}: `ml_h` com vazão fora de 0 a 999 ml/h: {', '.join(map(str, fora))}")
+        elif mlh is not None and not _na_faixa(_numero(mlh), "ml_h"):
+            erros.append(f"{onde}: `ml_h` tem de ser número de 0 a 999 ml/h ou série por hora (veio {mlh!r})")
+
+    # o motor escreve a droga (com dose) na linha DVA/SEDAÇÃO/BNM da ficha e no bloco: nada repetido à mão
+    for rot, its in ficha.get("infusoes") or []:
+        grupo = rot.strip().upper()
+        if grupo not in bic.GRUPOS:
+            continue
+        for item in its:
+            for i in bic.mencionadas(item):
+                nome = bic.TABELA[i][0]
+                if SE_PRECISAR.search(item):
+                    continue
+                if i in ids:
+                    erros.append(f"{L}: `ficha.infusoes` linha {grupo} repete {nome} de `infusoes_continuas` (o motor "
+                                 f"já escreve a droga, com a dose, nessa linha): tire o item manual \"{item[:50]}\"")
+                else:
+                    avisos.append(f"{L}: {nome} escrita à mão na linha {grupo} da ficha: em `infusoes_continuas` o "
+                                  "motor calcula concentração e dose")
+    for linha in leito.get("outros_balanco") or []:
+        for i in bic.mencionadas(linha):
+            if i in ids:
+                erros.append(f"{L}: `outros_balanco` repete {bic.TABELA[i][0]}, que já sai calculada de "
+                             f"`infusoes_continuas`: tire a linha manual \"{linha[:50]}\"")
+    return erros, avisos
+
+
 def validar_leito(leito, meta):
     erros, avisos = [], []
     L = f"L{leito.get('leito', '?')}"
@@ -165,6 +303,10 @@ def validar_leito(leito, meta):
         return erros + tipo, avisos  # o resto das checagens supõe os tipos certos
     e, a = _coerencia(leito, ficha, L)
     erros += e; avisos += a
+    for checa in (_peso(leito, meta, L), _infusoes(leito, ficha, L)):
+        erros += checa[0]; avisos += checa[1]
+    if "horas_balanco" in leito:
+        erros += _horas_balanco(leito["horas_balanco"], L)
 
     for lado in ("ganhos", "perdas"):
         for item in leito.get(lado, []):
@@ -276,6 +418,8 @@ def validar(plantao):
     if meta.get("data") and not (isinstance(meta["data"], str) and DATA.match(meta["data"])):
         erros.append(f"meta: `data` tem de ser dd/mm/aaaa (veio \"{meta['data']}\"): sem o ano o motor não conta "
                      "os dias de ATB e de UTI")
+    if "horas_balanco" in meta:
+        erros += _horas_balanco(meta["horas_balanco"], "meta")
     leitos = plantao.get("leitos", [])
     if not leitos:
         erros.append("nenhum leito no JSON")

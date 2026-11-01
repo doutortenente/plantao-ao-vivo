@@ -30,9 +30,12 @@ SpO2: max - min % (suporte se AA/cateter)
 TAX: max - min ºC [flag]
 Dx: v1 / v2 / v3 mg/dl [flag]
 Sup O2: ...            ← SÓ linha própria se VM. Nunca se AA/cateter.
+Peso: ... kg (fonte, dd/mm/aaaa) | Altura: ... cm | Peso predito: ... kg (VC 6 - 8 ml/kg: ... - ... ml)   ← motor
 Dieta: ... | Ingesta hídrica: ... ml
 Evacuação: ...
 Diurese: ... ml
+Débito urinário: ... ml/kg/h em N h [KDIGO n pelo débito]                ← motor, só com peso
+Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03 mcg/kg/min)   ← motor, de infusoes_continuas
 BH: ± ... ml
 
 ## Laboratório:
@@ -42,6 +45,7 @@ CR: v1 -> v2 mg/dl
 NA: ... | K: ... | MG: ... | CAI: ... | P: ...
 Gaso: pH / HCO3 / SBE / Lactato (se houver)
 Outros: PCR / troponina / D-dímero / INR (se houver)
+CLCR (Cockcroft-Gault): ... ml/min    ← motor, com peso e a linha CR (não escrever à mão)
 
 ## Terapias vigentes:
 CV: ...
@@ -92,6 +96,12 @@ antigos. Já estão no prontuário. Entram só as 7 seções acima.
 - Dias (19/10/2026): ATB com dia de início = D0 ("1 dia completo de ATB" = D1). Dia de UTI com dia da admissão = D1
   (como a nota de admissão: "1º dia de UTI"). Os dois são calculados pelo motor a partir de `I: dd/mm` e de
   `admissao_uti`; não contar de cabeça.
+- Peso e doses (01/11/2026): tudo o que é por kg sai do motor, nunca de cabeça. O JSON leva o peso com fonte e data
+  (`peso`) e cada bomba com a diluição DA PRESCRIÇÃO (`infusoes_continuas`: droga, ampolas, diluente); o motor
+  escreve a dose (mcg/kg/min e afins, contas do app calculadoras-uti), o débito urinário em ml/kg/h com o KDIGO
+  pelo débito, o ClCr de Cockcroft-Gault e, em VM, o peso predito com o VC de 6 a 8 ml/kg. Sem peso com fonte, nada
+  por kg: a linha sai só com a vazão. Em Terapias a bomba vai sem dose ("CV: Noradrenalina em BIC."): dose calculada
+  de cabeça não entra em lugar nenhum. Contrato: `gerador/schema-plantao.md`, seções "Peso" e "Bombas".
 
 ## 3. Plano terapêutico é a ALMA — não seja raso
 
@@ -131,3 +141,5 @@ sempre (TEV/LAMG/cabeceira). Cada problema da Impressão tem sua conduta. Raso =
 - [ ] Zero explicação no bloco (obs no rodapé). [ ] Impressão sem setinhas.
 - [ ] Plano rico e acionável. [ ] Campo sem fonte omitido. [ ] 7 seções na ordem (cabeçalho + 7).
 - [ ] Janela 24 h (07 h a 05 h) salvo pedido explícito. [ ] Ficha-cola: 1 folha por leito, com todos os vitais e o balanço.
+- [ ] Peso com fonte e data, se houver. [ ] Bombas em `infusoes_continuas` com a diluição da prescrição; nenhuma
+  dose calculada de cabeça.

@@ -24,7 +24,20 @@ class LerEvolucao(unittest.TestCase):
         self.assertEqual(avisos, [])
         self.assertEqual(leitos["99"]["exame_fisico"], l["exame_fisico"])
         self.assertEqual(leitos["99"]["plano_anterior"], l["conduta"])
-        self.assertEqual(leitos["99"]["laboratorio_anterior"], l["laboratorio"])
+        self.assertEqual(leitos["99"]["laboratorio_anterior"], l["laboratorio"])  # sem a linha CLCR do motor
+        self.assertEqual(leitos["99"]["peso"], l["peso"])  # o peso passa de um dia para o outro com fonte e data
+
+    def test_peso_da_linha_do_bloco(self):
+        texto = """LEITO 11 — FULANA
+Sinais vitais + balanço 24 h:
+Peso: 66,5 kg (balança, leito, 30/10/2026) | Altura: 153 cm | Peso predito: 46 kg (VC 6 - 8 ml/kg: 276 - 368 ml)
+LEITO 12 — BELTRANA
+Peso: 70 kg
+"""
+        leitos, _ = EA.ler(texto.splitlines())
+        self.assertEqual(leitos["11"]["peso"], {"kg": 66.5, "altura_cm": 153, "fonte": "balança, leito",
+                                                "data": "30/10/2026"})
+        self.assertNotIn("peso", leitos["12"])  # sem fonte e data não passa adiante
 
     def test_formato_da_admissao_e_varios_leitos(self):
         texto = """02 - FULANO FICTÍCIO

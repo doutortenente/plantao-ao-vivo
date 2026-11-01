@@ -16,6 +16,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "data": "11/10/2026",        // dd/mm/aaaa (obrigatório: os dias de ATB e de UTI saem dela); arquivo: 11-10-26
     "turno": "diurno",           // nome do arquivo: ...-evolucoes-diurno
     "janela": "24 h",            // padrão; um leito pode sobrescrever
+    "horas_balanco": 12,         // opcional: horas que o balanço cobre quando a janela não é 24 h (débito em ml/kg/h)
     "data_prescricao": "11/10"
   },
   "leitos": [{
@@ -28,7 +29,9 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "diagnostico": "Problema 1  ·  Problema 2",   // Dx do cabeçalho da ficha (fonte única)
     "alergia": "Nega",                      // fonte única; != "nega" sai em CAIXA ALTA e negrito; sem saber: "?"
     "dieta": "geral VO",                    // vai na linha de balanço
+    "peso": {"kg": 66, "altura_cm": 153, "fonte": "EcoTT", "data": "06/12/2025"},  // opcional; ver "Peso" abaixo
     "janela": "desde a admissão (19 h - 05 h)",  // opcional
+    "horas_balanco": 10,                    // opcional: sobrescreve o da meta neste leito
 
     "vitais": {                             // POR HORA (preferido), lista sem hora, ou agregado
       "PAM": {"07": 90, "09": [86, 84], "11": "?", "19": 68},   // hora da folha (07 … 05); 2 leituras = lista
@@ -43,7 +46,10 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
                {"nome": "resíduo gástrico", "serie": [40, 25]}],
     "conferencia_enfermagem": {"ganhos": 1840, "perdas": 1300, "diurese": 1100, "bh": 540},  // rodapé, só confere
     "evacuacao": "ausente (última 08/10)",
-    "outros_balanco": ["Noradrenalina: 7 -> 5 -> 2,5 ml/h"],
+    "infusoes_continuas": [                 // DVA, sedação e BNM em bomba: ver "Bombas" abaixo
+      {"droga": "Hyponor", "ampolas": 4, "diluente_ml": 234},             // vazão: série do balanço com o nome
+      {"droga": "Dormonid", "ampolas": 3, "diluente_ml": 120, "ml_h": {"07": 4, "19": 6}}],  // ou `ml_h`
+    "outros_balanco": ["UF programada: 2.000 ml"],  // linha livre do bloco; droga em bomba NÃO vem aqui
     "avisos": ["vai para o rodapé Conferir, nunca para o bloco"],
 
     "laboratorio": ["HB: 13,4 -> 13,2 g/dl | HT: 39,9 -> 40,4 %", "UR: 26,4 -> 26,1 mg/dl"],
@@ -77,6 +83,45 @@ início não é recalculado, mas vira aviso se divergir da conta, e "D?" que sob
 "suspenso" fica com o D que tinha. Início sem ano que daria mais de 60 dias, e admissão depois do plantão, não são
 escritos: ficam como estão e vão para o "Conferir".
 
+## Peso
+
+`peso` só entra em conta com `kg`, `fonte` (balança, EcoTT, admissão, cama-balança…) e `data` em dd/mm/aaaa; a
+altura é opcional. Sem fonte ou sem data é ERRO no validar; peso ilegível: `"kg": "?"` (aviso, nada por kg). Faixas
+do app de calculadoras: 30 a 250 kg, 120 a 230 cm. Peso com mais de 30 dias vira aviso. Sem `peso`, nada por kg é
+calculado e o bloco sai como antes. O `evolucao_anterior.py` (e a esteira) devolve o peso da linha "Peso:" da véspera,
+com a fonte e a data de origem: não redigitar. Com ele, o motor (`peso.py`) escreve:
+
+- `Peso: 66 kg (EcoTT, 06/12/2025) | Altura: 153 cm` e, em VM, `| Peso predito: 46 kg (VC 6 - 8 ml/kg: 276 - 368 ml)`
+  (ARDSNet: 50 ou 45,5 + 0,91 x (altura - 152,4)). Em VM sem altura: aviso.
+- `Débito urinário: 0,38 ml/kg/h em 12 h [KDIGO 2 pelo débito]`, logo abaixo da Diurese: a média da janela; KDIGO
+  pelo débito (< 0,5 em 6 h = 1, em 12 h = 2; < 0,3 em 24 h = 3), nunca pela creatinina. Horas: `horas_balanco` (leito
+  ou meta) ou 24 na janela de 24 h; janela recortada sem `horas_balanco`, diurese 0 ou célula de diurese ilegível:
+  não calcula e avisa.
+- `CLCR (Cockcroft-Gault): 26 ml/min`, última linha do Laboratório, com o peso informado e a linha `CR:` do lab
+  (x 0,85 na mulher; idade e sexo de `idade_sexo`). Creatinina subindo ou IMC >= 30: aviso (superestima a função
+  renal). CR atual ilegível (`1,4 -> ?`): não calcula. Não escreva CLCR à mão: é conta do motor.
+- Em TRS (UF, CVVHDF ou diálise no balanço, ou linha TRS na ficha): sem ClCr (dose pela modalidade de TRS) e sem o
+  KDIGO pelo débito (TRS já é estágio 3); o débito em ml/kg/h continua.
+
+## Bombas (`infusoes_continuas`)
+
+Uma entrada por droga em BIC da tabela do app calculadoras-uti (`skills/sasi-ingest-export/scripts/bic.py`):
+noradrenalina, vasopressina, adrenalina, dobutamina, milrinone, nitroprussiato, nitroglicerina, dopamina, fentanil,
+midazolam, propofol, cetamina, dexmedetomidina, morfina, rocurônio (genérico, marca ou apelido: Hyponor, Dormonid,
+Precedex…). Droga fora da tabela (amiodarona, insulina…) é ERRO aqui: fica na linha manual da ficha e no texto.
+
+- `droga`, `ampolas` e a diluição DA PRESCRIÇÃO: `diluente_ml` (o volume final soma o das ampolas: 4 amp de 4 ml +
+  234 ml = 250 ml) ou `volume_final_ml` (0 = puro), nunca os dois. Apresentação diferente da tabela:
+  `mg_por_ampola` / `ml_por_ampola`.
+- Vazão: `ml_h` (número ou série por hora da folha) ou, sem ele, a série do balanço cujo nome traz a droga (célula =
+  ml/h). `ml_h` que não bate com a série do balanço vira aviso. Sem nenhum dos dois: "sem vazão na folha".
+- O motor escreve no bloco, antes do BH: `Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03
+  mcg/kg/min)` (contas e casas decimais do app; sem peso, só a vazão). Acima do teto do app: `ALERTA:` no topo.
+- Na ficha, as linhas DVA, SEDAÇÃO e BNM saem do motor (`Hyponor (noradrenalina) 16 mg/250 ml (64 mcg/ml) · 3 -> 2
+  ml/h · 0,05 -> 0,03 mcg/kg/min`). Linha manual com o mesmo rótulo é mesclada (droga fora da tabela fica depois);
+  a mesma droga à mão ao lado (na ficha ou em `outros_balanco`) é ERRO, exceto item ACM/SOS/"sem uso". Droga da
+  tabela à mão na linha DVA/SEDAÇÃO/BNM sem estar em `infusoes_continuas`: aviso.
+
 Nomes de ganho/perda reconhecidos: ver `CANON` no motor (dieta, soro, EV, diluição, NPT, CH, hemácias, plaquetas,
 ingesta, reposição, DVA, sedação, bicarbonato, glicose, ATB... / diurese, débito urinário, SVD, SNG, SOG, resíduo,
 dreno, drenagem, hemovac, colostomia, ileostomia, evacuação, UF, CVVHDF, diálise...). Nome desconhecido é ERRO no
@@ -97,8 +142,9 @@ Todo número de `lab` tem de estar em `laboratorio`, e o ATB da ficha tem de bat
   "alergia": "nega",                              // padrão: leito.alergia. Diferente do leito = ERRO na validação
   "dx": "Problema 1  ·  Problema 2  ·  AP",       // padrão: leito.diagnostico (aviso se diferente)
   "disp": "TQT 06/10  ·  PICC MSD 15/09",         // padrão: leito.dispositivos (aviso se diferente)
-  "infusoes": [["DVA", ["Noradrenalina 16 mg/250 ml 2 ml/h"]],   // INFUSÕES E TERAPIAS:
-               ["ATB", ["Meronem (meropenem) 1 g EV 8/8 h (D3, I: 09/10) => 14-22-06"]]],  // DVA, SEDAÇÃO, ATB, VM/O2, DIETA/NPT, TRS
+  "infusoes": [["ATB", ["Meronem (meropenem) 1 g EV 8/8 h (D3, I: 09/10) => 14-22-06"]],  // INFUSÕES E TERAPIAS:
+               ["VM", ["PCV  ·  PEEP 8  ·  FiO2 40%"]]],   // ATB, VM/O2, DIETA/NPT, TRS; DVA/SEDAÇÃO/BNM saem de
+                                                          // `infusoes_continuas`; o VC alvo entra na linha VM
   "sistemas": [["NEURO", ["..."]], ["CV", ["..."]], ["RESP", ["..."]], ["TGI", ["..."]],
                ["RENAL", ["..."]], ["ENDÓCRINO", ["..."]], ["ANALGESIA", ["..."]],
                ["PROFILAXIA", ["só TEV/LAMG — nunca analgésico aqui"]], ["SN", ["..."]], ["SUSPENSOS", ["..."]]],

@@ -408,6 +408,7 @@ def montar(leituras, contexto):
         "evacuacao": limpar(ctl.get("evacuacao"), avisos, "controles"),
         "laboratorio": laboratorio_, "terapias": terapias,
         "exame_fisico": anterior.get("exame_fisico") or [], "plano_anterior": anterior.get("plano_anterior") or [],
+        "peso": anterior.get("peso"),  # da linha "Peso:" da evolução anterior, com a fonte e a data de lá
         "avisos": avisos,
         "ficha": {"infusoes": infusoes, "sistemas": sistemas, "vigiar": vigiar, "lab": lab_curto(laboratorio_),
                   "lab_titulo": f"LABORATÓRIO {(d_lab or data):%d/%m}" if (d_lab or data) else "LABORATÓRIO"},

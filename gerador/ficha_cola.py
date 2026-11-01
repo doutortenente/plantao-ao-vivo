@@ -200,7 +200,8 @@ def janelas(leito, meta, jan=None):
 
 # ── colunas ────────────────────────────────────────────────────────────────
 def linhas_controle(r, leito):
-    jan_linhas = r["secoes"][0][1]
+    calculadas = set(r.get("calculadas") or [])  # peso, débito e bombas: a ficha mostra do jeito dela
+    jan_linhas = [l for l in r["secoes"][0][1] if l not in calculadas]
     out = []
     for l in jan_linhas:
         out += [x.strip() for x in l.split(" | ")] if " | " in l else [l]
@@ -261,8 +262,9 @@ def col_controles(C, r, leito, jan_c, jan_b):
     subsec(C, f"BALANÇO  {jan_b}")
     curtos = [(k, v) for k, v in bal if k != "Evacuação"]
     evac = [v for k, v in bal if k == "Evacuação"]
+    deb = r.get("debito")
     n = (len(curtos) + 1) // 2
-    g3 = grade(C, n + (1 if evac else 0), 4, [1.55, 2.6, 1.55, 2.6])
+    g3 = grade(C, n + (1 if deb else 0) + (1 if evac else 0), 4, [1.55, 2.6, 1.55, 2.6])
     for i, (k, v) in enumerate(curtos):
         row, off = i // 2, (i % 2) * 2
         c0, c1 = g3.rows[row].cells[off], g3.rows[row].cells[off + 1]
@@ -270,14 +272,24 @@ def col_controles(C, r, leito, jan_c, jan_b):
         t(P(c1, True, 0), v + ("" if k in ("Evacuação",) else " ml"), b=(k == "BH"))
     for row in g3.rows[:n]:
         borda_cel(row.cells[2], left=(E.FIO_SECAO, CINZA))
+    extra = n
+    if deb:  # débito urinário do motor (peso + horas do balanço), com o KDIGO como flag
+        rr = g3.rows[extra].cells; extra += 1
+        t(P(rr[0], True, 0), "Débito", b=True)
+        m = rr[1].merge(rr[3]); q = P(m, True, 0)
+        t(q, f"{deb['ml_kg_h']} ml/kg/h em {deb['horas']} h")
+        if deb["kdigo"]:
+            t(q, f"   KDIGO {deb['kdigo']}", b=True, tam=S["tam"] - 1)
     if evac:
-        rr = g3.rows[n].cells
+        rr = g3.rows[extra].cells
         t(P(rr[0], True, 0), "Evac.", b=True)
         m = rr[1].merge(rr[3]); t(P(m, True, 0), evac[0])
 
     sec(C, leito["ficha"].get("lab_titulo", "LABORATÓRIO"), before=8)
     for linha in leito["ficha"]["lab"]:
         q = P(C, after=2.5); rk(q, linha.replace(" | ", "   |   "))
+    if r.get("clcr") is not None:
+        q = P(C, after=2.5); t(q, f"ClCr {r['clcr']} ml/min (Cockcroft-Gault)")
 
 
 def bloco_rx(C, linhas, w_rot=E.RX_ROTULO):
@@ -294,11 +306,37 @@ def bloco_rx(C, linhas, w_rot=E.RX_ROTULO):
                 droga(q, it)
 
 
-def col_rx(C, leito, meta):
+def infusoes_da_ficha(r, f):
+    """Linhas de INFUSÕES E TERAPIAS: as do motor (DVA, SEDAÇÃO, BNM, de `infusoes_continuas`) no topo, mescladas na
+    linha manual do mesmo rótulo (droga fora da tabela fica ali, depois das calculadas); o VC alvo vai na linha VM."""
+    manuais = [[rot, list(itens)] for rot, itens in f["infusoes"]]
+    geradas = {}
+    for it in r.get("infusoes") or []:
+        geradas.setdefault(it["grupo"], []).append(it["ficha"])
+    linhas = []
+    if geradas:  # sem bomba calculada, as linhas ficam como vieram
+        for grupo in motor.bic.GRUPOS:  # DVA, SEDAÇÃO, BNM no topo, nessa ordem, com as manuais do mesmo rótulo
+            mesma = [x for x in manuais if x[0].strip().upper() == grupo]
+            itens = geradas.get(grupo, []) + [i for x in mesma for i in x[1]]
+            if itens:
+                linhas.append([grupo, itens])
+            manuais = [x for x in manuais if x not in mesma]
+    linhas += manuais
+    if r.get("vc"):
+        vc = f"VC 6 - 8 ml/kg (PP {round(r['pp'])} kg): {r['vc'][0]} - {r['vc'][1]} ml"
+        vm = next((x for x in linhas if x[0].strip().upper() == "VM"), None)
+        if vm:
+            vm[1].append(vc)
+        else:
+            linhas.append(["VM", [vc]])
+    return linhas
+
+
+def col_rx(C, leito, meta, r=None):
     f = leito["ficha"]
     sec(C, f"PRESCRIÇÃO  {meta['data_prescricao']}", first=True)
     subsec(C, "INFUSÕES E TERAPIAS", before=1)
-    bloco_rx(C, f["infusoes"])
+    bloco_rx(C, infusoes_da_ficha(r or {}, f))
     subsec(C, "POR SISTEMAS", before=4)
     bloco_rx(C, f["sistemas"])
 
@@ -348,6 +386,9 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
     q = P(b, True, 1)
     t(q, nome, b=True, tam=E.NOME)
     t(q, f"     {leito['idade_sexo']}  ·  {leito['dia_uti'].split(' (')[0]}", tam=S["tam"])
+    if r.get("peso"):  # só o peso com fonte e data (o motor não usa outro); altura e peso predito ficam na evolução
+        p = r["peso"]
+        t(q, f"  ·  {motor._fmt(p['kg'])} kg ({p['fonte']}, {p['data']})", tam=S["tam"])
     q = P(b, after=1); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
     t(q, "Dx:  ", b=True); rk(q, dado(leito, "dx"))
     q = P(b, after=0); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
@@ -363,7 +404,7 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
     esq, meio, dir_ = body.rows[0].cells
     margens(esq, 0, 0, 0, 150); margens(meio, 0, 150, 0, 150); margens(dir_, 0, 150, 0, 0)
     col_controles(esq, r, leito, *janelas(leito, meta, r["janela"]))
-    col_rx(meio, leito, meta)
+    col_rx(meio, leito, meta, r)
     col_acao(dir_, leito, n_anot)
 
     q = doc.add_paragraph(); q.paragraph_format.space_before = Pt(6); q.paragraph_format.space_after = Pt(4)

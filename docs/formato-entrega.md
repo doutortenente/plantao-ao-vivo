@@ -34,15 +34,20 @@ Uma página por leito não é obrigatória na evolução (a regra de 1 folha é 
 Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha_cola.py`, a partir do bloco
 `ficha` de cada leito (`gerador/schema-plantao.md`). 6 leitos = 6 folhas.
 
-- Cabeçalho: caixa `LEITO XX` | nome em destaque + idade/sexo + dia de UTI; embaixo `Dx:` (problemas ativos
-  separados por " · ") e `Disp.:` (dispositivo com data) | `Alergia:` (caixa alta e negrito se houver) e turno/data.
+- Cabeçalho: caixa `LEITO XX` | nome em destaque + idade/sexo + dia de UTI + peso com fonte e data (`66 kg (EcoTT,
+  06/12/2025)`, só quando o JSON traz `peso`); embaixo `Dx:` (problemas ativos separados por " · ") e `Disp.:`
+  (dispositivo com data) | `Alergia:` (caixa alta e negrito se houver) e turno/data.
   Diagnósticos ficam no cabeçalho, não em coluna própria.
 - Coluna 1 — CONTROLES: sinais vitais em grade de 2 colunas (PAS/FR, PAD/SpO2, PAM/TAX, FC), Máx - Mín, alerta
-  `[Nx<lim]` em negrito na mesma linha; Dx em linha própria; BALANÇO em grade (Ganhos, Diurese, perdas, BH, Evac.);
-  LABORATÓRIO, um grupo por linha. Fios cinza finos entre linhas (guia de leitura — o Dr. é disléxico).
+  `[Nx<lim]` em negrito na mesma linha; Dx em linha própria; BALANÇO em grade (Ganhos, Diurese, perdas, BH; com
+  peso, `Débito  0,38 ml/kg/h em 12 h  KDIGO 2`, flag em negrito; Evac.); LABORATÓRIO, um grupo por linha, e com
+  peso a linha `ClCr 26 ml/min (Cockcroft-Gault)` do motor. Fios cinza finos entre linhas (guia de leitura — o Dr. é
+  disléxico).
 - Coluna 2 — PRESCRIÇÃO em 2 blocos: INFUSÕES E TERAPIAS (DVA, sedação, ATB com D e início, VM/O2, dieta/NPT,
   TRS) e POR SISTEMAS (Neuro, CV, Resp, TGI, Renal, Endócrino, Analgesia, Profilaxia, SN, Suspensos), rótulo à
-  esquerda, fio entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG.
+  esquerda, fio entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG. DVA, SEDAÇÃO e BNM das bombas
+  saem do motor (`infusoes_continuas`): `Hyponor (noradrenalina) 16 mg/250 ml (64 mcg/ml) · 3 -> 2 ml/h · 0,05 ->
+  0,03 mcg/kg/min`. Em VM com altura, a linha VM ganha `VC 6 - 8 ml/kg (PP 46 kg): 276 - 368 ml`.
 - Coluna 3 — PENDÊNCIAS (☐), EXAMES, ANOTAÇÕES / NOVOS EXAMES (linhas, quantas couberem).
 - Faixa de baixo: grade CONTROLES DO PLANTÃO (Hora, PA (PAM), FC, SpO2/FiO2, Diurese, Dx × 8) | INTERCORRÊNCIAS,
   CONDUTAS E PASSAGEM.

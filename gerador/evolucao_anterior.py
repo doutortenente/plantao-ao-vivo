@@ -6,6 +6,7 @@ evolucao_anterior.py — lê a evolução anterior (.docx ou .txt) e devolve, po
   exame_fisico          → cópia literal (o Dr. altera ao "canetar"; só sai o que ficou falso)
   plano_anterior        → o motor alerta droga que o plano mandou suspender e continua prescrita
   laboratorio_anterior  → o anterior da série "anterior -> atual" (labs.py)
+  peso                  → o peso com a fonte e a data dele (linha "Peso:" que o motor escreveu), para o JSON do dia
 
 Leitos: linha "LEITO 99 …" ou "02 - NOME" (formato da admissão). Seções pelos títulos do BRIEFING (e "Exame Físico
 Geral" da admissão). Leito sem exame físico reconhecido vira aviso: aí o Claude lê na mão.
@@ -24,6 +25,16 @@ SECOES = {
     "plano_anterior": re.compile(r"^plano terapeutico( e condutas)?$"),
     "laboratorio_anterior": re.compile(r"^laboratorio$"),
 }
+# linha que o motor acrescenta ao Laboratório (build_passagem._calc_clcr): é conta, não resultado de exame
+CONTA_DO_MOTOR = re.compile(r"^CLCR \(Cockcroft-Gault\):")
+# linha de peso do bloco (build_passagem._calc_peso): só passa adiante com fonte e data
+PESO = re.compile(r"^Peso:\s*(\d+(?:,\d+)?)\s*kg\s*\((.+),\s*(\d{2}/\d{2}/\d{4})\)"
+                  r"(?:\s*\|\s*Altura:\s*(\d+(?:,\d+)?)\s*cm)?")
+
+
+def _numero(txt):
+    v = float(txt.replace(",", "."))
+    return int(v) if v.is_integer() else v
 
 
 def _norm(txt):
@@ -53,7 +64,7 @@ def linhas_do_arquivo(caminho):
 
 
 def ler(linhas):
-    """{leito: {exame_fisico, plano_anterior, laboratorio_anterior}}, avisos."""
+    """{leito: {exame_fisico, plano_anterior, laboratorio_anterior, peso (se houver)}}, avisos."""
     leitos, avisos = {}, []
     atual, secao = None, None
     for linha in linhas:
@@ -65,11 +76,19 @@ def ler(linhas):
             continue
         if atual is None:
             continue
+        mp = PESO.match(linha.strip())
+        if mp:
+            leitos[atual]["peso"] = {"kg": _numero(mp.group(1)), "fonte": mp.group(2).strip(), "data": mp.group(3)}
+            if mp.group(4):
+                leitos[atual]["peso"]["altura_cm"] = _numero(mp.group(4))
+            continue
         t = _titulo(linha)
         if t:
             secao = t if t != "outra" else None
             continue
         if secao and linha.strip():
+            if secao == "laboratorio_anterior" and CONTA_DO_MOTOR.match(linha.strip()):
+                continue
             leitos[atual][secao].append(linha.strip())
     for n, dados in leitos.items():
         if not dados["exame_fisico"]:
