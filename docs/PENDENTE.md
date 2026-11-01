@@ -56,10 +56,10 @@ exemplo e passa.
 
 ## 5. Peso e bombas (PR `claude/peso-doses-por-kg`, 01/11/2026)
 
-- [ ] Merge na `main` só com o "prosseguir" dele.
-- [ ] Olhar com ele a primeira ficha real com peso: o peso na linha do nome, a linha `Débito` no balanço, a
-  `ClCr` no lab, o VC na linha VM e as bombas em 1 linha com a vazão e a dose de agora. Mudou alguma coisa do
-  modelo de 12/10: ele aprova ou pede ajuste.
+- [x] Merge na `main`: feito em 01/11/2026 (PR [#4](https://github.com/doutortenente/plantao-ao-vivo/pull/4)),
+  com o "manda bala" dele e o CI verde.
+- [x] Visual da ficha com peso: prévia real (leito 11, 31/10) enviada; ele mandou seguir em 01/11/2026, sem
+  ajuste.
 - [ ] A esteira (Airtable) leva o peso da evolução anterior, mas não monta `infusoes_continuas` (a prescrição
   lida não separa ampolas e diluente); a página `extracao-web` não lê nenhum dos dois. O Claude completa no chat;
   sem eles, tudo sai como antes (sem nada por kg).
