@@ -100,8 +100,8 @@ antigos. Já estão no prontuário. Entram só as 7 seções acima.
   (`peso`) e cada bomba com a diluição DA PRESCRIÇÃO (`infusoes_continuas`: droga, ampolas, diluente); o motor
   escreve a dose (mcg/kg/min e afins, contas do app calculadoras-uti), o débito urinário em ml/kg/h com o KDIGO
   pelo débito, o ClCr de Cockcroft-Gault e, em VM, o peso predito com o VC de 6 a 8 ml/kg. Sem peso com fonte, nada
-  por kg: a linha sai só com a vazão. Em Terapias a bomba vai sem dose ("CV: Noradrenalina em BIC."): dose calculada
-  de cabeça não entra em lugar nenhum. Contrato: `gerador/schema-plantao.md`, seções "Peso" e "Bombas".
+  por kg: a linha sai só com a vazão. Em Terapias a bomba vai sem dose ("CV: Noradrenalina em BIC."): a dose da
+  bomba é a do bloco, feita pelo motor. Contrato: `gerador/schema-plantao.md`, seções "Peso" e "Bombas".
 
 ## 3. Plano terapêutico é a ALMA — não seja raso
 
@@ -142,4 +142,4 @@ sempre (TEV/LAMG/cabeceira). Cada problema da Impressão tem sua conduta. Raso =
 - [ ] Plano rico e acionável. [ ] Campo sem fonte omitido. [ ] 7 seções na ordem (cabeçalho + 7).
 - [ ] Janela 24 h (07 h a 05 h) salvo pedido explícito. [ ] Ficha-cola: 1 folha por leito, com todos os vitais e o balanço.
 - [ ] Peso com fonte e data, se houver. [ ] Bombas em `infusoes_continuas` com a diluição da prescrição; nenhuma
-  dose calculada de cabeça.
+  dose de bomba calculada de cabeça.
