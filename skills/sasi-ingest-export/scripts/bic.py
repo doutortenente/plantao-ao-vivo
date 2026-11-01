@@ -52,8 +52,8 @@ TABELA = {
                   ["esmeron"]),
 }
 GRUPOS = ("DVA", "SEDAÇÃO", "BNM")  # ordem das linhas na ficha-cola
-# apelidos que são marca: na ficha a droga sai "Marca (genérico)", como nas linhas de ATB; sinônimo e abreviação
-# ("norepinefrina", "nora", "dobuta") saem pelo genérico
+# apelidos que são marca: na ficha a droga sai com a marca da prescrição; sinônimo e abreviação ("norepinefrina",
+# "nora", "dobuta") saem pelo genérico
 MARCAS = {"hyponor", "encrise", "dobutrex", "primacor", "nipride", "tridil", "revivan", "fentanest", "dormonid",
           "diprivan", "propovan", "ketalar", "precedex", "dimorf", "esmeron"}
 SEM_PESO = {"mcgh", "mgh", "mcgmin", "uimin"}
@@ -189,18 +189,17 @@ def _serie_do_balanco(d, ganhos):
 
 
 def nome_na_ficha(item, d):
-    """"Hyponor (noradrenalina)" quando a prescrição traz a marca; senão o genérico ("Noradrenalina")."""
+    """"Hyponor" quando a prescrição traz a marca; senão o genérico ("Noradrenalina")."""
     escrito = str(item.get("droga") or "").strip()
-    if _norm(escrito) in MARCAS:
-        return f"{escrito[:1].upper()}{escrito[1:]} ({d['nome'].lower()})"
-    return d["nome"]
+    return f"{escrito[:1].upper()}{escrito[1:]}" if _norm(escrito) in MARCAS else d["nome"]
 
 
 def linha(item, kg=None, ganhos=None):
     """Texto da evolução e da ficha de um item de `infusoes_continuas`. Droga fora da tabela -> None.
 
     Evolução: "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03 mcg/kg/min)" (rótulo = droga,
-    como as outras linhas do bloco). Ficha: "Hyponor (noradrenalina) 16 mg/250 ml (64 mcg/ml) · 3 -> 2 ml/h · …".
+    como as outras linhas do bloco). Ficha, em 1 linha, o que corre agora: "Hyponor 16 mg/250 ml · 2 ml/h · 0,03
+    mcg/kg/min" (a folha tem de caber; a sequência fica na evolução).
     Devolve {"id", "grupo", "evolucao", "ficha", "doses", "avisos"} (avisos com "ALERTA:" quando passa do teto)."""
     d = achar(item.get("droga"))
     if d is None:
@@ -214,9 +213,8 @@ def linha(item, kg=None, ganhos=None):
                 "avisos": [f"{d['nome']}: diluição incompleta (ampolas e diluente_ml ou volume_final_ml): "
                            "dose não calculada"]}
     unidade_massa = "UI" if d["cu"].startswith("UI") else "mg"
-    solucao = (f"{fmt(amp * (mg_amp or d['mg']))} {unidade_massa}/"
-               f"{fmt(volume_final(d, amp, dil, vfin, ml_amp), 1)} ml ({fmt(c)} {d['cu']})")
-    evo, fic = f"{d['nome']}: {solucao}", f"{nome_na_ficha(item, d)} {solucao}"
+    bolsa = f"{fmt(amp * (mg_amp or d['mg']))} {unidade_massa}/{fmt(volume_final(d, amp, dil, vfin, ml_amp), 1)} ml"
+    evo, fic = f"{d['nome']}: {bolsa} ({fmt(c)} {d['cu']})", f"{nome_na_ficha(item, d)} {bolsa}"
     avisos = []
     folha = _serie_do_balanco(d, ganhos)
     fonte = item.get("ml_h") if item.get("ml_h") is not None else folha
@@ -235,8 +233,8 @@ def linha(item, kg=None, ganhos=None):
     doses = [dose(d, c, v, kg) for v in seq]
     if None in doses:
         avisos.append(f"{d['nome']}: sem peso, dose por kg não calculada")
-        return {"id": d["id"], "grupo": d["grupo"], "evolucao": f"{evo}, {vaz}", "ficha": f"{fic} · {vaz}",
-                "doses": [], "avisos": avisos}
+        return {"id": d["id"], "grupo": d["grupo"], "evolucao": f"{evo}, {vaz}",
+                "ficha": f"{fic} · {fmt(seq[-1], 1)} ml/h", "doses": [], "avisos": avisos}
     n = casas(d)
     doses = [arred(x, n) for x in doses]
     txt_dose = " -> ".join(fmt(x, n) for x in doses) + f" {d['du']}"
@@ -248,4 +246,4 @@ def linha(item, kg=None, ganhos=None):
         if d["id"] == i and maior > limite and not (d["teto"] is not None and maior > d["teto"]):
             avisos.append(("ALERTA: " if alerta else "") + f"{d['nome']} {fmt(maior, n)} {d['du']}: {texto}")
     return {"id": d["id"], "grupo": d["grupo"], "evolucao": f"{evo}, {vaz} ({txt_dose})",
-            "ficha": f"{fic} · {vaz} · {txt_dose}", "doses": doses, "avisos": avisos}
+            "ficha": f"{fic} · {fmt(seq[-1], 1)} ml/h · {fmt(doses[-1], n)} {d['du']}", "doses": doses, "avisos": avisos}

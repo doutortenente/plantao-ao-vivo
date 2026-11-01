@@ -46,8 +46,9 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
 - Coluna 2 — PRESCRIÇÃO em 2 blocos: INFUSÕES E TERAPIAS (DVA, sedação, ATB com D e início, VM/O2, dieta/NPT,
   TRS) e POR SISTEMAS (Neuro, CV, Resp, TGI, Renal, Endócrino, Analgesia, Profilaxia, SN, Suspensos), rótulo à
   esquerda, fio entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG. DVA, SEDAÇÃO e BNM das bombas
-  saem do motor (`infusoes_continuas`): `Hyponor (noradrenalina) 16 mg/250 ml (64 mcg/ml) · 3 -> 2 ml/h · 0,05 ->
-  0,03 mcg/kg/min`. Em VM com altura, a linha VM ganha `VC 6 - 8 ml/kg (PP 46 kg): 276 - 368 ml`.
+  saem do motor (`infusoes_continuas`), uma linha por bomba com o que corre agora: `Hyponor 16 mg/250 ml · 2 ml/h
+  · 0,03 mcg/kg/min` (a sequência das vazões fica na evolução). Em VM com altura, a linha VM ganha `VC 6 - 8 ml/kg
+  (PP 46 kg): 276 - 368 ml`.
 - Coluna 3 — PENDÊNCIAS (☐), EXAMES, ANOTAÇÕES / NOVOS EXAMES (linhas, quantas couberem).
 - Faixa de baixo: grade CONTROLES DO PLANTÃO (Hora, PA (PAM), FC, SpO2/FiO2, Diurese, Dx × 8) | INTERCORRÊNCIAS,
   CONDUTAS E PASSAGEM.

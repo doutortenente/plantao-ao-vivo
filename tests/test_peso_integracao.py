@@ -167,7 +167,8 @@ class Ficha(unittest.TestCase):
             paras = [p.text for p in Document(str(cola)).element.body.iter() if hasattr(p, "text") and p.text]
         texto = "\n".join(paras)
         for esperado in ("90F  ·  D4 UTI  ·  66 kg (EcoTT, 06/12/2025)",  # na linha do nome, sem quebrar o canto
-                         "Hyponor (noradrenalina) 16 mg/250 ml (64 mcg/ml)", "0,05 -> 0,03 mcg/kg/min", "5,05 mcg/kg/min",
+                         "Hyponor 16 mg/250 ml  ·  2 ml/h  ·  0,03 mcg/kg/min",
+                         "Dobutrex 1.000 mg/250 ml  ·  5 ml/h  ·  5,05 mcg/kg/min",
                          "Débito", "0,38 ml/kg/h em 12 h", "KDIGO 2", "ClCr 26 ml/min (Cockcroft-Gault)",
                          "VC 6 - 8 ml/kg (PP 46 kg): 276 - 368 ml", "Rocefin"):
             self.assertIn(esperado, texto)

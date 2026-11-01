@@ -117,8 +117,9 @@ Precedex…). Droga fora da tabela (amiodarona, insulina…) é ERRO aqui: fica 
   ml/h). `ml_h` que não bate com a série do balanço vira aviso. Sem nenhum dos dois: "sem vazão na folha".
 - O motor escreve no bloco, antes do BH: `Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03
   mcg/kg/min)` (contas e casas decimais do app; sem peso, só a vazão). Acima do teto do app: `ALERTA:` no topo.
-- Na ficha, as linhas DVA, SEDAÇÃO e BNM saem do motor (`Hyponor (noradrenalina) 16 mg/250 ml (64 mcg/ml) · 3 -> 2
-  ml/h · 0,05 -> 0,03 mcg/kg/min`). Linha manual com o mesmo rótulo é mesclada (droga fora da tabela fica depois);
+- Na ficha, as linhas DVA, SEDAÇÃO e BNM saem do motor, uma linha por bomba com o que corre agora (`Hyponor 16
+  mg/250 ml · 2 ml/h · 0,03 mcg/kg/min`; a sequência fica na evolução, e a folha cabe). Linha manual com o mesmo
+  rótulo é mesclada (droga fora da tabela fica depois);
   a mesma droga à mão ao lado (na ficha ou em `outros_balanco`) é ERRO, exceto item ACM/SOS/"sem uso". Droga da
   tabela à mão na linha DVA/SEDAÇÃO/BNM sem estar em `infusoes_continuas`: aviso.
 

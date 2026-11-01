@@ -104,14 +104,15 @@ class LinhaDaNair(unittest.TestCase):
                        "ml_h": {"07": 3, "15": 3, "16": 2, "18": 2}}, 66)
         # 3 x 64 / 66 / 60 = 0,048; 2 x 64 / 66 / 60 = 0,032
         self.assertEqual(r["evolucao"], "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03 mcg/kg/min)")
-        self.assertEqual(r["ficha"], "Noradrenalina 16 mg/250 ml (64 mcg/ml) · 3 -> 2 ml/h · 0,05 -> 0,03 mcg/kg/min")
+        # na ficha, 1 linha com o que corre agora (a sequência fica na evolução): a folha tem de caber
+        self.assertEqual(r["ficha"], "Noradrenalina 16 mg/250 ml · 2 ml/h · 0,03 mcg/kg/min")
         self.assertEqual(r["grupo"], "DVA")
 
     def test_dobutamina_5_ml_h(self):
         r = bic.linha({"droga": "Dobutrex", "ampolas": 4, "diluente_ml": 170, "ml_h": 5}, 66)
         self.assertEqual(r["evolucao"], "Dobutamina: 1.000 mg/250 ml (4.000 mcg/ml), 5 ml/h (5,05 mcg/kg/min)")
-        # na ficha, marca da prescrição (genérico), como nas linhas de ATB; apelido ("dobuta") sai pelo genérico
-        self.assertEqual(r["ficha"], "Dobutrex (dobutamina) 1.000 mg/250 ml (4.000 mcg/ml) · 5 ml/h · 5,05 mcg/kg/min")
+        # na ficha, a marca da prescrição; apelido ("dobuta") sai pelo genérico
+        self.assertEqual(r["ficha"], "Dobutrex 1.000 mg/250 ml · 5 ml/h · 5,05 mcg/kg/min")
         apelido = bic.linha({"droga": "dobuta", "ampolas": 4, "diluente_ml": 170, "ml_h": 5}, 66)
         self.assertTrue(apelido["ficha"].startswith("Dobutamina 1.000 mg/250 ml"), apelido["ficha"])
 
