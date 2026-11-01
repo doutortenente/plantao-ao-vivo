@@ -54,7 +54,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import bic  # noqa: E402
 import checagens  # noqa: E402
+import peso as PESO  # noqa: E402
 
 # ── Dicionário canônico de balanço hídrico ──────────────────────────────────
 # Radical curto (<= 3 letras) só casa com PALAVRA INTEIRA ("ev", "sf", "ch", "uf"),
@@ -325,6 +327,124 @@ def _eh_vm(sup):
     return bool(sup) and bool(re.search(r"\bVM\b|ventila|TQT.*(PCV|VCV|PSV)|IOT", sup, re.I))
 
 
+# ── peso: o que depende dele (peso.py e bic.py fazem a conta; aqui só o texto) ───────────────────────────────────
+def _calc_peso(leito, meta, vm):
+    """Linha 'Peso: …' do bloco e os dados para a ficha. Sem peso com fonte e data -> (None, {}, [])."""
+    p = PESO.ler(leito)
+    if not p:
+        return None, {}, []
+    avisos = []
+    idade, sexo = PESO.idade_sexo(leito.get("idade_sexo"))
+    dados = {"peso": p, "idade": idade, "sexo": sexo, "pp": None, "vc": None}
+    partes = [f"Peso: {_fmt(p['kg'])} kg ({p['fonte']}, {p['data']})"]
+    if not sexo:
+        avisos.append("`idade_sexo` fora do formato \"90F\": peso predito e ClCr não calculados")
+    if p["altura_cm"]:
+        partes.append(f"Altura: {_fmt(p['altura_cm'])} cm")
+        if sexo:
+            dados["pp"] = PESO.peso_predito(sexo, p["altura_cm"])
+            if vm:
+                dados["vc"] = PESO.vc(dados["pp"])
+                partes.append(f"Peso predito: {_fmt(round(dados['pp']))} kg "
+                              f"(VC 6 - 8 ml/kg: {dados['vc'][0]} - {dados['vc'][1]} ml)")
+    elif vm:
+        avisos.append("em VM sem `altura_cm` no `peso`: peso predito e VC alvo (6 - 8 ml/kg) não calculados")
+    n = PESO.dias(p, _data(meta.get("data")))
+    if n is not None and n > 30:
+        avisos.append(f"peso de {p['data']} (há {n} dias): confirmar se ainda vale")
+    return " | ".join(partes), dados, avisos
+
+
+DIURESE = re.compile(r"diur|urin|svd", re.I)
+TRS = re.compile(r"\buf\b|cvvh|dialis|hemodi")  # sobre o texto sem acento e minúsculo
+
+
+def _em_trs(leito):
+    """Em TRS (UF, CVVHDF, diálise no balanço, ou linha TRS na ficha)? Aí ClCr e KDIGO pelo débito não valem."""
+    perdas = [checagens._sem_acento(it.get("nome", "")) for it in leito.get("perdas") or [] if isinstance(it, dict)]
+    linhas = [x for x in (leito.get("ficha") or {}).get("infusoes") or [] if isinstance(x, (list, tuple)) and x]
+    return any(TRS.search(n) for n in perdas) or any(str(x[0]).strip().upper() == "TRS" for x in linhas)
+
+
+def _diurese_ilegivel(leito):
+    """Alguma célula de diurese ilegível? (a soma sai subestimada e o débito daria KDIGO falso)."""
+    for it in leito.get("perdas") or []:
+        if not (isinstance(it, dict) and DIURESE.search(str(it.get("nome", "")))):
+            continue
+        serie = it.get("serie")
+        if serie is None:
+            celulas = [it.get("ml")]
+        else:
+            ph = por_hora(serie)
+            celulas = ph[1] if ph else (_valores(serie) if isinstance(serie, dict) else serie)
+        if any(_num(v, ml=True) == (None, "?") for v in (celulas if isinstance(celulas, list) else [celulas])):
+            return True
+    return False
+
+
+def _calc_debito(diurese_ml, dados, leito, meta, jan, trs=False):
+    """Linha 'Débito urinário: … ml/kg/h em N h [KDIGO n pelo débito]'. Horas: `horas_balanco` ou a janela de 24 h.
+    O estágio sai do número mostrado (2 casas), para não sair "0,50 [KDIGO 2]". Em TRS, só o débito (TRS já é 3)."""
+    horas = leito.get("horas_balanco", meta.get("horas_balanco"))
+    if horas is None and jan == "24 h":
+        horas = 24
+    h, _ = _num(horas) if horas is not None else (None, None)
+    if not h or not 1 <= h <= 24:
+        return None, None, [f"débito urinário em ml/kg/h não calculado: janela \"{jan}\" sem `horas_balanco` "
+                            "(quantas horas o balanço cobre)"]
+    if _diurese_ilegivel(leito):
+        return None, None, ["débito urinário em ml/kg/h não calculado: diurese com célula ilegível (a soma sairia "
+                            "subestimada)"]
+    if diurese_ml <= 0:
+        return None, None, ["diurese 0 ml: confirmar se é anúria (SVD) ou diurese não quantificada (fralda); "
+                            "KDIGO pelo débito não calculado"]
+    ml_kg_h = bic.arred(PESO.debito(diurese_ml, h, dados["peso"]["kg"]), 2)
+    kd = None if trs else PESO.kdigo_debito(ml_kg_h, h)
+    deb = {"ml_kg_h": _fmt(ml_kg_h, 2), "horas": _fmt(h), "kdigo": kd}  # 2 casas fixas: "0,50", não "0,5"
+    linha = f"Débito urinário: {deb['ml_kg_h']} ml/kg/h em {deb['horas']} h" + (f" [KDIGO {kd} pelo débito]" if kd else "")
+    return linha, deb, []
+
+
+def _calc_infusoes(leito, dados):
+    """Drogas de `infusoes_continuas` com dose (bic.py), na ordem DVA, SEDAÇÃO, BNM. Devolve (itens, avisos)."""
+    kg = dados.get("peso", {}).get("kg") if dados else None
+    itens, avisos = [], []
+    for item in leito.get("infusoes_continuas") or []:
+        if not isinstance(item, dict):
+            avisos.append("`infusoes_continuas`: item fora do formato {\"droga\", \"ampolas\", …}")
+            continue
+        r = bic.linha(item, kg, leito.get("ganhos"))
+        if r is None:
+            avisos.append(f"`infusoes_continuas`: \"{item.get('droga')}\" fora da tabela das calculadoras: dose não "
+                          "calculada (deixe a droga na linha manual da ficha)")
+            continue
+        avisos += r["avisos"]
+        if r["evolucao"]:
+            itens.append(r)
+    itens.sort(key=lambda r: bic.GRUPOS.index(r["grupo"]))
+    return itens, avisos
+
+
+def _calc_clcr(lab, dados, trs=False):
+    """Linha 'CLCR (Cockcroft-Gault): N ml/min' a partir do CR do laboratório. Devolve (linha, valor, avisos)."""
+    cr, anterior = PESO.creatinina(lab)
+    if not (dados.get("peso") and dados.get("idade") and dados.get("sexo") and cr):
+        return None, None, []
+    if trs:
+        return None, None, ["em TRS: ClCr por Cockcroft-Gault não calculado (não serve para ajustar dose; vale a "
+                            "modalidade de TRS)"]
+    p = dados["peso"]
+    valor = round(PESO.clcr(dados["idade"], dados["sexo"], p["kg"], cr))
+    avisos = []
+    if anterior and cr > anterior:
+        avisos.append(f"ClCr por Cockcroft-Gault com creatinina em ascensão ({_fmt(anterior)} -> {_fmt(cr)}): "
+                      "superestima a função renal")
+    if p["altura_cm"] and PESO.imc(p["kg"], p["altura_cm"]) >= 30:
+        avisos.append(f"IMC {round(PESO.imc(p['kg'], p['altura_cm']))}: o ClCr por Cockcroft-Gault com o peso real "
+                      "superestima a função renal (considerar o peso ajustado)")
+    return f"CLCR (Cockcroft-Gault): {valor} ml/min", valor, avisos
+
+
 # ── montagem por leito (estrutura usada pelo texto E pelo gerador .docx) ────
 def compute_leito(leito, meta=None):
     meta = meta or {}
@@ -363,6 +483,11 @@ def compute_leito(leito, meta=None):
             linhas.append(f"Sup O2: {sup}")
     if sup and vm and "Dx" not in vitais:
         linhas.append(f"Sup O2: {sup}")
+    calculadas = []  # linhas que o motor escreveu a partir do peso e das bombas (a ficha não as lê como célula)
+    l_peso, dados, av = _calc_peso(leito, meta, vm)
+    avisos += av
+    if l_peso:
+        linhas.append(l_peso); calculadas.append(l_peso)
 
     bal = calc_balanco(leito.get("ganhos"), leito.get("perdas"))
     avisos += bal["avisos"]
@@ -394,27 +519,46 @@ def compute_leito(leito, meta=None):
         linhas.append(f"Evacuação: {txt}")
     outras = [(n[:1].upper() + n[1:], ml) for n, ml in bal["itens_perda"]
               if not re.search(r"diur|urin|svd|evacua|fezes", n, re.I)]
-    if any(re.search(r"diur|urin|svd", n, re.I) for n, _ in bal["itens_perda"]):
+    debito, trs = None, _em_trs(leito)
+    if any(DIURESE.search(n) for n, _ in bal["itens_perda"]):
         linhas.append(f"Diurese: {_fmt(diur)} ml")
+        if dados:
+            l_deb, debito, av = _calc_debito(diur, dados, leito, meta, jan, trs)
+            avisos += av
+            if l_deb:
+                linhas.append(l_deb); calculadas.append(l_deb)
     for n, ml in outras:
         linhas.append(f"{n}: {_fmt(ml)} ml")
+    infusoes, av = _calc_infusoes(leito, dados)
+    avisos += av
+    for it in infusoes:
+        linhas.append(it["evolucao"]); calculadas.append(it["evolucao"])
     linhas += leito.get("outros_balanco", [])
     if tem_bal:
         b = bal["balanco"]
         linhas.append(f"BH: {'+' if b >= 0 else '-'} {_fmt(abs(b))} ml")
 
     secoes = [(f"{TITULOS['vitais']} {jan}:", linhas)]
+    clcr = None
     for chave in ("laboratorio", "terapias", "exame_fisico", "evolucao", "impressao", "conduta"):
         cont = leito.get(chave)
         if not cont:
             continue
         if isinstance(cont, str):
             cont = cont.split("\n")
+        cont = list(cont)
         if chave == "impressao":
             cont = [c if re.match(r"^\d+\.", c) else f"{i}. {c}" for i, c in enumerate(cont, 1)]
-        secoes.append((TITULOS[chave], list(cont)))
+        if chave == "laboratorio" and dados:
+            l_clcr, clcr, av = _calc_clcr(cont, dados, trs)
+            avisos += av
+            if l_clcr:
+                cont.append(l_clcr)
+        secoes.append((TITULOS[chave], cont))
     avisos = checagens.checar(leito) + avisos  # alergia × prescrição, TEV, duplicidade, suspenso: no topo
-    return {"cabecalho": cab, "secoes": secoes, "avisos": avisos, "balanco": bal, "janela": jan}
+    return {"cabecalho": cab, "secoes": secoes, "avisos": avisos, "balanco": bal, "janela": jan,
+            "peso": dados.get("peso"), "pp": dados.get("pp"), "vc": dados.get("vc"), "debito": debito, "clcr": clcr,
+            "infusoes": infusoes, "calculadas": calculadas}
 
 
 def render_leito(leito, meta=None):

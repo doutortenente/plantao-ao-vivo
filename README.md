@@ -26,7 +26,10 @@ correções listadas em `docs/DECISOES.md`.
 4. O motor `skills/sasi-ingest-export/scripts/build_passagem.py` faz toda a conta e cruza a prescrição
    (`checagens.py`):
    - Máx - Mín, flags e balanço pela soma das células;
-   - dias de ATB (início = D0) e de UTI (admissão = D1).
+   - dias de ATB (início = D0) e de UTI (admissão = D1);
+   - com peso de fonte e data: dose das bombas pela diluição prescrita (`bic.py`, tabela e contas do app
+     calculadoras-uti), débito urinário em ml/kg/h com KDIGO pelo débito, ClCr de Cockcroft-Gault e, em VM, peso
+     predito e VC alvo (`peso.py`).
 5. `gerador/gerar_docx.py` gera os dois Word.
    - Antes de gerar, valida o JSON (`validar.py`).
    - Ajusta a ficha-cola para 1 folha por leito.

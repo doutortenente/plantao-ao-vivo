@@ -37,7 +37,7 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
    classifica os arquivos, conta páginas, gera os PNG das folhas de controle (150 dpi e metades a 300 dpi), o texto
    dos laudos e `manifest.json` com o inventário leito × documentos e os avisos (leito sem lab, nº de folhas).
 1. **Evolução anterior.** `python3 gerador/evolucao_anterior.py anterior.docx` devolve, por leito, `exame_fisico`
-   (cópia literal), `plano_anterior` e `laboratorio_anterior` para o JSON. Leito não reconhecido = ler na mão.
+   (cópia literal), `plano_anterior`, `laboratorio_anterior` e o `peso` (com a fonte e a data de origem) para o JSON. Leito não reconhecido = ler na mão.
    **Inventário.** Listar leitos pelas evoluções. Conferir que cada leito tem folha de controle, prescrição e lab.
    Leito sem lab do dia → dizer no chat. Número de leito divergente entre folha e prescrição → dizer no chat.
 2. **Laboratório.** `python3 skills/sasi-ingest-export/scripts/labs.py laudo.pdf --anterior "<linhas de Laboratório
@@ -47,7 +47,9 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
    Transcrever as 12 aferições (07 h a 05 h) **com a hora** (`{"07": 146, "09": 126, …}`) — **janela 24 h é o padrão**,
    e o motor confere pelas horas (faltou o diurno = ALERTA). Balanço: transcrever as CÉLULAS, também com a hora.
 4. **Prescrição.** Ler cada página; incorporar o manuscrito (riscado, "suspenso", "modificado"). Doses só como
-   escritas. Pôr o plano da evolução anterior em `plano_anterior`: o motor alerta sozinho o que ele mandou suspender
+   escritas. Cada bomba da tabela das calculadoras (DVA, sedação, BNM) vai para `infusoes_continuas` com a diluição
+   da prescrição (droga, ampolas, diluente): a dose por kg é do motor. Peso: da folha, da balança, do EcoTT ou da
+   admissão, sempre com fonte e data (`peso`); sem fonte, fica fora. Pôr o plano da evolução anterior em `plano_anterior`: o motor alerta sozinho o que ele mandou suspender
    e continua prescrito, além de alergia × prescrição, TEV e duplicidade (`ALERTA:` no topo do Conferir). Alerta de
    alergia vai para o chat na hora, antes de terminar os arquivos.
 5. **JSON do plantão.** Montar um arquivo no contrato `gerador/schema-plantao.md`, com:
@@ -55,6 +57,8 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
    24 h, impressão, plano, até 3 alertas para o chat e o bloco `ficha` de cada leito (obrigatório: Dx, dispositivos,
    alergia, prescrição em infusões/terapias + por sistemas, 3 a 7 pendências tiradas do plano, exames e lab).
    ATB com `(I: dd/mm)`: o motor escreve o D (início = D0). Dia de UTI pela `admissao_uti` (admissão = D1).
+   Peso, débito em ml/kg/h, KDIGO pelo débito, ClCr, dose das bombas e VC alvo: o motor escreve (contrato, seções
+   "Peso" e "Bombas"). Janela recortada: `horas_balanco` com as horas que o balanço cobre.
 6. **Gerar.** `python3 gerador/gerar_docx.py plantao.json --saida saida/` → evolução + ficha-cola (+ PDFs).
    Antes de gerar ele roda `gerador/validar.py`: campo obrigatório faltando, item de balanço fora do dicionário do
    motor ou `(revisar)` no texto = não gera (código 2); corrigir o JSON e gerar de novo. Os avisos vão para o Conferir.

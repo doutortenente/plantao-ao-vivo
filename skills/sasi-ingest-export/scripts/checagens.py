@@ -17,7 +17,12 @@ Para acrescentar: uma linha em DROGAS. Alergia escrita como classe ("AINE", "sul
 "fluoroquinolona", "anti-inflamatório") também vale (ALERGIA_CLASSE).
 """
 import re
+import sys
 import unicodedata
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import bic  # noqa: E402
 
 # genérico: (classe, marcas e grafias que também identificam a droga)
 DROGAS = {
@@ -250,10 +255,16 @@ def _tem_outra_coisa(oracao):
 
 
 def _itens_prescritos(leito):
-    """(rótulo, texto) de cada item da prescrição da ficha; SUSPENSOS (e variantes) fica de fora."""
+    """(rótulo, texto) de cada item da prescrição: as bombas de `infusoes_continuas` (a ficha as escreve pelo motor)
+    e as linhas da ficha; SUSPENSOS (e variantes) fica de fora."""
     f = leito.get("ficha") or {}
-    return [(rot.strip().upper(), it) for rot, itens in linhas_da_ficha(f, "infusoes") + linhas_da_ficha(f, "sistemas")
-            if not rot.strip().upper().startswith("SUSPENS") for it in itens]
+    bombas = []
+    for it in leito.get("infusoes_continuas") or []:
+        d = bic.achar(it.get("droga")) if isinstance(it, dict) else None
+        if d:
+            bombas.append((d["grupo"], f"{it['droga']} ({d['nome'].lower()})"))
+    return bombas + [(rot.strip().upper(), it) for rot, itens in linhas_da_ficha(f, "infusoes")
+                     + linhas_da_ficha(f, "sistemas") if not rot.strip().upper().startswith("SUSPENS") for it in itens]
 
 
 def _alergia(leito):

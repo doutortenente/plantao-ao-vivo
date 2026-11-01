@@ -49,7 +49,7 @@ from docx.shared import Cm, Pt  # noqa: E402
 
 FONTE = E.FONTE
 TAM = E.CORPO
-FLAG = re.compile(r"(\[[^\]]*x [<>][^\]]*\])")
+FLAG = re.compile(r"(\[[^\]]*x [<>][^\]]*\]|\[KDIGO [^\]]*\])")  # "[2x < 65]" e "[KDIGO 2 pelo débito]"
 
 
 # ── utilidades de formatação ─────────────────────────────────────────────────

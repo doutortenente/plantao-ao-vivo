@@ -18,6 +18,7 @@
 | 19/10/2026 | Plantão roda no projeto do claude.ai (hooks do Claude Code não valem lá): as regras viram script, teste e CI. |
 | 19/10/2026 | Exceções aprovadas ao "TNR 10 em tudo", só na ficha-cola: 8 (rótulo LEITO), 9 (rótulos e flags), 13 (nome), 20 (nº do leito) e o "– " de EXAMES. |
 | 19/10/2026 | Mudanças entram por branch + PR com CI; o merge na `main` é de uma vez, com o "prosseguir" dele. |
+| 01/11/2026 | Peso no plantão (item 2 das melhorias): peso só com fonte e data; o motor calcula a dose das bombas pela diluição da prescrição (tabela e contas do app calculadoras-uti), o débito em ml/kg/h com KDIGO pelo débito, o ClCr (Cockcroft-Gault) e, em VM, o peso predito com o VC de 6 a 8 ml/kg. Nada por kg de cabeça. |
 | 12/10/2026 | Ficha-cola: modelo novo aprovado (`gerador/ficha_cola.py`) — Dx no cabeçalho, prescrição em 2 blocos (infusões/terapias + por sistemas), controles em grade, PDF junto. Profilaxia só TEV/LAMG. Folha que estoura no Word = erro grave. |
 
 ## Correções feitas ao montar este repositório (11/10/2026)

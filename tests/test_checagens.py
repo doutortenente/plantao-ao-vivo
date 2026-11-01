@@ -74,7 +74,8 @@ class Suspenso(unittest.TestCase):
     def test_suspenso_que_saiu_da_prescricao(self):
         def mudar(l):
             l["plano_anterior"] = ["- Azitromicina suspensa."]
-            l["ficha"]["infusoes"][1][1] = [l["ficha"]["infusoes"][1][1][0]]
+            atb = next(x for x in l["ficha"]["infusoes"] if x[0] == "ATB")
+            atb[1] = [atb[1][0]]
             l["ficha"]["sistemas"].append(["SUSPENSOS", ["Azitromicina"]])
         self.assertEqual(C.checar(leito(mudar)), [])
 

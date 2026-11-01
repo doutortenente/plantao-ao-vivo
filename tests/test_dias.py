@@ -47,7 +47,8 @@ class Uti(unittest.TestCase):
         prep, avisos = m.preparar(dados)
         self.assertEqual(avisos, [])
         self.assertEqual(prep["leitos"][0]["dia_uti"], "D3 UTI")
-        self.assertIn("(D2, I: 30/12)", prep["leitos"][0]["ficha"]["infusoes"][1][1][0])
+        atb = next(itens for rot, itens in prep["leitos"][0]["ficha"]["infusoes"] if rot == "ATB")
+        self.assertIn("(D2, I: 30/12)", atb[0])
 
 
 def exemplo(mudar=None, data=None):

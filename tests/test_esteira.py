@@ -291,6 +291,10 @@ class Montar(unittest.TestCase):
         self.assertTrue(any("sem o leito 07" in a for a in l["avisos"]))
         _, l, _ = self.montado(evolucao_anterior=outra.replace("09", "07"))
         self.assertEqual(l["exame_fisico"], ["- SNC: vígil"])
+        self.assertNotIn("peso", l)
+        com_peso = outra.replace("09", "07").replace("Exame físico:", "Peso: 72 kg (balança, 30/12/2025)\nExame físico:")
+        _, l, _ = self.montado(evolucao_anterior=com_peso)
+        self.assertEqual(l["peso"], {"kg": 72, "fonte": "balança", "data": "30/12/2025"})
 
     def test_atb_com_inicio_o_motor_escreve_o_d(self):
         pl, _, _ = self.montado()

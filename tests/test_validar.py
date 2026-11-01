@@ -38,7 +38,8 @@ class Validar(unittest.TestCase):
         def mudar(l, d):
             l["ficha"]["dx"] = "Outra coisa"
             l["ficha"]["lab"].append("Hb 12,1")
-            l["ficha"]["infusoes"][1] = ["ATB", ["Rocefin (ceftriaxona) 2 g EV 1x/dia (D2, I: 31/12)"]]
+            i = next(n for n, x in enumerate(l["ficha"]["infusoes"]) if x[0] == "ATB")
+            l["ficha"]["infusoes"][i] = ["ATB", ["Rocefin (ceftriaxona) 2 g EV 1x/dia (D2, I: 31/12)"]]
         _, avisos = com(mudar)
         txt = "\n".join(avisos)
         self.assertIn("diagnostico diverge", txt)

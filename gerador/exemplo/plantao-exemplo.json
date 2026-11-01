@@ -16,6 +16,12 @@
       "diagnostico": "Pneumonia comunitária grave  ·  Choque séptico  ·  LRA KDIGO I  ·  HAS",
       "alergia": "Dipirona",
       "dieta": "enteral 50 ml/h",
+      "peso": {
+        "kg": 70,
+        "altura_cm": 172,
+        "fonte": "balança",
+        "data": "01/01/2026"
+      },
       "vitais": {
         "PAS": {
           "07": 132,
@@ -186,8 +192,17 @@
         "bh": 400
       },
       "evacuacao": "ausente (última 30/12)",
-      "outros_balanco": [
-        "Noradrenalina: 0 -> 5 -> 3 ml/h (iniciada às 13 h)"
+      "infusoes_continuas": [
+        {
+          "droga": "Hyponor",
+          "ampolas": 4,
+          "diluente_ml": 234,
+          "ml_h": {
+            "07": 0,
+            "13": 5,
+            "21": 3
+          }
+        }
       ],
       "avisos": [],
       "laboratorio": [
@@ -236,12 +251,6 @@
         "janela_controles": "01/01  ·  07 - 05 h",
         "janela_balanco": "07 - 05 h",
         "infusoes": [
-          [
-            "DVA",
-            [
-              "Noradrenalina 16 mg/250 ml 3 ml/h"
-            ]
-          ],
           [
             "ATB",
             [
