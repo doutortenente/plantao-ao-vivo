@@ -57,7 +57,7 @@ PRESCRIÇÃO MÉDICA:
   VO, EV, SNE, SNG, SC, IM, VR. Mantenha a vírgula decimal.
 - "grupo": exatamente um nome da lista. DVA (vasopressor, inotrópico em BIC), SEDAÇÃO (sedativo ou opioide em BIC),
   ATB (antibiótico, antifúngico, antiviral), VM (parâmetros do ventilador), O2 (cateter, máscara, VNI), DIETA (enteral
-  ou oral), NPT (parenteral), TRS (diálise), NEURO (anticonvulsivante, antipsicótico, sedativo não contínuo), CV
+  ou oral; em enteral, a água pela sonda é item da DIETA, com volume e horários), NPT (parenteral), TRS (diálise), NEURO (anticonvulsivante, antipsicótico, sedativo não contínuo), CV
   (anti-hipertensivo, antiarrítmico, diurético), RESP (broncodilatador, corticoide inalatório), TGI (procinético,
   laxante, antiemético fixo), RENAL, ENDÓCRINO (insulina, hormônio, hipoglicemiante), ANALGESIA (analgésico em
   horário fixo), PROFILAXIA (só TEV e lesão aguda de mucosa gástrica: heparina, enoxaparina, IBP, compressão

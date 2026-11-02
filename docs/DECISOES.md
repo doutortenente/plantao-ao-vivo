@@ -132,6 +132,12 @@ Pedido do Dr. Nicolas no plantão de 01/11:
 A página `extracao-web` acompanhou 1 a 4. O modelo próprio da skill `controles-vitais-janela` (pedido
 "sinais-labs-prescrição") não mudou.
 
+## Água pela sonda na ficha-cola (02/11/2026)
+
+Em TNE, a linha DIETA da ficha-cola leva a água pela sonda, com volume e horários da prescrição. O validar deixava a
+água fora da ficha ("água NNN ml" estava na lista do que não vai); saiu da lista, e TNE sem água na DIETA agora vira
+aviso.
+
 ## Pendente (não resolvido aqui)
 
 Lista viva em `docs/PENDENTE.md`.

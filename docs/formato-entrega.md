@@ -43,7 +43,9 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
   peso, `Débito  0,38 ml/kg/h em 12 h  KDIGO 2`, flag em negrito; Evac.); LABORATÓRIO, um grupo por linha, e com
   peso a linha `ClCr 26 ml/min (Cockcroft-Gault)` do motor. Fios cinza finos entre linhas (guia de leitura — o Dr. é
   disléxico).
-- Coluna 2 — PRESCRIÇÃO em 2 blocos: INFUSÕES E TERAPIAS (DVA, sedação, ATB com D e início, VM/O2, dieta/NPT,
+- Coluna 2 — PRESCRIÇÃO em 2 blocos: INFUSÕES E TERAPIAS (DVA, sedação, ATB com D e início, VM/O2, dieta/NPT —
+  em TNE, a linha DIETA leva também a água pela sonda, com volume e horários: `Fresubin HP Energy 60 ml/h SNE ·
+  Água 200 ml 6/6 h => 10-16-22-04` (02/11/2026) —,
   TRS) e POR SISTEMAS (Neuro, CV, Resp, TGI, Renal, Endócrino, Analgesia, Profilaxia, SN, Suspensos), rótulo à
   esquerda, fio entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG. DVA, SEDAÇÃO e BNM das bombas
   saem do motor (`infusoes_continuas`), uma linha por bomba com o que corre agora: `Hyponor 16 mg/250 ml · 2 ml/h
