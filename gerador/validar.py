@@ -42,7 +42,10 @@ CLASSES_FORA_DA_FICHA = {"SINTOMÁTICOS", "OFTALMO", "PELE", "TÓPICOS"}
 ITENS_FORA_DA_FICHA = re.compile(
     r"\b(col[íi]rio|lacrima|lumigan|brixag|ephynal|hirudoid|brava|comfeel|com feel|primoderm|primo derme|"
     r"rio ?hex|riohex|luftal|simeticona|dersani|fresubin creme|fresubin protein|resource fiber|complexo b|"
-    r"shilley heparinizado|água( mineral)? \d+ ?ml)\b", re.I)
+    r"shilley heparinizado)\b", re.I)
+# 02/11/2026: em TNE, a água pela sonda vai na linha DIETA da ficha (volume e frequência). Tirá-la foi erro.
+TNE = re.compile(r"\b(SNE|SNG|SOG|GTT|GTM|TNE|enteral|sonda)\b", re.I)
+AGUA = re.compile(r"\b[áa]gua\b", re.I)
 
 # PROFILAXIA na ficha = só TEV e LAMG (docs/formato-entrega.md).
 PROFILAXIA_TEV_LAMG = re.compile(
@@ -327,6 +330,10 @@ def validar_leito(leito, meta):
             if DUVIDA.search(txt):
                 avisos.append(f"{L}: \"?\" em `{campo}`: {txt[:70]}")
 
+    dieta = [it for rot, its in (ficha.get("infusoes") or []) if rot.strip().upper() == "DIETA" for it in its]
+    if any(TNE.search(it) for it in dieta) and not any(AGUA.search(it) for it in dieta):
+        avisos.append(f"{L}: DIETA em TNE sem a água pela sonda na ficha (pôr volume e frequência da prescrição; "
+                      "sem água prescrita, escrever \"sem água prescrita\")")
     for rot, itens in (ficha.get("infusoes") or []) + (ficha.get("sistemas") or []):
         if rot.strip().upper() in CLASSES_FORA_DA_FICHA:
             avisos.append(f"{L}: classe {rot} não vai na ficha-cola")

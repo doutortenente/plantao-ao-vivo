@@ -58,6 +58,7 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
    vitais (séries), células de balanço, laboratório, terapias, exame físico (copiado da evolução anterior), eventos
    24 h, impressão, plano, até 3 alertas para o chat e o bloco `ficha` de cada leito (obrigatório: Dx, dispositivos,
    alergia, prescrição em infusões/terapias + por sistemas, 3 a 7 pendências tiradas do plano, exames e lab).
+   Em TNE, a linha DIETA leva a água pela sonda (volume e frequência, sem os horários).
    ATB com `(I: dd/mm)`: o motor escreve o D (início = D0). Dia de UTI pela `admissao_uti` (admissão = D1).
    Peso, débito em ml/kg/h, KDIGO pelo débito, ClCr, dose das bombas e VC alvo: o motor escreve (contrato, seções
    "Peso" e "Bombas"). Janela recortada: `horas_balanco` com as horas que o balanço cobre.
