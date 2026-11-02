@@ -48,8 +48,10 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
    e o motor confere pelas horas (faltou o diurno = ALERTA). Balanço: transcrever as CÉLULAS, também com a hora.
 4. **Prescrição.** Ler cada página; incorporar o manuscrito (riscado, "suspenso", "modificado"). Doses só como
    escritas. Cada bomba da tabela das calculadoras (DVA, sedação, BNM) vai para `infusoes_continuas` com a diluição
-   da prescrição (droga, ampolas, diluente): a dose por kg é do motor. Peso: da folha, da balança, do EcoTT ou da
-   admissão, sempre com fonte e data (`peso`); sem fonte, fica fora. Pôr o plano da evolução anterior em `plano_anterior`: o motor alerta sozinho o que ele mandou suspender
+   da prescrição (droga, ampolas, diluente): a dose por kg é do motor. Peso: o Claude CAÇA no material, como os
+   outros dados-chave (folha de controle, prescrição, evolução anterior, admissão, laudo de EcoTT): nunca pede ao
+   Dr. A fonte e a data do `peso` são o documento onde foi achado e a data dele, preenchidas pelo Claude. Não achou
+   em lugar nenhum: o leito sai sem conta por kg e isso vai uma vez para o Conferir. Pôr o plano da evolução anterior em `plano_anterior`: o motor alerta sozinho o que ele mandou suspender
    e continua prescrito, além de alergia × prescrição, TEV e duplicidade (`ALERTA:` no topo do Conferir). Alerta de
    alergia vai para o chat na hora, antes de terminar os arquivos.
 5. **JSON do plantão.** Montar um arquivo no contrato `gerador/schema-plantao.md`, com:
