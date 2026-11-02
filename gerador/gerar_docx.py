@@ -86,6 +86,14 @@ def filete(p, sz=6, cor=E.PAPEL_TINTA):
     b.append(e); pPr.append(b)
 
 
+def rotulos_compactos(p, linha, tam=None):
+    """Linha compacta de sinais vitais + balanço: cada "Rótulo: valor" com o rótulo em negrito, separados por " | "."""
+    for i, seg in enumerate(linha.split(" | ")):
+        if i:
+            T(p, " | ", False, tam)
+        rotulo_valor(p, seg, tam)
+
+
 def rotulo_valor(p, linha, tam=None):
     m = re.match(r"^(-\s)?([^:]{1,40}):(.*)$", linha)
     if m:
@@ -115,7 +123,9 @@ def gerar_evolucoes(plantao, caminho):
                 f"Evolução {({'noturno': 'noturna', 'diurno': 'diurna'}).get(meta.get('turno', ''), meta.get('turno', ''))} {meta.get('unidade', '')}".strip(), meta.get("data")]
         T(p2, "  ·  ".join(x for x in info if x))
         filete(p2, E.FIO_TITULO); p2.paragraph_format.space_after = Pt(6)
-        for titulo, linhas in r["secoes"]:
+        for n_sec, (titulo, linhas) in enumerate(r["secoes"]):
+            if n_sec == 0:  # sinais vitais + balanço numa linha só (02/11/2026)
+                linhas = motor.compactar(linhas)
             h = doc.add_paragraph()
             h.paragraph_format.space_before = Pt(9); h.paragraph_format.space_after = Pt(3)
             h.paragraph_format.keep_with_next = True
@@ -136,6 +146,8 @@ def gerar_evolucoes(plantao, caminho):
                     T(q, m_num.group(1), True); T(q, m_num.group(2))
                 elif plano or titulo.startswith("Impressão"):
                     T(q, l)
+                elif n_sec == 0:
+                    rotulos_compactos(q, l)
                 else:
                     rotulo_valor(q, l)
     doc.save(caminho)

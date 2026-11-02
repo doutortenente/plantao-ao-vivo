@@ -309,7 +309,7 @@ def laboratorio(texto, lido, n_leito, anterior, avisos, paciente=None):
 
 
 def lab_curto(linhas):
-    """Laboratório da ficha a partir das linhas do BRIEFING ('HB: 11,2 -> 10,8 g/dl | …' → 'Hb 11,2 -> 10,8 | …')."""
+    """Laboratório da ficha a partir das linhas do BRIEFING ('HB: 11,2 => 10,8 g/dl | …' → 'Hb 11,2 => 10,8 | …')."""
     valores = {}
     for linha in linhas:
         corpo = re.sub(r"^\s*(Gaso\s*\w?|Outros)\s*:\s*", "", re.sub(r"\([^)]*\)", "", linha))

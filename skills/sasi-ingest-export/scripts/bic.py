@@ -223,13 +223,13 @@ def linha(item, kg=None, ganhos=None):
     if item.get("ml_h") is not None and folha is not None:
         seq_folha = vazoes(folha)[0]
         if seq_folha and seq_folha != seq:
-            avisos.append(f"{d['nome']}: `ml_h` ({' -> '.join(fmt(v, 1) for v in seq)} ml/h) diferente da série do "
-                          f"balanço ({' -> '.join(fmt(v, 1) for v in seq_folha)} ml/h): a dose saiu do `ml_h`, conferir")
+            avisos.append(f"{d['nome']}: `ml_h` ({' => '.join(fmt(v, 1) for v in seq)} ml/h) diferente da série do "
+                          f"balanço ({' => '.join(fmt(v, 1) for v in seq_folha)} ml/h): a dose saiu do `ml_h`, conferir")
     if not seq:
         avisos.append(f"{d['nome']}: sem vazão na folha (nem `ml_h` nem série no balanço): dose não calculada")
         return {"id": d["id"], "grupo": d["grupo"], "evolucao": f"{evo}, sem vazão na folha",
                 "ficha": f"{fic} · sem vazão na folha", "doses": [], "avisos": avisos}
-    vaz = " -> ".join(fmt(v, 1) for v in seq) + " ml/h"
+    vaz = " => ".join(fmt(v, 1) for v in seq) + " ml/h"
     doses = [dose(d, c, v, kg) for v in seq]
     if None in doses:
         avisos.append(f"{d['nome']}: sem peso, dose por kg não calculada")
@@ -237,7 +237,7 @@ def linha(item, kg=None, ganhos=None):
                 "ficha": f"{fic} · {fmt(seq[-1], 1)} ml/h", "doses": [], "avisos": avisos}
     n = casas(d)
     doses = [arred(x, n) for x in doses]
-    txt_dose = " -> ".join(fmt(x, n) for x in doses) + f" {d['du']}"
+    txt_dose = " => ".join(fmt(x, n) for x in doses) + f" {d['du']}"
     maior = max(doses)
     if d["teto"] is not None and maior > d["teto"]:
         avisos.append(f"ALERTA: {d['nome']} {fmt(maior, n)} {d['du']} acima do teto de {fmt(d['teto'], 3)} "

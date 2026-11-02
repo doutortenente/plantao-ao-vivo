@@ -695,7 +695,12 @@ function montaLabs(exList){
   function serie(k){
     var e = map[k]; if (!e || !e.serie.length) return null;
     var u = e.unidade || LAB_UNIT[k] || "";
-    return (k + ": " + e.serie.map(function(x){ return x.valor; }).join(" -> ") + (u ? " " + u : "")).trim();
+    return (k + ": " + e.serie.map(function(x){ return x.valor; }).join(" => ") + (u ? " " + u : "")).trim();
+  }
+  function atual(k){  /* eletrólito: só o valor atual, sem série (02/11/2026) */
+    var e = map[k]; if (!e || !e.serie.length) return null;
+    var u = e.unidade || LAB_UNIT[k] || "";
+    return (k + ": " + e.serie[e.serie.length - 1].valor + (u ? " " + u : "")).trim();
   }
   var usados = {}, linhas = [];
   function grupo(keys, sep){
@@ -712,8 +717,10 @@ function montaLabs(exList){
   } else {
     ["SEG","BAST"].forEach(function(k){ var s = serie(k); if (s) linhas.push(s); });
   }
-  grupo(["UR"], ""); grupo(["CR"], "");
-  grupo(["MG","NA","CAI","K","P"], " | ");
+  /* 02/11/2026: UR e CR seriais na mesma linha dos eletrólitos, que vão sem série */
+  var renal = ["UR","CR"].map(function(k){ usados[k] = 1; return serie(k); })
+    .concat(["NA","K","MG","CAI","P"].map(function(k){ usados[k] = 1; return atual(k); })).filter(Boolean);
+  if (renal.length) linhas.push(renal.join(" | "));
   grupo(["PH","PCO2","PO2","HCO3","BE","SATO2","LACTATO"], " | ");
   ordem.forEach(function(k){ if (!usados[k]){ var s = serie(k); if (s) linhas.push(s); } });
   return linhas;
@@ -864,7 +871,7 @@ function buildBed(P, jan, janTxt){
   if (P.bal.length){
     var di = [];
     if (dieta) di.push("Dieta: " + dieta);
-    if (ganhos.length) di.push("Ingesta hídrica: " + fmtMl(somaG) + " ml");
+    /* 02/11/2026: sem "Ingesta hídrica" no bloco (como o motor) */
     if (di.length) linhasB.push(di.join(" | "));
     if (evac || evacMl) linhasB.push("Evacuação: " + [evac, evacMl ? fmtMl(evacMl) + " ml" : ""].filter(Boolean).join(", "));
     if (diur !== null) linhasB.push("Diurese: " + fmtMl(diur) + " ml");
@@ -888,10 +895,11 @@ function buildBed(P, jan, janTxt){
 
   if (linhasV.length || linhaDx || linhasB.length){
     L.push("Sinais vitais + balanço " + janTxt + ":");
-    linhasV.forEach(function(s){ L.push(s); });
-    if (linhaDx) L.push(linhaDx);
-    if (supVM) L.push(supVM);
-    linhasB.forEach(function(s){ L.push(s); });
+    /* 02/11/2026: o bloco sai numa linha só, itens separados por " | " (como o motor) */
+    var bloco = linhasV.slice();
+    if (linhaDx) bloco.push(linhaDx);
+    if (supVM) bloco.push(supVM);
+    L.push(bloco.concat(linhasB).join(" | "));
     L.push("");
   }
   if (P.sv.length && !P.bal.length) pend.push("Sem folha de balanço pareada para este leito.");

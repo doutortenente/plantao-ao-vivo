@@ -103,7 +103,7 @@ class LinhaDaNair(unittest.TestCase):
         r = bic.linha({"droga": "noradrenalina", "ampolas": 4, "diluente_ml": 234,
                        "ml_h": {"07": 3, "15": 3, "16": 2, "18": 2}}, 66)
         # 3 x 64 / 66 / 60 = 0,048; 2 x 64 / 66 / 60 = 0,032
-        self.assertEqual(r["evolucao"], "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03 mcg/kg/min)")
+        self.assertEqual(r["evolucao"], "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 => 2 ml/h (0,05 => 0,03 mcg/kg/min)")
         # na ficha, 1 linha com o que corre agora (a sequência fica na evolução): a folha tem de caber
         self.assertEqual(r["ficha"], "Noradrenalina 16 mg/250 ml · 2 ml/h · 0,03 mcg/kg/min")
         self.assertEqual(r["grupo"], "DVA")
@@ -142,7 +142,7 @@ class SemPesoSemVazaoTeto(unittest.TestCase):
     def test_vazao_sai_da_serie_do_balanco(self):
         ganhos = [{"nome": "dieta SNE", "serie": {"07": 40}}, {"nome": "Nora", "serie": {"07": 3, "16": 2}}]
         r = bic.linha({"droga": "noradrenalina", "ampolas": 4, "diluente_ml": 234}, 66, ganhos)
-        self.assertIn(", 3 -> 2 ml/h", r["evolucao"])
+        self.assertIn(", 3 => 2 ml/h", r["evolucao"])
 
     def test_acima_do_teto_e_alerta(self):
         # 70 ml/h x 64 mcg/ml / 66 kg / 60 = 1,13 mcg/kg/min; teto 1 (definido pelo Dr. no app)
@@ -183,7 +183,7 @@ class SemPesoSemVazaoTeto(unittest.TestCase):
         difere = bic.linha({"droga": "noradrenalina", "ampolas": 4, "diluente_ml": 234, "ml_h": 5}, 66, ganhos)
         self.assertEqual(igual["avisos"], [])
         self.assertIn(", 5 ml/h", difere["evolucao"])  # vale o `ml_h`, mas o Conferir mostra a folha
-        self.assertTrue(any("3 -> 2" in a and "balanço" in a for a in difere["avisos"]), difere["avisos"])
+        self.assertTrue(any("3 => 2" in a and "balanço" in a for a in difere["avisos"]), difere["avisos"])
 
     def test_item_estranho_no_balanco_nao_derruba(self):
         r = bic.linha({"droga": "noradrenalina", "ampolas": 4, "diluente_ml": 234}, 66,

@@ -10,7 +10,7 @@ Como lê:
   - `pdftotext -layout`; cada linha que começa com um analito conhecido (LAB_ALIAS) dá um valor: o PRIMEIRO
     número depois do nome (o resto da linha costuma ser a faixa de referência);
   - bloco de "AMOSTRA MAQUINA" (circuito de diálise) é ignorado até a próxima amostra;
-  - série `anterior -> atual`: o anterior vem do último valor de cada analito em `laboratorio_anterior`
+  - série `anterior => atual`: o anterior vem do último valor de cada analito em `laboratorio_anterior`
     (as linhas de Laboratório da evolução anterior, no formato do BRIEFING);
   - analito repetido no laudo com valores diferentes, ou linha de analito sem número: aviso.
 
@@ -100,13 +100,14 @@ def anteriores(linhas):
 
 
 def montar(valores, ant=None):
-    """Linhas no formato do BRIEFING §1, com série anterior -> atual onde houver anterior."""
+    """Linhas no formato do BRIEFING §1, com série anterior => atual onde houver anterior. UR e CR seriais na mesma
+    linha dos eletrólitos, e eletrólitos só com o valor atual (pedido de 02/11/2026)."""
     ant = ant or {}
 
     def s(k):
         if k not in valores:
             return None
-        v = valores[k] if k not in ant or ant[k] == "" else f"{ant[k]} -> {valores[k]}"
+        v = valores[k] if k not in ant or ant[k] == "" else f"{ant[k]} => {valores[k]}"
         return f"{k}: {v}" + (f" {UNIDADE[k]}" if k in UNIDADE else "")
     linhas = []
     grupo = [x for x in (s("HB"), s("HT"), s("PLAQ")) if x]
@@ -115,10 +116,8 @@ def montar(valores, ant=None):
     if "LEUCO" in valores:
         dif = f" (seg {valores['SEG']} % / bast {valores['BAST']} %)" if "SEG" in valores and "BAST" in valores else ""
         linhas.append(s("LEUCO") + dif)
-    for k in ("UR", "CR"):
-        if s(k):
-            linhas.append(s(k))
-    grupo = [x for x in (s(k) for k in ("NA", "K", "MG", "CAI", "P")) if x]
+    atual = lambda k: f"{k}: {valores[k]}" if k in valores else None  # eletrólito: sem série
+    grupo = [x for x in [s("UR"), s("CR")] + [atual(k) for k in ("NA", "K", "MG", "CAI", "P")] if x]
     if grupo:
         linhas.append(" | ".join(grupo))
     gaso = [f"{k} {valores[k]}" for k in ("pH", "pCO2", "pO2", "HCO3", "BE", "SatO2", "Lactato") if k in valores]

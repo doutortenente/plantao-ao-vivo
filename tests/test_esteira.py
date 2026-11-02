@@ -218,7 +218,7 @@ class Montar(unittest.TestCase):
     def test_conta_e_do_motor(self):
         pl, l, _ = self.montado()
         txt, avisos = motor.build(pl)
-        self.assertIn("Ingesta hídrica: 836 ml", txt)  # 12 × 50 + 12 × 3 + 2 × 100
+        self.assertNotIn("Ingesta hídrica", txt)  # 02/11/2026: fora do bloco; os ganhos (836) ficam na conferência
         self.assertIn("Diurese: 720 ml", txt)  # dreno (penrose) não entra na diurese
         self.assertIn("Dreno penrose: 20 ml", txt)
         self.assertTrue(any("CONFERÊNCIA — Ganhos: folha diz 1.036, células somam 836" in a for a in avisos))
@@ -305,12 +305,12 @@ class Montar(unittest.TestCase):
 
     def test_laboratorio_lido_e_da_ficha(self):
         _, l, _ = self.montado()
-        self.assertEqual(l["laboratorio"], ["HB: 10,8 g/dl", "LEUCO: 18.400 /mm3", "CR: 1,7 mg/dl", "K: 4,8",
+        self.assertEqual(l["laboratorio"], ["HB: 10,8 g/dl", "LEUCO: 18.400 /mm3", "CR: 1,7 mg/dl | K: 4,8",
                                             "Gaso: Lactato 3,1"])
         self.assertEqual(l["ficha"]["lab"], ["Hb 10,8 | Leuco 18.400", "Cr 1,7", "K 4,8", "Lactato 3,1"])
         exemplo = json.loads((RAIZ / "gerador" / "exemplo" / "plantao-exemplo.json").read_text(encoding="utf-8"))
         curto = montar.lab_curto(exemplo["leitos"][0]["laboratorio"])
-        self.assertEqual(curto[0], "Hb 11,2 -> 10,8 | Leuco 16.200 -> 18.400 | Plaq 210.000 -> 180.000")
+        self.assertEqual(curto[0], "Hb 11,2 => 10,8 | Leuco 16.200 => 18.400 | Plaq 210.000 => 180.000")
         _, av = validar.validar(dict(exemplo, leitos=[dict(exemplo["leitos"][0], ficha=dict(
             exemplo["leitos"][0]["ficha"], lab=curto))]))
         self.assertFalse(any("lab da ficha" in a for a in av), av)

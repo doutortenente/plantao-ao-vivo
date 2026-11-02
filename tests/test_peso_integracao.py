@@ -44,7 +44,7 @@ NAIR = {
 
 PESO = "Peso: 66 kg (EcoTT, 06/12/2025) | Altura: 153 cm | Peso predito: 46 kg (VC 6 - 8 ml/kg: 276 - 368 ml)"
 DEBITO = "Débito urinário: 0,38 ml/kg/h em 12 h [KDIGO 2 pelo débito]"
-NORA = "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03 mcg/kg/min)"
+NORA = "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 => 2 ml/h (0,05 => 0,03 mcg/kg/min)"
 DOBUTA = "Dobutamina: 1.000 mg/250 ml (4.000 mcg/ml), 5 ml/h (5,05 mcg/kg/min)"
 CLCR = "CLCR (Cockcroft-Gault): 26 ml/min"
 
@@ -138,7 +138,7 @@ class Evolucao(unittest.TestCase):
     def test_sem_peso_nada_por_kg(self):
         r, linhas, sec = bloco(*leito(lambda l, m: l.pop("peso")))
         self.assertFalse(any(x.startswith(("Peso", "Débito")) for x in linhas))
-        self.assertIn("Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h", linhas)
+        self.assertIn("Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 => 2 ml/h", linhas)
         self.assertNotIn(CLCR, sec["Laboratório:"])
         self.assertTrue(any("sem peso" in a for a in r["avisos"]), r["avisos"])
 
