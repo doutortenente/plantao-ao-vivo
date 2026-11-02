@@ -315,8 +315,17 @@ def sem_glicemia(linhas):
     return out
 
 
+# 02/11/2026: a prescrição da ficha-cola sai sem os horários ("=> 10-16-22-04"): a frequência basta, horário é
+# ruído. O JSON pode trazer os horários (a evolução e o motor não dependem deles); quem tira é a ficha.
+HORARIOS = re.compile(r"\s*=>\s*\d{1,2}(?::\d{2})?(?:\s*-\s*\d{1,2}(?::\d{2})?)*\s*(?=\*\*\s*$|$)")
+
+
+def sem_horarios(linhas):
+    return [[rot, [" · ".join(HORARIOS.sub("", s) for s in it.split(" · ")) for it in itens]] for rot, itens in linhas]
+
+
 def bloco_rx(C, linhas, w_rot=E.RX_ROTULO):
-    linhas = sem_glicemia(linhas)
+    linhas = sem_horarios(sem_glicemia(linhas))
     g = grade(C, len(linhas), 2, [w_rot, WM - 0.6 - w_rot])
     for i, (rot, itens) in enumerate(linhas):
         c0, c1 = g.rows[i].cells

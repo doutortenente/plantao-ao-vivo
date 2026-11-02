@@ -8,6 +8,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "gerador"))
+import ficha_cola  # noqa: E402
 import validar  # noqa: E402
 
 EXEMPLO = json.loads((RAIZ / "gerador" / "exemplo" / "plantao-exemplo.json").read_text(encoding="utf-8"))
@@ -34,6 +35,18 @@ class AguaDaSonda(unittest.TestCase):
         _, avisos = com_dieta(["Geral hipossódica VO"])
         self.assertFalse(any("água pela sonda" in a for a in avisos), avisos)
 
+    def test_prescricao_sai_sem_horarios(self):
+        linhas = [["DIETA", ["Fresubin HP Energy 60 ml/h SNE · Água 200 ml 6/6 h => 10-16-22-04"]],
+                  ["ATB", ["Rocefin (ceftriaxona) 1 g EV 12/12 h (D7, I: 25/10) => 10-22"]],
+                  ["ENDÓCRINO", ["Synthroid (levotiroxina) 50 mcg VO => 06:30 · AAS 100 mg => 13"]],
+                  ["CV", ["**Selozok (metoprolol) 25 mg VO => 22**"]],
+                  ["SN", ["Zofran 8 mg EV até 8/8 h"]]]
+        self.assertEqual(ficha_cola.sem_horarios(linhas), [
+            ["DIETA", ["Fresubin HP Energy 60 ml/h SNE · Água 200 ml 6/6 h"]],
+            ["ATB", ["Rocefin (ceftriaxona) 1 g EV 12/12 h (D7, I: 25/10)"]],
+            ["ENDÓCRINO", ["Synthroid (levotiroxina) 50 mcg VO · AAS 100 mg"]],
+            ["CV", ["**Selozok (metoprolol) 25 mg VO**"]],
+            ["SN", ["Zofran 8 mg EV até 8/8 h"]]])
 
 if __name__ == "__main__":
     unittest.main()

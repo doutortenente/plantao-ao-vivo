@@ -45,13 +45,14 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
   disléxico).
 - Coluna 2 — PRESCRIÇÃO em 2 blocos: INFUSÕES E TERAPIAS (DVA, sedação, ATB com D e início, VM/O2, dieta/NPT —
   em TNE, a linha DIETA leva também a água pela sonda, com volume e horários: `Fresubin HP Energy 60 ml/h SNE ·
-  Água 200 ml 6/6 h => 10-16-22-04` (02/11/2026) —,
+  Água 200 ml 6/6 h` (02/11/2026) —,
   TRS) e POR SISTEMAS (Neuro, CV, Resp, TGI, Renal, Endócrino, Analgesia, Profilaxia, SN, Suspensos), rótulo à
   esquerda, fio entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG. DVA, SEDAÇÃO e BNM das bombas
   saem do motor (`infusoes_continuas`), uma linha por bomba com o que corre agora: `Hyponor 16 mg/250 ml · 2 ml/h
   · 0,03 mcg/kg/min` (a sequência das vazões fica na evolução). Em VM com altura, a linha VM ganha `VC 6 - 8 ml/kg
   (PP 46 kg): 276 - 368 ml`. Sem aferição de glicemia (Dx/HGT 6/6 h) e sem escala de correção (insulina
-  "conforme Dx", G50% se Dx < 70): o gerador tira esses trechos (02/11/2026).
+  "conforme Dx", G50% se Dx < 70): o gerador tira esses trechos (02/11/2026). Toda a prescrição sai sem os
+  horários de administração ("=> 10-16-22-04"): droga, dose, via e frequência bastam; o gerador tira (02/11/2026).
 - Coluna 3 — PENDÊNCIAS (☐), EXAMES, ANOTAÇÕES / NOVOS EXAMES (linhas, quantas couberem).
 - Faixa de baixo: grade CONTROLES DO PLANTÃO (Hora, PA (PAM), FC, SpO2/FiO2, Diurese, Dx × 8) | INTERCORRÊNCIAS,
   CONDUTAS E PASSAGEM.

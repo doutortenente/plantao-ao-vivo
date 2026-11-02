@@ -145,7 +145,7 @@ Todo número de `lab` tem de estar em `laboratorio`, e o ATB da ficha tem de bat
   "disp": "TQT 06/10  ·  PICC MSD 15/09",         // padrão: leito.dispositivos (aviso se diferente)
   "infusoes": [["ATB", ["Meronem (meropenem) 1 g EV 8/8 h (D3, I: 09/10) => 14-22-06"]],  // INFUSÕES E TERAPIAS:
                ["VM", ["PCV  ·  PEEP 8  ·  FiO2 40%"]],
-               ["DIETA", ["Fresubin HP Energy 60 ml/h SNE  ·  Água 200 ml 6/6 h => 10-16-22-04"]]],  // TNE: com a água da sonda
+               ["DIETA", ["Fresubin HP Energy 60 ml/h SNE  ·  Água 200 ml 6/6 h"]]],  // TNE: com a água da sonda, sem horários
                                                           // ATB, VM/O2, DIETA/NPT, TRS; DVA/SEDAÇÃO/BNM saem de
                                                           // `infusoes_continuas`; o VC alvo entra na linha VM
   "sistemas": [["NEURO", ["..."]], ["CV", ["..."]], ["RESP", ["..."]], ["TGI", ["..."]],
@@ -158,5 +158,6 @@ Todo número de `lab` tem de estar em `laboratorio`, e o ATB da ficha tem de bat
 }
 ```
 
-Itens de prescrição: `Nome (genérico) dose via freq => horários`; vários na mesma linha separados por " · ".
+Itens de prescrição: `Nome (genérico) dose via freq`; vários na mesma linha separados por " · ". Horários (`=> 14-22-06`)
+podem vir no JSON, mas a ficha-cola sai sem eles (02/11/2026: ruído).
 O nome antes do primeiro número/parêntese sai em negrito automaticamente.
