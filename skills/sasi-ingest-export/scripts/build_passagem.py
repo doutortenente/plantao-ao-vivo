@@ -37,8 +37,8 @@ Entrada (por leito) — ver gerador/schema-plantao.md para o contrato completo
     "perdas": [{"nome": "diurese", "serie": [200, 300]}, {"nome": "UF", "ml": 1880}],
     "conferencia_enfermagem": {"ganhos": 1840, "perdas": 1300, "bh": 540},
     "evacuacao": "ausente (última 08/10)",
-    "outros_balanco": ["Noradrenalina: 7 -> 5 -> 2,5 ml/h"],
-    "laboratorio": ["HB: 13,4 -> 13,2 g/dl | HT: 39,9 -> 40,4 %", ...],
+    "outros_balanco": ["Noradrenalina: 7 => 5 => 2,5 ml/h"],
+    "laboratorio": ["HB: 13,4 => 13,2 g/dl | HT: 39,9 => 40,4 %", ...],
     "terapias": [...], "exame_fisico": [...], "evolucao": [...],
     "impressao": [...], "conduta": [...],
     "avisos": ["texto que vai para o rodapé, nunca para o bloco"]
@@ -437,7 +437,7 @@ def _calc_clcr(lab, dados, trs=False):
     valor = round(PESO.clcr(dados["idade"], dados["sexo"], p["kg"], cr))
     avisos = []
     if anterior and cr > anterior:
-        avisos.append(f"ClCr por Cockcroft-Gault com creatinina em ascensão ({_fmt(anterior)} -> {_fmt(cr)}): "
+        avisos.append(f"ClCr por Cockcroft-Gault com creatinina em ascensão ({_fmt(anterior)} => {_fmt(cr)}): "
                       "superestima a função renal")
     if p["altura_cm"] and PESO.imc(p["kg"], p["altura_cm"]) >= 30:
         avisos.append(f"IMC {round(PESO.imc(p['kg'], p['altura_cm']))}: o ClCr por Cockcroft-Gault com o peso real "
@@ -506,11 +506,8 @@ def compute_leito(leito, meta=None):
             avisos.append(f"CONFERÊNCIA — {rot}: folha diz {_fmt(v_inf)}, células somam {_fmt(calc)}")
     tem_bal = bool(leito.get("ganhos") or leito.get("perdas"))
     dieta = leito.get("dieta")
-    if dieta or tem_bal:
-        partes = []
-        if dieta: partes.append(f"Dieta: {dieta}")
-        if tem_bal: partes.append(f"Ingesta hídrica: {_fmt(bal['ganho_total'])} ml")
-        linhas.append(" | ".join(partes))
+    if dieta:  # 02/11/2026: sem "Ingesta hídrica" no bloco (os ganhos vão só para a ficha-cola)
+        linhas.append(f"Dieta: {dieta}")
     evac_ml = sum(ml for n, ml in bal["itens_perda"] if re.search(r"evacua|fezes", n, re.I))
     if leito.get("evacuacao") or evac_ml:
         txt = leito.get("evacuacao") or ""
@@ -561,11 +558,18 @@ def compute_leito(leito, meta=None):
             "infusoes": infusoes, "calculadas": calculadas}
 
 
+def compactar(linhas):
+    """Bloco de sinais vitais + balanço numa linha só, itens separados por " | " (pedido de 02/11/2026). O motor
+    guarda as linhas separadas em `secoes` (a ficha-cola lê item a item); quem imprime a evolução compacta."""
+    linhas = [l.strip() for l in linhas if l and l.strip()]
+    return [" | ".join(linhas)] if linhas else []
+
+
 def render_leito(leito, meta=None):
     r = compute_leito(leito, meta)
     L = [r["cabecalho"]]
-    for titulo, linhas in r["secoes"]:
-        L += ["", titulo] + linhas
+    for i, (titulo, linhas) in enumerate(r["secoes"]):
+        L += ["", titulo] + (compactar(linhas) if i == 0 else linhas)
     return "\n".join(L), r["avisos"]
 
 

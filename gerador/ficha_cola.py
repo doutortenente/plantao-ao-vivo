@@ -230,6 +230,9 @@ def linhas_controle(r, leito):
             if rot == "BH":
                 v = v.replace("+ ", "+").replace("- ", "-")
             bal.append((rot, v))
+    # 02/11/2026: a evolução não traz mais "Ingesta hídrica"; os Ganhos da ficha vêm da conta do motor
+    if (leito.get("ganhos") or leito.get("perdas")) and r.get("balanco") and not any(k == "Ganhos" for k, _ in bal):
+        bal.insert(0, ("Ganhos", motor._fmt(r["balanco"]["ganho_total"])))
     return vit, bal
 
 
@@ -292,7 +295,28 @@ def col_controles(C, r, leito, jan_c, jan_b):
         q = P(C, after=2.5); t(q, f"ClCr {r['clcr']} ml/min (Cockcroft-Gault)")
 
 
+# 02/11/2026: aferição de glicemia (Dx/HGT 6/6 h) e escala de correção (insulina "conforme Dx", G50% se Dx < 70)
+# não vão na ficha-cola. Sai o trecho (" · "), e o rótulo que ficar vazio some.
+GLICEMIA_CORRECAO = re.compile(
+    r"conforme\s+(o\s+)?(dx|dextro|hgt|glicemia)|\bG\s?50\s?%|glicose\s+50\s?%.*\bdx\b|dextrostix|\bhgt\b|"
+    r"glicemia\s+capilar|\bdx\s+\d+\s*/\s*\d+\s*h", re.I)
+
+
+def sem_glicemia(linhas):
+    out = []
+    for rot, itens in linhas:
+        novos = []
+        for it in itens:
+            segs = [s for s in it.split(" · ") if not GLICEMIA_CORRECAO.search(s.replace("**", ""))]
+            if segs:
+                novos.append(" · ".join(segs))
+        if novos:
+            out.append([rot, novos])
+    return out
+
+
 def bloco_rx(C, linhas, w_rot=E.RX_ROTULO):
+    linhas = sem_glicemia(linhas)
     g = grade(C, len(linhas), 2, [w_rot, WM - 0.6 - w_rot])
     for i, (rot, itens) in enumerate(linhas):
         c0, c1 = g.rows[i].cells

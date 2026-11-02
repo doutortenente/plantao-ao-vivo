@@ -41,7 +41,7 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
    **Inventário.** Listar leitos pelas evoluções. Conferir que cada leito tem folha de controle, prescrição e lab.
    Leito sem lab do dia → dizer no chat. Número de leito divergente entre folha e prescrição → dizer no chat.
 2. **Laboratório.** `python3 skills/sasi-ingest-export/scripts/labs.py laudo.pdf --anterior "<linhas de Laboratório
-   da evolução anterior>"` monta a seção com série `anterior -> atual` e ignora "AMOSTRA MAQUINA" (circuito de
+   da evolução anterior>"` monta a seção com série `anterior => atual` (UR e CR na linha dos eletrólitos, que vão sem série) e ignora "AMOSTRA MAQUINA" (circuito de
    diálise). BETA até calibrar com um laudo real: conferir contra o PDF; divergência vale o PDF e vai para o Conferir.
 3. **Folhas de controle.** Ler os PNG que o `preparar.py` gerou (150 dpi visão geral, metades a 300 dpi).
    Transcrever as 12 aferições (07 h a 05 h) **com a hora** (`{"07": 146, "09": 126, …}`) — **janela 24 h é o padrão**,

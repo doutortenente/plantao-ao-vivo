@@ -27,8 +27,9 @@ SECOES = {
 }
 # linha que o motor acrescenta ao Laboratório (build_passagem._calc_clcr): é conta, não resultado de exame
 CONTA_DO_MOTOR = re.compile(r"^CLCR \(Cockcroft-Gault\):")
-# linha de peso do bloco (build_passagem._calc_peso): só passa adiante com fonte e data
-PESO = re.compile(r"^Peso:\s*(\d+(?:,\d+)?)\s*kg\s*\((.+),\s*(\d{2}/\d{2}/\d{4})\)"
+# linha de peso do bloco (build_passagem._calc_peso): só passa adiante com fonte e data. Desde 02/11/2026 o bloco
+# de sinais vitais sai numa linha só ("PAS: … | Peso: … | …"): o peso é procurado dentro dela
+PESO = re.compile(r"(?:^|\|\s*)Peso:\s*(\d+(?:,\d+)?)\s*kg\s*\((.+),\s*(\d{2}/\d{2}/\d{4})\)"
                   r"(?:\s*\|\s*Altura:\s*(\d+(?:,\d+)?)\s*cm)?")
 
 
@@ -76,7 +77,7 @@ def ler(linhas):
             continue
         if atual is None:
             continue
-        mp = PESO.match(linha.strip())
+        mp = PESO.search(linha.strip())
         if mp:
             leitos[atual]["peso"] = {"kg": _numero(mp.group(1)), "fonte": mp.group(2).strip(), "data": mp.group(3)}
             if mp.group(4):

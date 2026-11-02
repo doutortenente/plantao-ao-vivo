@@ -19,8 +19,8 @@ Cabeçalho: `LEITO XX  NOME COMPLETO` e, embaixo, `idade/sexo · dia de UTI · E
 
 Seções, nesta ordem e só estas:
 
-1. Sinais vitais + balanço 24 h
-2. Laboratório
+1. Sinais vitais + balanço 24 h — numa linha só, itens separados por " | ", sem "Ingesta hídrica" (02/11/2026)
+2. Laboratório — séries com " => "; UR e CR seriais na linha dos eletrólitos, que vão sem série (02/11/2026)
 3. Terapias vigentes
 4. Exame físico — copiado da evolução anterior (ele altera ao "canetar")
 5. Evolução / Eventos 24 h
@@ -39,7 +39,7 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
   (dispositivo com data) | `Alergia:` (caixa alta e negrito se houver) e turno/data.
   Diagnósticos ficam no cabeçalho, não em coluna própria.
 - Coluna 1 — CONTROLES: sinais vitais em grade de 2 colunas (PAS/FR, PAD/SpO2, PAM/TAX, FC), Máx - Mín, alerta
-  `[Nx<lim]` em negrito na mesma linha; Dx em linha própria; BALANÇO em grade (Ganhos, Diurese, perdas, BH; com
+  `[Nx<lim]` em negrito na mesma linha; Dx em linha própria; BALANÇO em grade (Ganhos — da conta do motor, já que a evolução não traz mais a ingesta —, Diurese, perdas, BH; com
   peso, `Débito  0,38 ml/kg/h em 12 h  KDIGO 2`, flag em negrito; Evac.); LABORATÓRIO, um grupo por linha, e com
   peso a linha `ClCr 26 ml/min (Cockcroft-Gault)` do motor. Fios cinza finos entre linhas (guia de leitura — o Dr. é
   disléxico).
@@ -48,7 +48,8 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
   esquerda, fio entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG. DVA, SEDAÇÃO e BNM das bombas
   saem do motor (`infusoes_continuas`), uma linha por bomba com o que corre agora: `Hyponor 16 mg/250 ml · 2 ml/h
   · 0,03 mcg/kg/min` (a sequência das vazões fica na evolução). Em VM com altura, a linha VM ganha `VC 6 - 8 ml/kg
-  (PP 46 kg): 276 - 368 ml`.
+  (PP 46 kg): 276 - 368 ml`. Sem aferição de glicemia (Dx/HGT 6/6 h) e sem escala de correção (insulina
+  "conforme Dx", G50% se Dx < 70): o gerador tira esses trechos (02/11/2026).
 - Coluna 3 — PENDÊNCIAS (☐), EXAMES, ANOTAÇÕES / NOVOS EXAMES (linhas, quantas couberem).
 - Faixa de baixo: grade CONTROLES DO PLANTÃO (Hora, PA (PAM), FC, SpO2/FiO2, Diurese, Dx × 8) | INTERCORRÊNCIAS,
   CONDUTAS E PASSAGEM.

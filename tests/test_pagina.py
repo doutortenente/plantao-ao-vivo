@@ -75,7 +75,7 @@ class Pagina(unittest.TestCase):
         self.assertTrue(any("BIC \"NORA\"" in p for p in self.bed["pend"]))
 
     def test_conta_pelas_celulas_e_rodape_so_confere(self):
-        self.assertIn("Ingesta hídrica: 1.736 ml", self.bed["texto"])  # 12 × 50 + 12 × 3 + 100 + 1.000
+        self.assertNotIn("Ingesta hídrica", self.bed["texto"])  # 02/11/2026: fora do bloco
         self.assertIn("BH: + 1.056 ml", self.bed["texto"])
         self.assertTrue(any("rodapé Ganhos diz 1.836, células somam 1.736" in p for p in self.bed["pend"]))
 

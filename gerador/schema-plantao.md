@@ -52,7 +52,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "outros_balanco": ["UF programada: 2.000 ml"],  // linha livre do bloco; droga em bomba NÃO vem aqui
     "avisos": ["vai para o rodapé Conferir, nunca para o bloco"],
 
-    "laboratorio": ["HB: 13,4 -> 13,2 g/dl | HT: 39,9 -> 40,4 %", "UR: 26,4 -> 26,1 mg/dl"],
+    "laboratorio": ["HB: 13,4 => 13,2 g/dl | HT: 39,9 => 40,4 %", "UR: 26,4 => 26,1 mg/dl | CR: 0,8 => 0,9 mg/dl | NA: 138 | K: 4,1"],
     "terapias": ["RESP: ...", "ATB: Rocefin 1 g EV 12/12h (D?, I: 08/10)."],  // D? ou só (I: dd/mm): o motor
                                             // escreve o D (início = D0); D errado é corrigido e vira aviso
     "exame_fisico": ["- SNC: ...", "- ACV: ..."],
@@ -99,7 +99,7 @@ com a fonte e a data de origem: não redigitar. Com ele, o motor (`peso.py`) esc
   não calcula e avisa.
 - `CLCR (Cockcroft-Gault): 26 ml/min`, última linha do Laboratório, com o peso informado e a linha `CR:` do lab
   (x 0,85 na mulher; idade e sexo de `idade_sexo`). Creatinina subindo ou IMC >= 30: aviso (superestima a função
-  renal). CR atual ilegível (`1,4 -> ?`): não calcula. Não escreva CLCR à mão: é conta do motor.
+  renal). CR atual ilegível (`1,4 => ?`): não calcula. Não escreva CLCR à mão: é conta do motor.
 - Em TRS (UF, CVVHDF ou diálise no balanço, ou linha TRS na ficha): sem ClCr (dose pela modalidade de TRS) e sem o
   KDIGO pelo débito (TRS já é estágio 3); o débito em ml/kg/h continua.
 
@@ -115,7 +115,7 @@ Precedex…). Droga fora da tabela (amiodarona, insulina…) é ERRO aqui: fica 
   `mg_por_ampola` / `ml_por_ampola`.
 - Vazão: `ml_h` (número ou série por hora da folha) ou, sem ele, a série do balanço cujo nome traz a droga (célula =
   ml/h). `ml_h` que não bate com a série do balanço vira aviso. Sem nenhum dos dois: "sem vazão na folha".
-- O motor escreve no bloco, antes do BH: `Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03
+- O motor escreve no bloco, antes do BH: `Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 => 2 ml/h (0,05 => 0,03
   mcg/kg/min)` (contas e casas decimais do app; sem peso, só a vazão). Acima do teto do app: `ALERTA:` no topo.
 - Na ficha, as linhas DVA, SEDAÇÃO e BNM saem do motor, uma linha por bomba com o que corre agora (`Hyponor 16
   mg/250 ml · 2 ml/h · 0,03 mcg/kg/min`; a sequência fica na evolução, e a folha cabe). Linha manual com o mesmo

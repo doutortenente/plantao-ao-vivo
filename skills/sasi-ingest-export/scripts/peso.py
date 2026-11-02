@@ -83,14 +83,14 @@ def clcr(idade, sexo, kg, cr):
 
 
 def creatinina(laboratorio):
-    """(atual, anterior) da linha "CR: 1,4 -> 1,5 mg/dl" (formato do BRIEFING); sem a linha ou com o atual
+    """(atual, anterior) da linha "CR: 1,4 => 1,5 mg/dl" (aceita também "->", das evoluções antigas) (formato do BRIEFING); sem a linha ou com o atual
     ilegível -> (None, None)."""
     for linha in laboratorio or []:
         for parte in str(linha).split("|"):
             m = CR.match(parte)
             if m:
-                vals = [_num(x) for x in m.group(1).split("->")]
-                if vals[-1] is None:  # atual ilegível ("1,4 -> ?"): a da véspera não vale como atual
+                vals = [_num(x) for x in re.split(r"[-=]>", m.group(1))]
+                if vals[-1] is None:  # atual ilegível ("1,4 => ?"): a da véspera não vale como atual
                     return None, None
                 return vals[-1], (vals[-2] if len(vals) > 1 else None)
     return None, None

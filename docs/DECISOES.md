@@ -115,6 +115,23 @@ Cada achado foi reproduzido antes de corrigir e ganhou teste (commit `fix(revisa
   "falhou"). Ficha reprovada na conferência não volta para o Airtable. O disparo precisa da opção "enviado" no
   Status, que ainda não existe na tabela.
 
+## Formato de entrega da evolução (02/11/2026)
+
+Pedido do Dr. Nicolas no plantão de 01/11:
+
+1. Sinais vitais + balanço numa linha só, itens separados por " | " (`motor.compactar`, usado pelo Word e pelo
+   texto). O motor continua guardando as linhas separadas em `secoes`, porque a ficha-cola lê item a item.
+2. Sem "Ingesta hídrica" no bloco. Os Ganhos da ficha-cola passam a vir da conta do motor (`balanco.ganho_total`).
+3. UR e CR seriais na mesma linha dos eletrólitos; eletrólitos (NA, K, MG, CAI, P) sem série, só o valor atual
+   (`labs.py`).
+4. Valores seriais com " => " no lugar de " -> " (labs e vazão/dose das bombas). Leitura da CR (`peso.py`) e do
+   peso da véspera (`evolucao_anterior.py`) aceitam o formato novo e o antigo.
+5. Ficha-cola sem aferição de glicemia e sem escala de correção (`ficha_cola.sem_glicemia`; insulina em horário
+   fixo ou em BIC fica).
+
+A página `extracao-web` acompanhou 1 a 4. O modelo próprio da skill `controles-vitais-janela` (pedido
+"sinais-labs-prescrição") não mudou.
+
 ## Pendente (não resolvido aqui)
 
 Lista viva em `docs/PENDENTE.md`.

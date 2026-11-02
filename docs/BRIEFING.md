@@ -13,7 +13,7 @@
    vai FORA, num rodapé ("Flags táticos"). O bloco que ele cola no prontuário é limpo.
 2. **Diurese e BH: some as células, NUNCA o total escrito à mão.** A última célula não é a diurese total. Motor:
    `skills/sasi-ingest-export/scripts/build_passagem.py`.
-3. **Laboratório é SEÇÃO PRÓPRIA, com séries (`->`).** Nunca embutir lab no exame físico.
+3. **Laboratório é SEÇÃO PRÓPRIA, com séries (`=>`).** Nunca embutir lab no exame físico.
 
 ## 1. Estrutura por leito (ordem fixa)
 
@@ -21,28 +21,19 @@
 LEITO XX — Nome Completo — Dn UTI — DD/MM/AAAA TURNO
 
 ## Sinais vitais + balanço [24 h]:
-PAS: max - min mmHg [flag]
-PAD: max - min mmHg [flag]
-PAM: max - min mmHg [flag]
-FC: max - min bpm [flag]
-FR: max - min rpm [flag]
-SpO2: max - min % (suporte se AA/cateter)
-TAX: max - min ºC [flag]
-Dx: v1 / v2 / v3 mg/dl [flag]
-Sup O2: ...            ← SÓ linha própria se VM. Nunca se AA/cateter.
-Peso: ... kg (fonte, dd/mm/aaaa) | Altura: ... cm | Peso predito: ... kg (VC 6 - 8 ml/kg: ... - ... ml)   ← motor
-Dieta: ... | Ingesta hídrica: ... ml
-Evacuação: ...
-Diurese: ... ml
-Débito urinário: ... ml/kg/h em N h [KDIGO n pelo débito]                ← motor, só com peso
-Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 -> 2 ml/h (0,05 -> 0,03 mcg/kg/min)   ← motor, de infusoes_continuas
-BH: ± ... ml
+PAS: max - min mmHg [flag] | PAD: max - min mmHg [flag] | PAM: max - min mmHg [flag] | FC: max - min bpm [flag] | FR: max - min rpm [flag] | SpO2: max - min % (suporte se AA/cateter) | TAX: max - min ºC [flag] | Dx: v1 / v2 / v3 mg/dl [flag] | Dieta: ... | Evacuação: ... | Diurese: ... ml | BH: ± ... ml
+
+(02/11/2026: o bloco inteiro numa linha só, itens separados por " | ", nesta ordem. Quando houver, entram no
+lugar deles, na mesma linha: "Sup O2: ..." logo depois do Dx (SÓ se VM; nunca se AA/cateter); "Peso: ... kg
+(fonte, dd/mm/aaaa) | Altura: ... cm | Peso predito: ... kg (VC 6 - 8 ml/kg: ... - ... ml)" antes da Dieta;
+"Débito urinário: ... ml/kg/h em N h [KDIGO n pelo débito]" depois da Diurese; outras perdas (dreno, SNG,
+resíduo); e as bombas, "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 => 2 ml/h (0,05 => 0,03 mcg/kg/min)", antes
+do BH. Peso, débito e bombas são do motor. Sem "Ingesta hídrica" no bloco: os ganhos ficam só na ficha-cola.)
 
 ## Laboratório:
-HB: ... g/dl | HT: ... % | PLAQ: ... /mm3 | LEUCO: ... /mm3 (seg/bast)
-UR: v1 -> v2 mg/dl
-CR: v1 -> v2 mg/dl
-NA: ... | K: ... | MG: ... | CAI: ... | P: ...
+HB: v1 => v2 g/dl | HT: v1 => v2 % | PLAQ: v1 => v2 /mm3
+LEUCO: v1 => v2 /mm3 (seg/bast)
+UR: v1 => v2 mg/dl | CR: v1 => v2 mg/dl | NA: ... | K: ... | MG: ... | CAI: ... | P: ...   ← eletrólitos SEM série (só o atual)
 Gaso: pH / HCO3 / SBE / Lactato (se houver)
 Outros: PCR / troponina / D-dímero / INR (se houver)
 CLCR (Cockcroft-Gault): ... ml/min    ← motor, com peso e a linha CR (não escrever à mão)
@@ -86,8 +77,9 @@ antigos. Já estão no prontuário. Entram só as 7 seções acima.
 
 - Máx – Mín com `" - "` (espaço-hífen-espaço). NUNCA `–` nem `—`. SpO2 incluso (max primeiro).
 - Sup O2: AA/cateter → entre parênteses no fim do SpO2. VM → linha própria após Dx. NUNCA na diurese.
-- Labs seriais com `" -> "`. Só com valores REAIS da fonte — não inventar coleta anterior.
-- Balanço em linhas separadas: Dieta|Ingesta / Evacuação / Diurese / BH.
+- Valores seriais com `" => "` (labs e vazão/dose das bombas; trocado de `->` em 02/11/2026). Só com valores REAIS
+  da fonte — não inventar coleta anterior. Eletrólitos (NA, K, MG, CAI, P) vão sem série, só o valor atual.
+- Sinais vitais + balanço numa linha só (" | "), sem "Ingesta hídrica" (02/11/2026).
 - Abreviações MAIÚSCULAS. Decimal com vírgula BR.
 - Flags `[Nx > limiar]` só quando ≥1. Limiares: PAS<90 PAD<50 PAM<65 FC>100 FR>20 SpO2<92 TAX<35,5 DX>180.
   Acrescentados em 11/10/2026: DX<70 e TAX>37,8 (hipoglicemia e febre não passam calados).
@@ -137,7 +129,7 @@ sempre (TEV/LAMG/cabeceira). Cada problema da Impressão tem sua conduta. Raso =
 ## 5. Checklist final (todos ou refaz)
 
 - [ ] `" - "` nos vitais (SpO2 incluso). [ ] Sup O2 no lugar certo, nunca na diurese.
-- [ ] Laboratório seção própria, séries `->` onde há. [ ] Diurese somada célula-a-célula.
+- [ ] Laboratório seção própria, séries `=>` onde há; eletrólitos sem série. [ ] Diurese somada célula-a-célula.
 - [ ] Zero explicação no bloco (obs no rodapé). [ ] Impressão sem setinhas.
 - [ ] Plano rico e acionável. [ ] Campo sem fonte omitido. [ ] 7 seções na ordem (cabeçalho + 7).
 - [ ] Janela 24 h (07 h a 05 h) salvo pedido explícito. [ ] Ficha-cola: 1 folha por leito, com todos os vitais e o balanço.

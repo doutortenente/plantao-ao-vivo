@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """preparar.py com uma entrada fictícia. Rodar: python3 -m unittest discover -s tests"""
+import copy
 import json
 import shutil
 import sys
@@ -28,8 +29,13 @@ class Preparar(unittest.TestCase):
             tmp = Path(tmp); ent = tmp / "entrada"; ent.mkdir()
             evo = ent / "01-01-26-uti2-evolucoes.docx"
             gerar_docx.gerar_evolucoes(EXEMPLO, evo)
-            # stand-ins fictícios: 2 páginas para controles, o laudo fictício para labs
-            shutil.move(pdf_de(evo, tmp), ent / "01-01-26-uti2-controles.pdf")
+            # stand-ins fictícios: 2 páginas para controles (2 leitos, 1 página cada desde a evolução compacta de
+            # 02/11/2026), o laudo fictício para labs
+            dois = copy.deepcopy(EXEMPLO); outro = copy.deepcopy(dois["leitos"][0]); outro["leito"] = "98"
+            dois["leitos"].append(outro)
+            ctl_docx = tmp / "controles-stand-in.docx"
+            gerar_docx.gerar_evolucoes(dois, ctl_docx)
+            shutil.move(pdf_de(ctl_docx, tmp), ent / "01-01-26-uti2-controles.pdf")
             lab_txt = tmp / "01-01-26-uti2-labs.txt"
             shutil.copy(RAIZ / "tests" / "fixtures" / "laudo-ficticio.txt", lab_txt)
             shutil.move(pdf_de(lab_txt, tmp), ent / "01-01-26-uti2-labs.pdf")
