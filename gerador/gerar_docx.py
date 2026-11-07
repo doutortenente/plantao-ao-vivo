@@ -17,7 +17,7 @@ Uso:
   python3 gerador/gerar_docx.py plantao.json --saida pasta/ --sem-ajuste   # não mede no LibreOffice
 
 O ajuste (padrão) mede cada leito no LibreOffice para a ficha caber em 1 folha. Sem ajuste, a ficha sai com
-6 linhas de anotação e 4 de intercorrências em 10 pt, e pode estourar.
+6 linhas de anotação, 6 de intercorrências e o exame físico normal em 10 pt, e pode estourar.
 Com --sem-ajuste a ficha ainda é medida uma vez com a folga de 1,5 cm (o Word desenha mais alto que o LibreOffice):
 passou de 1 folha por leito, é erro. Sem LibreOffice, --sem-ajuste gera os Word mas a conferência dá erro (sem PDF
 nem contagem de páginas não se entrega).

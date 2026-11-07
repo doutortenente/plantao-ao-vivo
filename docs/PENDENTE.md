@@ -65,7 +65,19 @@ exemplo e passa.
   sem eles, tudo sai como antes (sem nada por kg).
 - [ ] A nota de admissão (`gerar_admissao.py`) não escreve a linha "Peso:": o peso do 1º dia entra no JSON à mão.
 
-## 6. Limites conhecidos (não são erro)
+## 6. Ficha-cola opção A (branch `claude/bold-thompson-sqdlc1`, 07/11/2026)
+
+- [ ] Merge na `main`: só com o "prosseguir" dele e o CI verde.
+- [ ] Imprimir 1 folha na impressora do plantão e olhar os cinzas (`PAPEL_CINZA_FAIXA` D0D0D0, `_SUB` E0E0E0,
+  `_ZEBRA` EFEFEF em `gerador/estilo.py`). Se a zebra sumir no papel, escurecer ali.
+- [ ] Conferir num plantão real cheio: com o exame, a faixa de baixo ficou ~1 cm mais alta. No teste com um leito
+  fictício pesado, o exame compacto manteve a mesma fonte do modelo antigo (9,5 pt), mas é um caso só.
+- [ ] Design system "Plantão ao Vivo" (artefato do claude.ai, fora do repo): acrescentar `papel-cinza-faixa`,
+  `papel-cinza-sub`, `papel-cinza-zebra` e `papel-folha` (borda); trocar `GradeControles` por `ExameFisico`; tirar
+  `papel-faixa-controles`, `papel-faixa-intercorrencias`, `papel-grade-rotulo` e `papel-grade-celula`, que saíram de
+  `gerador/estilo.py`.
+
+## 7. Limites conhecidos (não são erro)
 
 - O JSON da página `extracao-web` não monta o bloco `ficha`: quem monta é o Claude no chat, a partir de
   `prescricao_lida`.

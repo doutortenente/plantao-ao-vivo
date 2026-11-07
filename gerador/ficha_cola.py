@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Ficha-cola (modelo aprovado em 12/10/2026) — 1 folha paisagem por leito.
-Cabeçalho: leito + nome + Dx + dispositivos | alergia + plantão.
+"""Ficha-cola (modelo aprovado em 12/10/2026, opção A em 07/11/2026) — 1 folha paisagem por leito.
+Cabeçalho: leito + nome + Dx + dispositivos | alergia (em caixa) + plantão.
 Corpo: CONTROLES + LAB | PRESCRIÇÃO (infusões/terapias + por sistemas) | PENDÊNCIAS + EXAMES + ANOTAÇÕES.
-Rodapé de trabalho: grade de controles do plantão | intercorrências.
-Preto no branco, Times New Roman, fios cinza entre linhas para guiar a leitura."""
+Rodapé de trabalho: EXAME FÍSICO em 6 quadros por sistema | intercorrências.
+Times New Roman, texto sempre preto. Para a leitura (o Dr. é disléxico): título em faixa cinza, linha sim, linha
+não em cinza, alerta em caixinha e fios cinza entre as linhas da prescrição."""
 import json, re, subprocess, sys, tempfile
 from pathlib import Path
 
@@ -15,7 +16,7 @@ import office  # noqa: E402
 
 from docx import Document  # noqa: E402
 from docx.enum.section import WD_ORIENT  # noqa: E402
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT  # noqa: E402
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_ROW_HEIGHT_RULE, WD_TABLE_ALIGNMENT  # noqa: E402
 from docx.enum.text import WD_TAB_ALIGNMENT  # noqa: E402
 from docx.oxml import OxmlElement  # noqa: E402
 from docx.oxml.ns import qn  # noqa: E402
@@ -99,6 +100,59 @@ def borda_cel(cell, **lados):
     tcPr.append(b)
 
 
+# ── cinza e caixa (opção A, 07/11/2026): só fundo e fio; o texto continua preto ──────────────────────────
+def sombra(pr, cor):
+    """Fundo cinza (w:shd) num pPr ou tcPr; o sanear() põe na ordem do OOXML."""
+    shd = OxmlElement("w:shd")
+    for k, v in (("val", "clear"), ("color", "auto"), ("fill", cor)):
+        shd.set(qn("w:" + k), v)
+    pr.append(shd)
+
+
+def recuo(p, pt):
+    f = p.paragraph_format
+    f.left_indent = f.right_indent = Pt(pt)
+
+
+def moldura(p, cor, sz=E.FIO_SECAO, folga=2):
+    """Borda nos 4 lados do parágrafo, afastada `folga` pt do texto; o recuo traz a moldura de volta para a
+    largura da coluna."""
+    pPr = p._p.get_or_add_pPr()
+    b = OxmlElement("w:pBdr")
+    for lado, esp in (("top", 1), ("left", folga), ("bottom", 1), ("right", folga)):
+        e = OxmlElement(f"w:{lado}")
+        for k, v in (("val", "single"), ("sz", str(sz)), ("space", str(esp)), ("color", cor)):
+            e.set(qn("w:" + k), v)
+        b.append(e)
+    pPr.append(b)
+    recuo(p, folga + sz / 8)
+    return p
+
+
+def faixa(p, cor, folga=2):
+    """Faixa cinza de ponta a ponta da coluna, com folga em volta do texto (a borda tem a cor do fundo)."""
+    moldura(p, cor, folga=folga)
+    sombra(p._p.get_or_add_pPr(), cor)
+    return p
+
+
+def caixinha(run):
+    """Alerta em caixinha: borda fina no próprio trecho (flag de sinal vital, KDIGO, BH)."""
+    b = OxmlElement("w:bdr")
+    for k, v in (("val", "single"), ("sz", str(E.FIO_SECAO)), ("space", "1"), ("color", E.PAPEL_TINTA)):
+        b.set(qn("w:" + k), v)
+    run._element.get_or_add_rPr().append(b)
+    return run
+
+
+def zebra(g, comeco=0):
+    """Linha sim, linha não em cinza (guia de leitura), contando a partir de `comeco`."""
+    for i, tr in enumerate(g._tbl.tr_lst):
+        if (i + comeco) % 2 == 0:
+            for tc in tr.tc_lst:
+                sombra(tc.get_or_add_tcPr(), E.PAPEL_CINZA_ZEBRA)
+
+
 
 W = E.LARGURA_UTIL
 WL, WM = E.COL_CONTROLES, E.COL_PRESCRICAO
@@ -123,17 +177,18 @@ def rk(p, txt, tam=None):
     rico(p, txt, tam=tam or S["tam"])
 
 
-def sec(cell, txt, first=False, before=5):
+def sec(cell, txt, first=False, before=5, folga=2):
     p = P(cell, first=first, after=3, before=0 if first else before)
     p.paragraph_format.keep_with_next = True
+    faixa(p, E.PAPEL_CINZA_FAIXA, folga)
     t(p, txt, b=True, tam=S["tam"])
-    borda_p(p, "bottom", E.FIO_TITULO)
     return p
 
 
 def subsec(cell, txt, before=5):
     p = P(cell, after=2, before=before)
     p.paragraph_format.keep_with_next = True
+    faixa(p, E.PAPEL_CINZA_SUB)
     t(p, txt, b=True, tam=S["tam"] - 1)
     return p
 
@@ -149,8 +204,8 @@ def encolher(p):
     p.paragraph_format.space_before = Pt(0); p.paragraph_format.space_after = Pt(0)
 
 
-def grade(cell_or_doc, rows, cols, larg, linhas=True):
-    bd = {"insideH": (E.FIO_GUIA, CINZA), "bottom": (E.FIO_GUIA, CINZA), "top": (E.FIO_GUIA, CINZA)} if linhas else None
+def grade(cell_or_doc, rows, cols, larg, linhas=True, fio=E.FIO_GUIA):
+    bd = {"insideH": (fio, CINZA), "bottom": (fio, CINZA), "top": (fio, CINZA)} if linhas else None
     g = tabela(cell_or_doc, rows, cols, larg, bd)
     if hasattr(cell_or_doc, "paragraphs"):
         encolher(cell_or_doc.paragraphs[-1])
@@ -241,7 +296,7 @@ def col_controles(C, r, leito, jan_c, jan_b):
     vit, bal = linhas_controle(r, leito)
     pares = [("PAS", "FR"), ("PAD", "SpO2"), ("PAM", "TAX"), ("FC", None)]
     w = [1.0, 1.75, 1.3] * 2
-    g = grade(C, len(pares), 6, w)
+    g = grade(C, len(pares), 6, w, linhas=False)  # a zebra faz o papel do fio entre as linhas
     for i, (a, b) in enumerate(pares):
         for j, k in enumerate((a, b)):
             if not k or k not in vit:
@@ -251,28 +306,32 @@ def col_controles(C, r, leito, jan_c, jan_b):
             t(P(c0, True, 0), k, b=True)
             t(P(c1, True, 0), val, b=bool(fl))
             if fl:
-                q = P(c2, True, 0); q.alignment = 2; t(q, fl, b=True, tam=S["tam"] - 1)
+                q = P(c2, True, 0); q.alignment = 2; caixinha(t(q, fl, b=True, tam=S["tam"] - 1))
     for row in g.rows:
         borda_cel(row.cells[3], left=(E.FIO_SECAO, CINZA))
+    zebra(g)
     if "Dx" in vit:
         val, fl = vit["Dx"]
-        g2 = grade(C, 1, 3, [1.05, 5.1, 2.15])
+        g2 = grade(C, 1, 3, [1.05, 5.1, 2.15], linhas=False)
         t(P(g2.rows[0].cells[0], True, 0), "Dx", b=True)
         t(P(g2.rows[0].cells[1], True, 0), val, b=bool(fl))
         if fl:
-            q = P(g2.rows[0].cells[2], True, 0); q.alignment = 2; t(q, fl, b=True, tam=S["tam"] - 1)
+            q = P(g2.rows[0].cells[2], True, 0); q.alignment = 2; caixinha(t(q, fl, b=True, tam=S["tam"] - 1))
+        zebra(g2, comeco=len(pares))  # continua a alternância dos vitais
 
     subsec(C, f"BALANÇO  {jan_b}")
     curtos = [(k, v) for k, v in bal if k != "Evacuação"]
     evac = [v for k, v in bal if k == "Evacuação"]
     deb = r.get("debito")
     n = (len(curtos) + 1) // 2
-    g3 = grade(C, n + (1 if deb else 0) + (1 if evac else 0), 4, [1.55, 2.6, 1.55, 2.6])
+    g3 = grade(C, n + (1 if deb else 0) + (1 if evac else 0), 4, [1.55, 2.6, 1.55, 2.6], linhas=False)
     for i, (k, v) in enumerate(curtos):
         row, off = i // 2, (i % 2) * 2
         c0, c1 = g3.rows[row].cells[off], g3.rows[row].cells[off + 1]
         t(P(c0, True, 0), k, b=True)
-        t(P(c1, True, 0), v + ("" if k in ("Evacuação",) else " ml"), b=(k == "BH"))
+        valor = t(P(c1, True, 0), v + ("" if k in ("Evacuação",) else " ml"), b=(k == "BH"))
+        if k == "BH":
+            caixinha(valor)
     for row in g3.rows[:n]:
         borda_cel(row.cells[2], left=(E.FIO_SECAO, CINZA))
     extra = n
@@ -282,17 +341,24 @@ def col_controles(C, r, leito, jan_c, jan_b):
         m = rr[1].merge(rr[3]); q = P(m, True, 0)
         t(q, f"{deb['ml_kg_h']} ml/kg/h em {deb['horas']} h")
         if deb["kdigo"]:
-            t(q, f"   KDIGO {deb['kdigo']}", b=True, tam=S["tam"] - 1)
+            t(q, "   "); caixinha(t(q, f"KDIGO {deb['kdigo']}", b=True, tam=S["tam"] - 1))
     if evac:
         rr = g3.rows[extra].cells
         t(P(rr[0], True, 0), "Evac.", b=True)
         m = rr[1].merge(rr[3]); t(P(m, True, 0), evac[0])
+    zebra(g3)
 
     sec(C, leito["ficha"].get("lab_titulo", "LABORATÓRIO"), before=8)
-    for linha in leito["ficha"]["lab"]:
-        q = P(C, after=2.5); rk(q, linha.replace(" | ", "   |   "))
+    lab = [linha.replace(" | ", "   |   ") for linha in leito["ficha"]["lab"]]
     if r.get("clcr") is not None:
-        q = P(C, after=2.5); t(q, f"ClCr {r['clcr']} ml/min (Cockcroft-Gault)")
+        lab.append(f"ClCr {r['clcr']} ml/min (Cockcroft-Gault)")
+    for i, linha in enumerate(lab):  # linha sim, linha não em cinza; a borda branca alinha as linhas brancas
+        q = P(C, after=1)
+        if i % 2 == 0:
+            faixa(q, E.PAPEL_CINZA_ZEBRA)
+        else:
+            moldura(q, E.PAPEL_FOLHA)
+        rk(q, linha)
 
 
 # 02/11/2026: aferição de glicemia (Dx/HGT 6/6 h) e escala de correção (insulina "conforme Dx", G50% se Dx < 70)
@@ -326,10 +392,11 @@ def sem_horarios(linhas):
 
 def bloco_rx(C, linhas, w_rot=E.RX_ROTULO):
     linhas = sem_horarios(sem_glicemia(linhas))
-    g = grade(C, len(linhas), 2, [w_rot, WM - 0.6 - w_rot])
+    g = grade(C, len(linhas), 2, [w_rot, WM - 0.6 - w_rot], fio=E.FIO_SECAO)
     for i, (rot, itens) in enumerate(linhas):
         c0, c1 = g.rows[i].cells
         c0.vertical_alignment = c1.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+        sombra(c0._tc.get_or_add_tcPr(), E.PAPEL_CINZA_ZEBRA)  # coluna de rótulo em cinza: âncora do olho
         t(P(c0, True, 0), rot, b=True, tam=S["tam"] - 1)
         for j, it in enumerate(itens):
             q = P(c1, first=(j == 0), after=0.5)
@@ -398,8 +465,64 @@ def linhas(cell, n):
         q.paragraph_format.right_indent = Cm(0.01 * (k % 2))
 
 
+# ── exame físico (opção A, aprovada em 07/11/2026) ───────────────────────────────────────────────────────
+# 6 quadros por sistema, na ordem da evolução, para canetar à beira-leito: ☐ marca, ____ escreve.
+# Sem a faixa de bundle (FAST HUGS BID) no pé dos quadros: ele mandou tirar em 07/11/2026.
+EXAME = (
+    ("NEURO", ("RASS ____  alvo ____   CAM-ICU ☐ +  ☐ −",
+               "ECG ____   Pupilas ☐ iso  ☐ aniso  ☐ FR",
+               "Dor ____   Déficit focal ☐ não  ☐ sim")),
+    ("RESPIRATÓRIO", ("☐ AA  ☐ CN  ☐ VNI  ☐ CNAF  ☐ TOT/TQT",
+                      "FiO2 ____  PEEP ____  Pplat ____  ΔP ____",
+                      "MV ____________   ☐ crep  ☐ sib  ☐ roncos")),
+    ("HEMODINÂMICA", ("Ritmo ☐ sinusal  ☐ FA  ____________",
+                      "TEC ____ s   Mottling ____   ☐ extrem. frias",
+                      "Bulhas ________________   ☐ sopro")),
+    ("RENAL · METABÓLICO", ("Diurese ____ ml/kg/h   BH acum. ________",
+                            "TRS ☐ não  ☐ sim  ____________",
+                            "Glicemia ____ a ____   ☐ hipo (< 70)")),
+    ("TGI · NUTRIÇÃO", ("Abdome ☐ flácido  ☐ distendido  ☐ doloroso",
+                        "RHA ☐ +  ☐ −   Evacuação última ______",
+                        "Dieta ____ % da meta   Resíduo ____")),
+    ("INFECTO · PELE", ("Tmáx ____   Foco ________________",
+                        "LPP ☐ não  ☐ sim  ________   Edema ____",
+                        "Mobilização ____   Panturrilhas ☐ livres")),
+)
+N_INTER = 6  # linhas de intercorrências ao lado do exame: em 10, 9,5 e 9 pt ficam mais baixas que os quadros
+N_INTER_COMPACTO = 4  # com o exame compacto: senão as intercorrências é que seguram a altura da faixa
+
+
+def exame(cell, compacto=False):
+    """EXAME FÍSICO: faixa com a hora e 2 linhas de 3 quadros (cabeçalho cinza, 3 linhas para canetar).
+    Compacto (folha cheia, último recurso antes de baixar a fonte): os mesmos campos, com menos folga."""
+    p = sec(cell, "EXAME FÍSICO", first=True)
+    tab(p, E.FAIXA_EXAME - 0.4, "right")
+    t(p, "\thora  ________", tam=S["tam"] - 1)
+    q, v = E.QUADRO_EXAME, E.VAO_EXAME
+    g = tabela(cell, 5, 5, [q, v, q, v, q])  # linhas: cabeçalho, quadro, vão, cabeçalho, quadro
+    encolher(cell.paragraphs[-1])
+    vao = g.rows[2]
+    vao.height, vao.height_rule = Cm(0.08 if compacto else 0.15), WD_ROW_HEIGHT_RULE.EXACTLY
+    for k, row in enumerate(g.rows):
+        for j, c in enumerate(row.cells):
+            if k == 2 or j in (1, 3):  # vãos: sem borda, sem margem, sem altura própria
+                margens(c, 0, 0, 0, 0); encolher(c.paragraphs[0])
+    fio = (E.FIO_SECAO, E.PAPEL_TINTA)
+    for i, (titulo, itens) in enumerate(EXAME):
+        lin, col = 3 * (i // 3), 2 * (i % 3)
+        cab, corpo = g.rows[lin].cells[col], g.rows[lin + 1].cells[col]
+        borda_cel(cab, top=fio, left=fio, bottom=fio, right=fio)
+        borda_cel(corpo, left=fio, bottom=fio, right=fio)
+        sombra(cab._tc.get_or_add_tcPr(), E.PAPEL_CINZA_SUB)
+        m = 0 if compacto else 10
+        margens(cab, m, 60, m, 40); margens(corpo, 0, 60, 2 * m + 20, 40)
+        t(P(cab, True, 0), titulo, b=True, tam=S["tam"] - 1)
+        for j, item in enumerate(itens):
+            t(P(corpo, first=(j == 0), after=0, before=1 if compacto else 4.5), item, tam=S["tam"] - 1)
+
+
 # ── página ─────────────────────────────────────────────────────────────────
-def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
+def pagina(doc, meta, leito, n_anot, n_inter, primeiro, compacto=False):
     r = motor.compute_leito(leito, meta)
     if not primeiro:
         q = doc.add_paragraph(); q.paragraph_format.page_break_before = True
@@ -426,10 +549,15 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
     t(q, "Dx:  ", b=True); rk(q, dado(leito, "dx"))
     q = P(b, after=0); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
     t(q, "Disp.:  ", b=True); rk(q, dado(leito, "disp"))
-    q = P(c, True, 2); t(q, "Alergia:  ", b=True)
     al = dado(leito, "alergia")
-    t(q, al.upper() if al.lower() != "nega" else "nega", b=al.lower() != "nega")
+    q = P(c, True, 3)
+    if al.strip().lower() in ("", "nega"):
+        t(q, "Alergia:  ", b=True); t(q, al.strip().lower())
+    else:  # alergia em caixa preta: salta aos olhos
+        moldura(q, E.PAPEL_TINTA, E.FIO_CAIXA)
+        t(q, f"ALERGIA:  {al.upper()}", b=True)
     q = P(c, after=0); t(q, f"{meta['turno'].capitalize()}  ·  {meta['data']}")
+    q.paragraph_format.left_indent = Pt(2 + E.FIO_CAIXA / 8)  # alinhado ao texto da caixa
     q = doc.add_paragraph(); q.paragraph_format.space_after = Pt(4); q.paragraph_format.space_before = Pt(2)
     t(q, " ", tam=E.ESPACADOR); borda_p(q, "bottom", E.FIO_CAIXA)
 
@@ -442,20 +570,13 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro):
 
     q = doc.add_paragraph(); q.paragraph_format.space_before = Pt(6); q.paragraph_format.space_after = Pt(4)
     t(q, " ", tam=E.ESPACADOR); borda_p(q, "bottom", E.FIO_TITULO)
-    wl = E.FAIXA_CONTROLES
+    wl = E.FAIXA_EXAME  # o exame fica sob as colunas 1 e 2; as intercorrências, sob a coluna 3
     bt = tabela(doc, 1, 2, [wl, W - wl], {"insideV": (E.FIO_SECAO, E.PAPEL_TINTA)})
     L, R = bt.rows[0].cells
     margens(L, 0, 0, 0, 150); margens(R, 0, 150, 0, 0)
-    sec(L, "CONTROLES DO PLANTÃO", first=True)
-    g = tabela(L, 6, 9, [E.GRADE_ROTULO] + [E.GRADE_CELULA] * 8,
-               {k: (E.FIO_SECAO, E.PAPEL_TINTA) for k in ("top", "left", "bottom", "right", "insideH", "insideV")})
-    encolher(L.paragraphs[-1])
-    for i, rot in enumerate(("Hora", "PA (PAM)", "FC", "SpO2 / FiO2", "Diurese", "Dx")):
-        cel = g.rows[i].cells[0]; margens(cel, 15, 60, 15, 40)
-        t(P(cel, True, 0), rot, b=True, tam=S["tam"] - 1)
-        for j in range(1, 9):
-            t(P(g.rows[i].cells[j], True, 0), " ", tam=S["tam"] + 1)
-    sec(R, "INTERCORRÊNCIAS, CONDUTAS E PASSAGEM", first=True)
+    exame(L, compacto)
+    # 225,8 pt de texto em 8,4 cm: com a folga de 2 pt a faixa quebrava em 2 linhas; com 1 pt sobram 1,8 pt
+    sec(R, "INTERCORRÊNCIAS, CONDUTAS E PASSAGEM", first=True, folga=1)
     linhas(R, n_inter)
 
 
@@ -500,9 +621,9 @@ def gerar(plantao, caminho, cfg=None, folga=0.0):
     s.bottom_margin = Cm(E.MARGEM_FICHA_PE + folga)
     s.header_distance = s.footer_distance = Cm(E.DISTANCIA_CABECALHO)
     for i, leito in enumerate(plantao["leitos"]):
-        n_anot, n_inter, tam = (cfg or {}).get(leito["leito"], (6, 4, E.CORPO))
+        n_anot, n_inter, tam, *compacto = (cfg or {}).get(leito["leito"], (6, N_INTER, E.CORPO, False))
         S["tam"] = tam
-        pagina(doc, meta, leito, n_anot, n_inter, i == 0)
+        pagina(doc, meta, leito, n_anot, n_inter, i == 0, compacto=bool(compacto and compacto[0]))
     body = doc.element.body
     if body[0].tag == qn("w:p") and not "".join(body[0].itertext()).strip():
         body.remove(body[0])
@@ -524,16 +645,21 @@ def ajustar(plantao, folga=E.FOLGA_MEDICAO):
         for leito in plantao["leitos"]:
             um = {"meta": plantao["meta"], "leitos": [leito]}
             achou = None
+            # Em cada tamanho: primeiro descem as anotações (as intercorrências ficam ao lado do exame e não
+            # aumentam a folha); depois o exame fica compacto, com 4 intercorrências; só então a fonte desce.
             for tam in E.AJUSTE:
-                for n_anot, n_inter in ((14, 5), (12, 5), (10, 5), (9, 4), (8, 4), (7, 4), (6, 4), (5, 4),
-                                        (4, 3), (3, 3), (2, 3), (1, 3), (0, 3)):
-                    fx = Path(tmp) / "x.docx"
-                    gerar(um, fx, {leito["leito"]: (n_anot, n_inter, tam)}, folga=folga)
-                    if n_paginas(fx) == 1:
-                        achou = (n_anot, n_inter, tam); break
+                for compacto, n_inter in ((False, N_INTER), (True, N_INTER_COMPACTO)):
+                    for n_anot in (14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0):
+                        fx = Path(tmp) / "x.docx"
+                        tentativa = (n_anot, n_inter, tam, compacto)
+                        gerar(um, fx, {leito["leito"]: tentativa}, folga=folga)
+                        if n_paginas(fx) == 1:
+                            achou = tentativa; break
+                    if achou:
+                        break
                 if achou:
                     break
-            res[leito["leito"]] = achou or (0, 2, 9)
+            res[leito["leito"]] = achou or (0, N_INTER_COMPACTO, 9, True)
             if not achou:
                 nao_coube.append(leito["leito"])
             print(leito["leito"], res[leito["leito"]], "OK" if achou else "NAO COUBE", file=sys.stderr)

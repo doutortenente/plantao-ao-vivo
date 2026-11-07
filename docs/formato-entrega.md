@@ -8,7 +8,9 @@ Gerador: `gerador/gerar_docx.py`. Texto clínico: `docs/BRIEFING.md`.
 
 - Times New Roman 10 em TUDO (inclusive cabeçalho e títulos). Rótulos, títulos, flags `[Nx < 50]` e alertas em
   negrito. Sem cor nenhuma — nada de vermelho (pedido de 11/10/2026).
-- Sem caixas coloridas, sem faixas, sem ícone. Preto no branco, filete fino sob títulos.
+- Sem cor e sem ícone. Evolução: preto no branco, filete fino sob títulos. Ficha-cola (opção A, 07/11/2026): faixa
+  cinza nos títulos, linha sim, linha não em cinza, alerta e alergia em caixa. O cinza é só de fundo; o texto é
+  sempre preto.
 - Impressora do plantão não faz frente e verso: cada página é uma folha.
 - Nome do arquivo: `DD-MM-AA-utiN-<classe-do-documento>.<tipo>` — ex.: `11-10-26-uti2-evolucoes-diurno.docx` e
   `11-10-26-uti2-ficha-cola-diurno.docx` (o turno vem de `meta.turno`) (mesmo padrão dos arquivos de entrada, como `11-10-26-uti2-controles.pdf`).
@@ -36,29 +38,34 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
 
 - Cabeçalho: caixa `LEITO XX` | nome em destaque + idade/sexo + dia de UTI + peso com fonte e data (`66 kg (EcoTT,
   06/12/2025)`, só quando o JSON traz `peso`); embaixo `Dx:` (problemas ativos separados por " · ") e `Disp.:`
-  (dispositivo com data) | `Alergia:` (caixa alta e negrito se houver) e turno/data.
+  (dispositivo com data) | `ALERGIA:` em caixa preta, caixa alta e negrito, se houver (sem alergia: `Alergia: nega`,
+  sem caixa) e turno/data.
   Diagnósticos ficam no cabeçalho, não em coluna própria.
 - Coluna 1 — CONTROLES: sinais vitais em grade de 2 colunas (PAS/FR, PAD/SpO2, PAM/TAX, FC), Máx - Mín, alerta
   `[Nx<lim]` em negrito na mesma linha; Dx em linha própria; BALANÇO em grade (Ganhos — da conta do motor, já que a evolução não traz mais a ingesta —, Diurese, perdas, BH; com
   peso, `Débito  0,38 ml/kg/h em 12 h  KDIGO 2`, flag em negrito; Evac.); LABORATÓRIO, um grupo por linha, e com
-  peso a linha `ClCr 26 ml/min (Cockcroft-Gault)` do motor. Fios cinza finos entre linhas (guia de leitura — o Dr. é
-  disléxico).
+  peso a linha `ClCr 26 ml/min (Cockcroft-Gault)` do motor. Linha sim, linha não em cinza nos vitais, no balanço e
+  no laboratório (guia de leitura — o Dr. é disléxico); flag e BH em caixinha (07/11/2026).
 - Coluna 2 — PRESCRIÇÃO em 2 blocos: INFUSÕES E TERAPIAS (DVA, sedação, ATB com D e início, VM/O2, dieta/NPT —
   em TNE, a linha DIETA leva também a água pela sonda, com volume e horários: `Fresubin HP Energy 60 ml/h SNE ·
   Água 200 ml 6/6 h` (02/11/2026) —,
   TRS) e POR SISTEMAS (Neuro, CV, Resp, TGI, Renal, Endócrino, Analgesia, Profilaxia, SN, Suspensos), rótulo à
-  esquerda, fio entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG. DVA, SEDAÇÃO e BNM das bombas
+  esquerda em coluna cinza, fio cinza de 0,5 pt entre sistemas, nome da droga em negrito. Profilaxia = só TEV/LAMG. DVA, SEDAÇÃO e BNM das bombas
   saem do motor (`infusoes_continuas`), uma linha por bomba com o que corre agora: `Hyponor 16 mg/250 ml · 2 ml/h
   · 0,03 mcg/kg/min` (a sequência das vazões fica na evolução). Em VM com altura, a linha VM ganha `VC 6 - 8 ml/kg
   (PP 46 kg): 276 - 368 ml`. Sem aferição de glicemia (Dx/HGT 6/6 h) e sem escala de correção (insulina
   "conforme Dx", G50% se Dx < 70): o gerador tira esses trechos (02/11/2026). Toda a prescrição sai sem os
   horários de administração ("=> 10-16-22-04"): droga, dose, via e frequência bastam; o gerador tira (02/11/2026).
 - Coluna 3 — PENDÊNCIAS (☐), EXAMES, ANOTAÇÕES / NOVOS EXAMES (linhas, quantas couberem).
-- Faixa de baixo: grade CONTROLES DO PLANTÃO (Hora, PA (PAM), FC, SpO2/FiO2, Diurese, Dx × 8) | INTERCORRÊNCIAS,
-  CONDUTAS E PASSAGEM.
+- Faixa de baixo (07/11/2026, no lugar da grade CONTROLES DO PLANTÃO): EXAME FÍSICO sob as colunas 1 e 2, em 6
+  quadros por sistema na ordem da evolução (NEURO, RESPIRATÓRIO, HEMODINÂMICA, RENAL · METABÓLICO, TGI · NUTRIÇÃO,
+  INFECTO · PELE), com ☐ para marcar e ____ para escrever, e a hora na faixa | INTERCORRÊNCIAS, CONDUTAS E PASSAGEM
+  sob a coluna 3 (6 linhas). Sem faixa de bundle (FAST HUGS BID) no pé dos quadros: ele mandou tirar.
 - Fora: subtítulos explicativos, rodapé de fontes, frase de comentário. Dúvida de leitura vai para o "Conferir" do chat.
-- Tamanho: corpo 10 pt; o ajuste desce para 9,5/9 pt e corta linhas de anotação até caber, medindo com 1,5 cm de
-  folga no pé (o Word renderiza mais alto que o LibreOffice — sem folga, a folha estourava para 2 páginas no Word).
+- Tamanho: corpo 10 pt. Em cada tamanho (10, depois 9,5, depois 9 pt) o ajuste corta primeiro as linhas de anotação
+  (14 até 0); depois deixa o exame compacto (os mesmos campos com menos folga e 4 linhas de intercorrências); só então
+  a fonte desce. Mede com 1,5 cm de folga no pé (o Word renderiza mais alto que o LibreOffice — sem folga, a folha
+  estourava para 2 páginas no Word).
 - Entrega: `.docx` + `.pdf` (o PDF é o que imprime igual em qualquer computador).
 - O XML é reordenado no padrão OOXML (`sanear`) porque o Word é estrito e o LibreOffice não.
 

@@ -23,11 +23,16 @@ ENTRELINHA_EVOLUCAO = 1.08
 ENTRELINHA_FICHA = 1.05
 ENTRELINHA_ADMISSAO = 1.0
 
-# ── cores (só fios; texto é sempre preto) ────────────────────────────────────
+# ── cores (só fios e fundos; texto é sempre preto) ───────────────────────────
 PAPEL_TINTA = "000000"
-PAPEL_CINZA = "A6A6A6"            # fios guia das grades e divisória interna (dislexia)
+PAPEL_FOLHA = "FFFFFF"            # a folha: borda invisível que alinha as linhas brancas da zebra às cinza
+PAPEL_CINZA = "A6A6A6"           # fios guia das grades e divisória interna (dislexia)
 PAPEL_CINZA_ANOTACAO = "8C8C8C"   # linhas de anotação e intercorrências
 PAPEL_CINZA_SECAO = "808080"      # fio sob título de seção da evolução
+# fundos da ficha-cola (opção A, aprovada em 07/11/2026): só cinza, sempre atrás de texto preto
+PAPEL_CINZA_FAIXA = "D0D0D0"      # faixa dos títulos (CONTROLES, PRESCRIÇÃO, PENDÊNCIAS, EXAME FÍSICO...)
+PAPEL_CINZA_SUB = "E0E0E0"        # faixa dos subtítulos e cabeçalho dos quadros do exame físico
+PAPEL_CINZA_ZEBRA = "EFEFEF"      # linha sim, linha não nas grades; coluna de rótulo da prescrição
 
 # ── espessura dos fios (w:sz, em 1/8 pt) ─────────────────────────────────────
 FIO_GUIA = 2      # 0,25 pt
@@ -47,6 +52,6 @@ MARGEM_ADMISSAO_ESQ, MARGEM_ADMISSAO_DIR, MARGEM_ADMISSAO_VERTICAL = 1.25, 1.34,
 LARGURA_UTIL = 27.7                   # W
 COL_CONTROLES, COL_PRESCRICAO = 8.3, 11.0   # WL, WM (WR = o resto)
 CAIXA_LEITO, CABECALHO_DIREITA = 2.0, 4.4
-FAIXA_CONTROLES = 13.3
-GRADE_ROTULO, GRADE_CELULA = 2.1, 1.4
+FAIXA_EXAME = COL_CONTROLES + COL_PRESCRICAO   # faixa de baixo: EXAME FÍSICO sob as colunas 1 e 2
+QUADRO_EXAME, VAO_EXAME = 6.2, 0.2    # 3 quadros do exame por linha e o vão entre eles
 RX_ROTULO = 2.35
