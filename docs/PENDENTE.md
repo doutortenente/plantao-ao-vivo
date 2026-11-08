@@ -65,7 +65,28 @@ exemplo e passa.
   sem eles, tudo sai como antes (sem nada por kg).
 - [ ] A nota de admissão (`gerar_admissao.py`) não escreve a linha "Peso:": o peso do 1º dia entra no JSON à mão.
 
-## 6. Limites conhecidos (não são erro)
+## 6. Ficha-cola opção A (branch `claude/bold-thompson-sqdlc1`, 07/11/2026)
+
+- [x] Merge na `main` em 08/11/2026, a pedido dele, com o CI vermelho (item seguinte).
+- [ ] **CI vermelho: fazer primeiro.** Em 07/11/2026 o `ubuntu-latest` do GitHub virou Ubuntu 26.04 com
+  LibreOffice 26.2.6. A `main` de 02/11 e esta sessão usavam o 24.2.7. Lá a ficha do exemplo, sem ajuste e com a
+  folga de 1,5 cm, passa de 1 folha, e `tests/test_gerador.py` (`test_sem_ajuste_gera_os_dois`) falha. A `main`
+  de antes passa no mesmo runner. Causa provável: o ☐ dos quadros do exame não existe na Times e vem de uma fonte
+  de reserva. Simulado aqui com a DejaVu Sans no lugar da FreeSerif (8,1 pt contra 6,8 pt de largura a 9 pt), a
+  linha "☐ AA ☐ CN ☐ VNI ☐ CNAF ☐ TOT/TQT" quebra em 2. A fonte de reserva do runner não foi conferida.
+  Correção: trocar o ☐ do exame por □ (U+25A1, que a Times e a Liberation Serif têm, com a mesma largura em todo
+  computador), deixar folga de largura nas linhas e conferir no CI. A esteira (`plantao.yml`, também em
+  `ubuntu-latest`) usa o mesmo LibreOffice 26.2.
+- [ ] Imprimir 1 folha na impressora do plantão e olhar os cinzas (`PAPEL_CINZA_FAIXA` D0D0D0, `_SUB` E0E0E0,
+  `_ZEBRA` EFEFEF em `gerador/estilo.py`). Se a zebra sumir no papel, escurecer ali.
+- [ ] Conferir num plantão real cheio: com o exame, a faixa de baixo ficou ~1 cm mais alta. No teste com um leito
+  fictício pesado, o exame compacto manteve a mesma fonte do modelo antigo (9,5 pt), mas é um caso só.
+- [ ] Design system "Plantão ao Vivo" (artefato do claude.ai, fora do repo): acrescentar `papel-cinza-faixa`,
+  `papel-cinza-sub`, `papel-cinza-zebra` e `papel-folha` (borda); trocar `GradeControles` por `ExameFisico`; tirar
+  `papel-faixa-controles`, `papel-faixa-intercorrencias`, `papel-grade-rotulo` e `papel-grade-celula`, que saíram de
+  `gerador/estilo.py`.
+
+## 7. Limites conhecidos (não são erro)
 
 - O JSON da página `extracao-web` não monta o bloco `ficha`: quem monta é o Claude no chat, a partir de
   `prescricao_lida`.

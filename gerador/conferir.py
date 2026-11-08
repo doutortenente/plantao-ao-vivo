@@ -6,6 +6,7 @@ conferir.py — confere a entrega depois de gerar (o que antes era feito no olho
 Erros (a entrega não pode sair assim):
   - ficha-cola com nº de páginas diferente do nº de leitos (1 folha por leito);
   - run fora de Times New Roman, tamanho fora da lista aprovada, ou com cor;
+  - fundo ou fio que não seja cinza, preto ou branco (as faixas cinza da ficha, 07/11/2026, passam);
   - "(revisar)" no texto; "–"/"—" entre números (Máx - Mín usa " - "); setas ↑ ↓ na evolução.
 Sem LibreOffice/pdfinfo também é erro: sem PDF não dá para contar as folhas, e a entrega não sai.
 Avisos: "→" no texto.
@@ -30,12 +31,13 @@ import office  # noqa: E402
 from docx import Document  # noqa: E402
 from docx.oxml.ns import qn  # noqa: E402
 
-# Tamanhos aprovados (pt). Evolução: só o corpo. Ficha: corpo nos 3 degraus do ajuste, rótulos (corpo - 1),
-# células da grade de controles (corpo + 1) e as exceções fixas aprovadas em 19/10/2026.
+# Tamanhos aprovados (pt). Evolução: só o corpo. Ficha: corpo nos 3 degraus do ajuste, rótulos e exame físico
+# (corpo - 1) e as exceções fixas aprovadas em 19/10/2026.
 TAM_EVOLUCAO = {E.CORPO}
-TAM_FICHA = ({t for t in E.AJUSTE} | {t - 1 for t in E.AJUSTE} | {t + 1 for t in E.AJUSTE}
+TAM_FICHA = ({t for t in E.AJUSTE} | {t - 1 for t in E.AJUSTE}
              | {E.NOME, E.LEITO, E.LEITO_ROTULO, E.PAUTA, E.ESPACADOR})
 
+NEUTRO = re.compile(r"^(auto|([0-9A-Fa-f]{2})\2\2)$")  # cinza, preto ou branco: R = G = B
 TRAVESSAO_NUMEROS = re.compile(r"\d\s*[–—]\s*\d")
 SETAS_PROIBIDAS = re.compile(r"[↑↓]")
 
@@ -72,6 +74,10 @@ def conferir_docx(caminho, tamanhos, evolucao=False):
         erros.append(f"{nome}: tamanho fora da lista aprovada: {', '.join(f'{t:g} pt' for t in fora)}")
     if cor:
         erros.append(f"{nome}: {cor} trecho(s) com cor (destaque é só negrito)")
+    tinta = sum(1 for el in doc.element.body.iter() for a in (qn("w:fill"), qn("w:color"))
+                if el.get(a) is not None and not NEUTRO.match(el.get(a)))
+    if tinta:
+        erros.append(f"{nome}: {tinta} fundo(s) ou fio(s) com cor (no papel, só cinza, preto e branco)")
     for txt in _texto_paragrafos(doc):
         if "(revisar)" in txt.lower():
             erros.append(f"{nome}: \"(revisar)\" no texto: {txt[:80]}")

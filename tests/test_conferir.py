@@ -15,19 +15,26 @@ import conferir as C  # noqa: E402
 import estilo as E  # noqa: E402
 
 from docx import Document  # noqa: E402
+from docx.oxml import OxmlElement  # noqa: E402
+from docx.oxml.ns import qn  # noqa: E402
 from docx.shared import Pt, RGBColor  # noqa: E402
 
 TEM_PDF = bool(shutil.which("soffice") and shutil.which("pdfinfo"))
 
 
-def docx_com(tmp, linhas, fonte=E.FONTE, tam=E.CORPO, cor=None):
+def docx_com(tmp, linhas, fonte=E.FONTE, tam=E.CORPO, cor=None, fundo=None):
     doc = Document()
     doc.styles["Normal"].font.name = E.FONTE
     for txt in linhas:
-        r = doc.add_paragraph().add_run(txt)
+        p = doc.add_paragraph()
+        r = p.add_run(txt)
         r.font.name = fonte; r.font.size = Pt(tam)
         if cor:
             r.font.color.rgb = RGBColor(0xC0, 0, 0)
+        if fundo:
+            shd = OxmlElement("w:shd")
+            shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), fundo)
+            p._p.get_or_add_pPr().append(shd)
     caminho = Path(tmp) / "x.docx"
     doc.save(caminho)
     return caminho
@@ -61,6 +68,20 @@ class Docx(unittest.TestCase):
         for t in (8, 9, 13, 20, 9.5, 8.5):
             self.assertIn(t, C.TAM_FICHA)
         self.assertNotIn(13, C.TAM_EVOLUCAO)
+
+    def test_sem_grade_de_controles_sem_corpo_mais_um(self):  # o corpo + 1 era só das células da grade
+        for t in (11, 10.5):
+            self.assertNotIn(t, C.TAM_FICHA)
+
+    def test_fundo_cinza_passa(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            erros, _ = C.conferir_docx(docx_com(tmp, ["PRESCRIÇÃO"], fundo=E.PAPEL_CINZA_FAIXA), C.TAM_FICHA)
+        self.assertEqual(erros, [])
+
+    def test_fundo_colorido_e_erro(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            erros, _ = C.conferir_docx(docx_com(tmp, ["PRESCRIÇÃO"], fundo="FFFF00"), C.TAM_FICHA)
+        self.assertTrue(any("fundo" in e for e in erros), erros)
 
 
 @unittest.skipUnless(TEM_PDF, "sem LibreOffice/pdfinfo")
