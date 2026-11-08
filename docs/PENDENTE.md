@@ -67,7 +67,16 @@ exemplo e passa.
 
 ## 6. Ficha-cola opção A (branch `claude/bold-thompson-sqdlc1`, 07/11/2026)
 
-- [ ] Merge na `main`: só com o "prosseguir" dele e o CI verde.
+- [x] Merge na `main` em 08/11/2026, a pedido dele, com o CI vermelho (item seguinte).
+- [ ] **CI vermelho: fazer primeiro.** Em 07/11/2026 o `ubuntu-latest` do GitHub virou Ubuntu 26.04 com
+  LibreOffice 26.2.6. A `main` de 02/11 e esta sessão usavam o 24.2.7. Lá a ficha do exemplo, sem ajuste e com a
+  folga de 1,5 cm, passa de 1 folha, e `tests/test_gerador.py` (`test_sem_ajuste_gera_os_dois`) falha. A `main`
+  de antes passa no mesmo runner. Causa provável: o ☐ dos quadros do exame não existe na Times e vem de uma fonte
+  de reserva. Simulado aqui com a DejaVu Sans no lugar da FreeSerif (8,1 pt contra 6,8 pt de largura a 9 pt), a
+  linha "☐ AA ☐ CN ☐ VNI ☐ CNAF ☐ TOT/TQT" quebra em 2. A fonte de reserva do runner não foi conferida.
+  Correção: trocar o ☐ do exame por □ (U+25A1, que a Times e a Liberation Serif têm, com a mesma largura em todo
+  computador), deixar folga de largura nas linhas e conferir no CI. A esteira (`plantao.yml`, também em
+  `ubuntu-latest`) usa o mesmo LibreOffice 26.2.
 - [ ] Imprimir 1 folha na impressora do plantão e olhar os cinzas (`PAPEL_CINZA_FAIXA` D0D0D0, `_SUB` E0E0E0,
   `_ZEBRA` EFEFEF em `gerador/estilo.py`). Se a zebra sumir no papel, escurecer ali.
 - [ ] Conferir num plantão real cheio: com o exame, a faixa de baixo ficou ~1 cm mais alta. No teste com um leito
