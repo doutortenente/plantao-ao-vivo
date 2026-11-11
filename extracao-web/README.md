@@ -59,8 +59,8 @@ O botão "Copiar JSON do plantão" copia o plantão inteiro no formato do `gerad
 
 - `meta`: unidade, data (a da prescrição, ou a da folha + 1 dia com aviso), turno, janela e `recorte` quando a janela é
   de 12 h;
-- por leito: cabeçalho, vitais por hora, ganhos e perdas por célula, rodapé em `conferencia_enfermagem`, laboratório
-  e as pendências em `avisos`;
+- por leito: `hd`, alergia, dieta, vitais por hora, ganhos e perdas por célula, rodapé em `conferencia_enfermagem`,
+  laboratório e as pendências em `avisos` (`diagnostico` no JSON foi aposentado em 11/11/2026);
 - `prescricao_lida`: a prescrição lida, pelos 7 blocos. O Claude monta o bloco `ficha` a partir dela.
 
 No chat, o motor (`build_passagem.py`) refaz as contas e é a conta oficial. O JSON sai da leitura, não das edições
@@ -94,6 +94,11 @@ de 24 h e de 12 h noturno. O teste precisa de node e playwright; sem eles, é pu
   para as pendências (BRIEFING §4).
 - Sup O2: ar ambiente/cateter entre parênteses no fim do SpO2; ventilação mecânica em linha própria depois do Dx.
 - Título do bloco: "Sinais vitais + balanço <janela>"; Dx separado por " / ".
+
+## Correções de 11/11/2026
+
+- Prescrição lida e JSON do leito: hipóteses em `hd` (rótulo **HD:** na ficha). `diagnostico` não entra no JSON.
+- `vitais.Dx` permanece glicemia (rótulo Dx na grade).
 
 ## Correções de 19/10/2026
 

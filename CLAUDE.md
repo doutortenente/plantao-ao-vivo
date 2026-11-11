@@ -19,9 +19,11 @@ Admissão de leito novo: só `skills/admissao-uti/SKILL.md` (não a `sasi-ingest
   24 h, impressão, plano. Sem identificação, HPMA, antecedentes, dispositivos ou exames antigos.
 - **Balanço = soma das células.** Rodapé da folha só confere; divergência no rodapé "Conferir".
 - **Ficha-cola**: modelo aprovado em 12/10/2026, `gerador/ficha_cola.py` (bloco `ficha` no JSON). 1 folha
-  paisagem por leito — conferir TODAS as páginas do PDF; mandar .docx + .pdf. HD no cabeçalho; prescrição em 2 blocos
-  (infusões/terapias + por sistemas); profilaxia só TEV/LAMG; texto curto, sem encheção. Embaixo, EXAME FÍSICO em 6
-  quadros por sistema no lugar de CONTROLES DO PLANTÃO, sem faixa de bundle (07/11/2026).
+  paisagem por leito — conferir TODAS as páginas do PDF; mandar .docx + .pdf. Cabeçalho **HD:** (hipóteses no JSON
+  `leito.hd`; override opcional `ficha.hd`); **não** usar `diagnostico` nem `ficha.dx` (`validar.py` recusa). Na grade,
+  **Dx** = glicemia (`vitais.Dx`), não confundir com HD. Idade/Sexo legíveis; Peso/Altura sem fonte/data; balanço da
+  ficha sem Ganhos. Prescrição em 2 blocos (infusões/terapias + por sistemas); profilaxia só TEV/LAMG; texto curto.
+  Embaixo, EXAME FÍSICO em 6 quadros por sistema no lugar de CONTROLES DO PLANTÃO, sem faixa de bundle (07/11/2026).
 - **Fonte**: Times New Roman 10 em tudo; destaque só por negrito (rótulos, flags, alertas). Sem vermelho, sem cor.
   Nada de layout "inventado". Exceções aprovadas em 19/10/2026, só na ficha-cola: nome 13, nº do leito 20, rótulo
   LEITO 8, rótulos e flags um ponto abaixo do corpo (9), e o "– " das linhas de EXAMES. Opção A (07/11/2026), só na

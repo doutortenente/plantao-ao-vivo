@@ -41,7 +41,7 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
   peso e altura independentes); depois `HD:` e `Disp.:`
   (dispositivo com data) | `ALERGIA:` em caixa preta, caixa alta e negrito, se houver (sem alergia: `Alergia: nega`,
   sem caixa) e turno/data.
-  Diagnósticos ficam no cabeçalho, não em coluna própria.
+  Hipóteses diagnósticas (**HD:**) ficam no cabeçalho, não em coluna própria (JSON: `leito.hd`).
 - Coluna 1 — CONTROLES: sinais vitais em grade de 2 colunas (PAS/FR, PAD/SpO2, PAM/TAX, FC), Máx - Mín, alerta
   `[Nx<lim]` em negrito na mesma linha; Dx (glicemia) em linha própria; BALANÇO em grade (Diurese, perdas, BH; sem
   Ganhos; com

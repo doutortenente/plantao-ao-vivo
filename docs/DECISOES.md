@@ -12,7 +12,7 @@
 | 11/10/2026 | Times New Roman 10, negrito mantido, visual limpo. |
 | 11/10/2026 | Repositório próprio `plantao-ao-vivo`, independente, sem symlinks. |
 | 11/10/2026 | Admissão com skill própria (`admissao-uti`), no padrão das evoluções reais dele: sem escore, sem rodapé, sem "Exame físico por sistemas"; entrega em Word Times New Roman 10. |
-| 12/10/2026 | O projeto do claude.ai sincroniza o `plantao-ao-vivo`; as instruções do projeto ficam versionadas em `docs/instrucoes-projeto.md` (v1.0; hoje v1.2, de 13/10/2026). |
+| 12/10/2026 | O projeto do claude.ai sincroniza o `plantao-ao-vivo`; as instruções do projeto ficam versionadas em `docs/instrucoes-projeto.md` (v1.0; hoje v1.3, de 11/11/2026). |
 | 19/10/2026 | Admissão em A4 (não Carta), margens 1,25 / 1,34 / 2,5 cm. Gerador em `gerador/gerar_admissao.py`. |
 | 19/10/2026 | ATB: dia de início = D0 (iniciou ontem: ontem D0, hoje D1). UTI: dia da admissão = D1. O motor calcula os dois (`preparar` em `build_passagem.py`). |
 | 19/10/2026 | Plantão roda no projeto do claude.ai (hooks do Claude Code não valem lá): as regras viram script, teste e CI. |
@@ -21,7 +21,7 @@
 | 11/11/2026 | Ficha-cola, cabeçalho: `HD:` no lugar de Dx para hipóteses (JSON `hd` no leito e opcional `ficha.hd`; `diagnostico` e `ficha.dx` aposentados). Idade/Sexo legíveis; `Peso`/`Altura` no cabeçalho. Balanço da ficha sem Ganhos. `vitais.Dx` = glicemia. |
 | 07/11/2026 | Ficha-cola, opção A ("faixas cinza"), escolhida entre 3 no canvas: título em faixa cinza, linha sim/linha não em cinza, alergia e alertas em caixa; o cinza é só de fundo e o texto continua preto. Embaixo, EXAME FÍSICO em 6 quadros por sistema no lugar da grade CONTROLES DO PLANTÃO, sem a faixa de bundle (FAST HUGS BID): ele mandou tirar. Folha cheia: o exame fica compacto antes de a fonte descer. |
 | 01/11/2026 | Peso no plantão (item 2 das melhorias): peso só com fonte e data; o motor calcula a dose das bombas pela diluição da prescrição (tabela e contas do app calculadoras-uti), o débito em ml/kg/h com KDIGO pelo débito, o ClCr (Cockcroft-Gault) e, em VM, o peso predito com o VC de 6 a 8 ml/kg. Nada por kg de cabeça. |
-| 12/10/2026 | Ficha-cola: modelo novo aprovado (`gerador/ficha_cola.py`) — Dx no cabeçalho, prescrição em 2 blocos (infusões/terapias + por sistemas), controles em grade, PDF junto. Profilaxia só TEV/LAMG. Folha que estoura no Word = erro grave. |
+| 12/10/2026 | Ficha-cola: modelo novo aprovado (`gerador/ficha_cola.py`) — hipóteses no cabeçalho (hoje rótulo **HD:** e JSON `hd`; na época imprimia como Dx), prescrição em 2 blocos (infusões/terapias + por sistemas), controles em grade, PDF junto. Profilaxia só TEV/LAMG. Folha que estoura no Word = erro grave. |
 
 ## Correções feitas ao montar este repositório (11/10/2026)
 
