@@ -26,7 +26,7 @@ class Validar(unittest.TestCase):
     def test_campo_obrigatorio(self):
         erros, _ = com(lambda l, d: (l["ficha"].pop("lab"), l.pop("diagnostico"), d["meta"].pop("data_prescricao")))
         self.assertIn("L99: falta `ficha.lab`", erros)
-        self.assertIn("L99: falta `diagnostico` (ou `ficha.dx`)", erros)
+        self.assertIn("L99: falta `diagnostico` (ou `ficha.hd`)", erros)
         self.assertIn("meta: falta `data_prescricao`", erros)
 
     def test_alergia_divergente_e_erro(self):
@@ -34,9 +34,13 @@ class Validar(unittest.TestCase):
         erros, _ = com(lambda l, d: l["ficha"].__setitem__("alergia", "nega"))
         self.assertTrue(any("alergia diverge" in e for e in erros))
 
+    def test_ficha_dx_antigo_e_erro(self):
+        erros, _ = com(lambda l, d: l["ficha"].__setitem__("dx", l["diagnostico"]))
+        self.assertTrue(any("ficha.dx` foi renomeado" in e for e in erros))
+
     def test_copias_divergentes_sao_aviso(self):
         def mudar(l, d):
-            l["ficha"]["dx"] = "Outra coisa"
+            l["ficha"]["hd"] = "Outra coisa"
             l["ficha"]["lab"].append("Hb 12,1")
             i = next(n for n, x in enumerate(l["ficha"]["infusoes"]) if x[0] == "ATB")
             l["ficha"]["infusoes"][i] = ["ATB", ["Rocefin (ceftriaxona) 2 g EV 1x/dia (D2, I: 31/12)"]]
