@@ -56,8 +56,11 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
    alergia vai para o chat na hora, antes de terminar os arquivos.
 5. **JSON do plantão.** Montar um arquivo no contrato `gerador/schema-plantao.md`, com:
    vitais (séries), células de balanço, laboratório, terapias, exame físico (copiado da evolução anterior), eventos
-   24 h, impressão, plano, até 3 alertas para o chat e o bloco `ficha` de cada leito (obrigatório: Dx, dispositivos,
-   alergia, prescrição em infusões/terapias + por sistemas, 3 a 7 pendências tiradas do plano, exames e lab).
+   24 h, impressão, plano, até 3 alertas para o chat e o bloco `ficha` de cada leito (obrigatório: hipóteses
+   diagnósticas (`diagnostico` no leito — na ficha imprime **HD:**), dispositivos, alergia, prescrição em
+   infusões/terapias + por sistemas, 3 a 7 pendências tiradas do plano, exames e lab).
+   Cabeçalho da ficha-cola (gerador): `Idade`/`Sexo` legíveis a partir de `idade_sexo`; `Peso`/`Altura` sempre
+   (bloco `peso`, sem fonte/data no cabeçalho; ver `docs/formato-entrega.md`). Balanço da ficha sem Ganhos.
    Em TNE, a linha DIETA leva a água pela sonda (volume e frequência, sem os horários).
    ATB com `(I: dd/mm)`: o motor escreve o D (início = D0). Dia de UTI pela `admissao_uti` (admissão = D1).
    Peso, débito em ml/kg/h, KDIGO pelo débito, ClCr, dose das bombas e VC alvo: o motor escreve (contrato, seções

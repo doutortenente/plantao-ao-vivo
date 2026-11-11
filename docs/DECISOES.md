@@ -18,6 +18,7 @@
 | 19/10/2026 | Plantão roda no projeto do claude.ai (hooks do Claude Code não valem lá): as regras viram script, teste e CI. |
 | 19/10/2026 | Exceções aprovadas ao "TNR 10 em tudo", só na ficha-cola: 8 (rótulo LEITO), 9 (rótulos e flags), 13 (nome), 20 (nº do leito) e o "– " de EXAMES. |
 | 19/10/2026 | Mudanças entram por branch + PR com CI; o merge na `main` é de uma vez, com o "prosseguir" dele. |
+| 11/11/2026 | Ficha-cola, cabeçalho: `HD:` no lugar de Dx para hipóteses (`diagnostico` no JSON); Idade/Sexo legíveis; `Peso`/`Altura` sempre no cabeçalho (sem fonte/data no papel; altura independente do peso válido pro motor). Balanço da ficha sem Ganhos. Dx na grade continua sendo glicemia. |
 | 07/11/2026 | Ficha-cola, opção A ("faixas cinza"), escolhida entre 3 no canvas: título em faixa cinza, linha sim/linha não em cinza, alergia e alertas em caixa; o cinza é só de fundo e o texto continua preto. Embaixo, EXAME FÍSICO em 6 quadros por sistema no lugar da grade CONTROLES DO PLANTÃO, sem a faixa de bundle (FAST HUGS BID): ele mandou tirar. Folha cheia: o exame fica compacto antes de a fonte descer. |
 | 01/11/2026 | Peso no plantão (item 2 das melhorias): peso só com fonte e data; o motor calcula a dose das bombas pela diluição da prescrição (tabela e contas do app calculadoras-uti), o débito em ml/kg/h com KDIGO pelo débito, o ClCr (Cockcroft-Gault) e, em VM, o peso predito com o VC de 6 a 8 ml/kg. Nada por kg de cabeça. |
 | 12/10/2026 | Ficha-cola: modelo novo aprovado (`gerador/ficha_cola.py`) — Dx no cabeçalho, prescrição em 2 blocos (infusões/terapias + por sistemas), controles em grade, PDF junto. Profilaxia só TEV/LAMG. Folha que estoura no Word = erro grave. |
@@ -122,7 +123,8 @@ Pedido do Dr. Nicolas no plantão de 01/11:
 
 1. Sinais vitais + balanço numa linha só, itens separados por " | " (`motor.compactar`, usado pelo Word e pelo
    texto). O motor continua guardando as linhas separadas em `secoes`, porque a ficha-cola lê item a item.
-2. Sem "Ingesta hídrica" no bloco. Os Ganhos da ficha-cola passam a vir da conta do motor (`balanco.ganho_total`).
+2. Sem "Ingesta hídrica" no bloco. Até 10/11/2026 os Ganhos da ficha vinham do motor; desde 11/11/2026 a grade de
+   balanço da ficha não traz Ganhos.
 3. UR e CR seriais na mesma linha dos eletrólitos; eletrólitos (NA, K, MG, CAI, P) sem série, só o valor atual
    (`labs.py`).
 4. Valores seriais com " => " no lugar de " -> " (labs e vazão/dose das bombas). Leitura da CR (`peso.py`) e do
