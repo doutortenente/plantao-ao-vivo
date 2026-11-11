@@ -39,10 +39,10 @@ class BlocoCompacto(unittest.TestCase):
         self.assertGreater(len(r["secoes"][0][1]), 5)
         self.assertFalse(any("Ingesta" in l for l in r["secoes"][0][1]))
 
-    def test_ficha_continua_com_ganhos_da_conta_do_motor(self):
+    def test_ficha_sem_ganhos_no_balanco(self):
         r = motor.compute_leito(self.leito, self.meta)
         _, bal = ficha_cola.linhas_controle(r, self.leito)
-        self.assertEqual(bal[0], ("Ganhos", motor._fmt(r["balanco"]["ganho_total"])))
+        self.assertFalse(any(k == "Ganhos" for k, _ in bal))
 
     def test_word_da_evolucao_tem_o_bloco_num_paragrafo(self):
         from docx import Document

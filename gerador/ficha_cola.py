@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Ficha-cola (modelo aprovado em 12/10/2026, opção A em 07/11/2026) — 1 folha paisagem por leito.
-Cabeçalho: leito + nome + Dx + dispositivos | alergia (em caixa) + plantão.
+Cabeçalho: leito + nome + idade/sexo + Peso/Altura + HD + dispositivos | alergia (em caixa) + plantão.
 Corpo: CONTROLES + LAB | PRESCRIÇÃO (infusões/terapias + por sistemas) | PENDÊNCIAS + EXAMES + ANOTAÇÕES.
 Rodapé de trabalho: EXAME FÍSICO em 6 quadros por sistema | intercorrências.
 Times New Roman, texto sempre preto. Para a leitura (o Dr. é disléxico): título em faixa cinza, linha sim, linha
@@ -17,7 +17,7 @@ import office  # noqa: E402
 from docx import Document  # noqa: E402
 from docx.enum.section import WD_ORIENT  # noqa: E402
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_ROW_HEIGHT_RULE, WD_TABLE_ALIGNMENT  # noqa: E402
-from docx.enum.text import WD_TAB_ALIGNMENT  # noqa: E402
+from docx.enum.text import WD_BREAK, WD_TAB_ALIGNMENT  # noqa: E402
 from docx.oxml import OxmlElement  # noqa: E402
 from docx.oxml.ns import qn  # noqa: E402
 from docx.shared import Cm, Pt  # noqa: E402
@@ -232,9 +232,46 @@ def droga(p, item):
 
 
 # ── dados do cabeçalho: uma fonte só ────────────────────────────────────────
-# alergia, Dx e dispositivos moram no leito (alergia, diagnostico, dispositivos); o bloco `ficha` só sobrescreve
+# alergia, HD (diagnóstico) e dispositivos moram no leito; o bloco `ficha` só sobrescreve
 # quando precisa de um texto mais curto. Divergência entre os dois vira erro/aviso no gerador/validar.py.
 CABECALHO = {"alergia": "alergia", "dx": "diagnostico", "disp": "dispositivos"}
+
+
+def idade_sexo_ficha(txt):
+    """Linhas do cabeçalho: idade legível e sexo por extenso (o JSON continua 90F)."""
+    idade, sexo = motor.PESO.idade_sexo(txt)
+    if idade is None:
+        bruto = str(txt or "?").strip() or "?"
+        return bruto, "?"
+    sexo_txt = {"M": "masculino", "F": "feminino"}.get(sexo, sexo or "?")
+    return f"{idade} anos", sexo_txt
+
+
+def rotulo_cabecalho(celula, rotulo, after=0):
+    """Parágrafo com gancho à esquerda (`Idade:`, `Peso:`…); devolve o parágrafo para o valor."""
+    q = P(celula, after=after)
+    q.paragraph_format.left_indent = Cm(0.75)
+    q.paragraph_format.first_line_indent = Cm(-0.75)
+    t(q, f"{rotulo}:  ", b=True)
+    return q
+
+
+def peso_altura_ficha(leito):
+    """Peso e altura só para o cabeçalho: leem o bloco `peso` do JSON, sem fonte/data; não dependem do motor."""
+    p = leito.get("peso")
+    if not isinstance(p, dict):
+        return "?", "?"
+
+    def _campo(chave, unidade):
+        bruto = p.get(chave)
+        if bruto in (None, "", "?"):
+            return "?"
+        n = motor.PESO._num(bruto)
+        if n is None or n <= 0:
+            return "?"
+        return f"{motor._fmt(n)} {unidade}"
+
+    return _campo("kg", "kg"), _campo("altura_cm", "cm")
 
 
 def dado(leito, chave):
@@ -281,13 +318,12 @@ def linhas_controle(r, leito):
         else:
             rot = {"Ingesta hídrica": "Ganhos", "Resíduo gástrico": "Resíduo", "UF (CVVHDF)": "UF",
                    "Débito SNG": "SNG"}.get(rot, rot)
+            if rot == "Ganhos":
+                continue
             v = val.replace(" ml", "")
             if rot == "BH":
                 v = v.replace("+ ", "+").replace("- ", "-")
             bal.append((rot, v))
-    # 02/11/2026: a evolução não traz mais "Ingesta hídrica"; os Ganhos da ficha vêm da conta do motor
-    if (leito.get("ganhos") or leito.get("perdas")) and r.get("balanco") and not any(k == "Ganhos" for k, _ in bal):
-        bal.insert(0, ("Ganhos", motor._fmt(r["balanco"]["ganho_total"])))
     return vit, bal
 
 
@@ -539,16 +575,24 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro, compacto=False):
     q = P(a, True, 0); q.alignment = 1; t(q, "LEITO", b=True, tam=E.LEITO_ROTULO)
     q = P(a, after=0); q.alignment = 1; t(q, leito["leito"], b=True, tam=E.LEITO)
     nome = leito["nome"].title().replace(" Da ", " da ").replace(" De ", " de ")
-    q = P(b, True, 1)
+    idade, sexo = idade_sexo_ficha(leito["idade_sexo"])
+    peso, altura = peso_altura_ficha(leito)
+    demo = S["tam"] - 1  # 9 pt nas linhas do nome: mesmo truque do modelo antigo (tudo no 1º parágrafo)
+    q = P(b, True, 0)
     t(q, nome, b=True, tam=E.NOME)
-    t(q, f"     {leito['idade_sexo']}  ·  {leito['dia_uti'].split(' (')[0]}", tam=S["tam"])
-    if r.get("peso"):  # só o peso com fonte e data (o motor não usa outro); altura e peso predito ficam na evolução
-        p = r["peso"]
-        t(q, f"  ·  {motor._fmt(p['kg'])} kg ({p['fonte']}, {p['data']})", tam=S["tam"])
-    q = P(b, after=1); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
-    t(q, "Dx:  ", b=True); rk(q, dado(leito, "dx"))
-    q = P(b, after=0); q.paragraph_format.left_indent = Cm(0.75); q.paragraph_format.first_line_indent = Cm(-0.75)
-    t(q, "Disp.:  ", b=True); rk(q, dado(leito, "disp"))
+    q.add_run().add_break(WD_BREAK.LINE)
+    uti = leito["dia_uti"].split(" (")[0]
+    t(q, f"     {uti}     ", tam=demo)
+    t(q, "Idade:  ", b=True, tam=demo)
+    t(q, idade, tam=demo)
+    t(q, "     Sexo:  ", b=True, tam=demo)
+    t(q, sexo, tam=demo)
+    t(q, "     Peso:  ", b=True, tam=demo)
+    t(q, peso, tam=demo)
+    t(q, "     Altura:  ", b=True, tam=demo)
+    t(q, altura, tam=demo)
+    rk(rotulo_cabecalho(b, "HD", after=0), dado(leito, "dx"), tam=demo)
+    rk(rotulo_cabecalho(b, "Disp.", after=1), dado(leito, "disp"), tam=demo)
     al = dado(leito, "alergia")
     q = P(c, True, 3)
     if al.strip().lower() in ("", "nega"):
