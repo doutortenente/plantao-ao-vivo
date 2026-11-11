@@ -38,8 +38,23 @@ LAB_ALIAS = {
     "TROPONINAI": "Troponina", "DDIMERO": "D-dímero", "INR": "INR", "RNI": "INR",
 }
 UNIDADE = {"HB": "g/dl", "HT": "%", "PLAQ": "/mm3", "LEUCO": "/mm3", "UR": "mg/dl", "CR": "mg/dl"}
-NUMERO = re.compile(r"(?<![\w,.])((?<!-)[<>]\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d+)?|-?\d+(?:,\d+)?)(?![\w])")
+# milhar com ponto (150.000) | decimal com ponto (1.7, 7.31, -2.5: 1 ou 2 casas não é milhar) | inteiro ou vírgula
+NUMERO = re.compile(r"(?<![\w,.])((?<!-)[<>]\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d+)?|-?\d+\.\d{1,2}|-?\d+(?:,\d+)?)(?![\w])")
 NOME_INICIO = re.compile(r"^\s*([A-Za-zÀ-ú][A-Za-zÀ-ú0-9 .\-()]{0,40}?)\s*(?:[:.]{1,}|\s{2,}|\s(?=[<>]?\s*-?\d))")
+# resultado em texto: o primeiro número da linha seria o da faixa de referência
+RESULTADO_EM_TEXTO = re.compile(r"(?i)\b(hemolis\w*|pendente\w*|n[ãa]o\s+reagente|reagente|coagulad\w*|"
+                                r"insuficiente|cancelad\w*|n[ãa]o\s+realizad\w*|inconclusiv\w*|aguardando|"
+                                r"em\s+andamento|lip[êe]mic\w*|ict[ée]ric\w*)\b")
+# unidade do laudo em outra escala que a UNIDADE fixa do bloco (o valor sairia 10× ou 1000× errado)
+OUTRA_ESCALA = {
+    "HB": r"g\s*/\s*l\b|mmol", "UR": r"m?mol|[µu]mol|mg\s*/\s*l\b", "CR": r"m?mol|[µu]mol|mg\s*/\s*l\b",
+    "PLAQ": r"x\s*10|10\s*\^|10\s*[³3]\s*/|mil\b", "LEUCO": r"x\s*10|10\s*\^|10\s*[³3]\s*/|mil\b",
+}
+
+
+def _br(numero):
+    """Decimal com ponto (1.7) vira vírgula (1,7), o padrão do BRIEFING; milhar (150.000) fica."""
+    return numero.replace(".", ",") if re.fullmatch(r"-?\d+\.\d{1,2}", numero) else numero
 
 
 def _chave(nome):
@@ -70,12 +85,21 @@ def extrair(texto):
         sigla = _chave(m.group(1))
         if not sigla:
             continue
+        em_texto = RESULTADO_EM_TEXTO.search(linha, m.end())
+        if em_texto:
+            avisos.append(f"lab: {sigla} com resultado em texto (\"{em_texto.group(0)}\"): sem valor, ler no PDF")
+            continue
         num = NUMERO.search(linha, m.end())
         if not num:
             avisos.append(f"lab: {sigla} sem número legível na linha \"{linha.strip()[:60]}\"")
             continue
-        valor = ((num.group(1) or "").replace(" ", "") + " " if num.group(1) else "") + num.group(2)
+        valor = ((num.group(1) or "").replace(" ", "") + " " if num.group(1) else "") + _br(num.group(2))
         valor = valor.strip()
+        resto = linha[num.end():].lstrip()
+        if sigla in OUTRA_ESCALA and re.match(OUTRA_ESCALA[sigla], resto, re.I):
+            avisos.append(f"lab: {sigla} {valor} com unidade \"{resto.split('  ')[0].strip()}\" no laudo (o bloco "
+                          f"escreve {UNIDADE[sigla]}): sem valor, ler no PDF")
+            continue
         if sigla in valores and valores[sigla] != valor:
             avisos.append(f"lab: {sigla} aparece com {valores[sigla]} e {valor} no laudo — ficou o primeiro")
             continue
@@ -95,7 +119,7 @@ def anteriores(linhas):
             nums = NUMERO.findall(m.group(2).split("(")[0])
             if sigla and nums:
                 ult = nums[-1]
-                ant[sigla] = ((ult[0] or "").replace(" ", "") + " " if ult[0] else "") + ult[1]
+                ant[sigla] = ((ult[0] or "").replace(" ", "") + " " if ult[0] else "") + _br(ult[1])
     return ant
 
 

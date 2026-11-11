@@ -64,6 +64,20 @@ Impressão / Problemas ativos:
         _, avisos = EA.ler(["texto solto"])
         self.assertTrue(any("nenhum leito" in a for a in avisos))
 
+    def test_txt_salvo_no_windows_nao_derruba(self):  # PENDENTE §2, conferido em 11/11/2026
+        with tempfile.TemporaryDirectory() as tmp:
+            arq = Path(tmp) / "evolucao.txt"
+            arq.write_bytes("LEITO 05\nExame físico:\nBEG, corado, hidratado\n".encode("cp1252"))
+            linhas = EA.linhas_do_arquivo(arq)
+        self.assertIn("Exame físico:", linhas)
+
+    def test_txt_utf8_com_bom_do_bloco_de_notas_le_o_primeiro_leito(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            arq = Path(tmp) / "evolucao.txt"
+            arq.write_bytes("LEITO 05\nExame físico:\nBEG\n".encode("utf-8-sig"))
+            linhas = EA.linhas_do_arquivo(arq)
+        self.assertEqual(linhas[0], "LEITO 05")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -281,12 +281,17 @@ def dado(leito, chave):
 
 def janelas(leito, meta, jan=None):
     """Títulos de CONTROLES e BALANÇO. Sem `janela_controles`/`janela_balanco` no bloco, saem da janela que o motor
-    conferiu (24 h = 07 - 05 h)."""
+    conferiu (24 h = 07 - 05 h). Se o motor rebaixou as 24 h pedidas (só noite, só dia), vale a dele e o texto do
+    bloco não passa por cima: a ficha não pode dizer 24 h com só um turno de dados (11/11/2026)."""
     f = leito["ficha"]
-    jan = jan or leito.get("janela") or meta.get("janela") or "24 h"
+    pedida = leito.get("janela") or meta.get("janela") or "24 h"
+    jan = jan or pedida
+    rebaixou = jan != "24 h" and re.fullmatch(r"24\s*h(oras)?", str(pedida).strip(), re.I)
     d = motor._data(meta.get("data"))
     padrao_c = f"{d:%d/%m}  ·  07 - 05 h" if jan == "24 h" and d else (jan if jan != "24 h" else "07 - 05 h")
     padrao_b = "07 - 05 h" if jan == "24 h" else jan
+    if rebaixou:
+        return padrao_c, padrao_b
     return f.get("janela_controles") or padrao_c, f.get("janela_balanco") or padrao_b
 
 
@@ -483,7 +488,7 @@ def col_acao(C, leito, n_anot):
     for it in f["vigiar"]:
         q = P(C, after=2.5)
         q.paragraph_format.left_indent = Cm(0.55); q.paragraph_format.first_line_indent = Cm(-0.55)
-        t(q, "☐  "); rk(q, it)
+        t(q, "□  "); rk(q, it)
     if f.get("exames"):
         sec(C, "EXAMES")
         for it in f["exames"]:
@@ -502,27 +507,27 @@ def linhas(cell, n):
 
 
 # ── exame físico (opção A, aprovada em 07/11/2026) ───────────────────────────────────────────────────────
-# 6 quadros por sistema, na ordem da evolução, para canetar à beira-leito: ☐ marca, ____ escreve.
+# 6 quadros por sistema, na ordem da evolução, para canetar à beira-leito: □ marca, ____ escreve.
 # Sem a faixa de bundle (FAST HUGS BID) no pé dos quadros: ele mandou tirar em 07/11/2026.
 EXAME = (
-    ("NEURO", ("RASS ____  alvo ____   CAM-ICU ☐ +  ☐ −",
-               "ECG ____   Pupilas ☐ iso  ☐ aniso  ☐ FR",
-               "Dor ____   Déficit focal ☐ não  ☐ sim")),
-    ("RESPIRATÓRIO", ("☐ AA  ☐ CN  ☐ VNI  ☐ CNAF  ☐ TOT/TQT",
+    ("NEURO", ("RASS ____  alvo ____   CAM-ICU □ +  □ −",
+               "ECG ____   Pupilas □ iso  □ aniso  □ FR",
+               "Dor ____   Déficit focal □ não  □ sim")),
+    ("RESPIRATÓRIO", ("□ AA  □ CN  □ VNI  □ CNAF  □ TOT/TQT",
                       "FiO2 ____  PEEP ____  Pplat ____  ΔP ____",
-                      "MV ____________   ☐ crep  ☐ sib  ☐ roncos")),
-    ("HEMODINÂMICA", ("Ritmo ☐ sinusal  ☐ FA  ____________",
-                      "TEC ____ s   Mottling ____   ☐ extrem. frias",
-                      "Bulhas ________________   ☐ sopro")),
+                      "MV ____________   □ crep  □ sib  □ roncos")),
+    ("HEMODINÂMICA", ("Ritmo □ sinusal  □ FA  ____________",
+                      "TEC ____ s   Mottling ____   □ extrem. frias",
+                      "Bulhas ________________   □ sopro")),
     ("RENAL · METABÓLICO", ("Diurese ____ ml/kg/h   BH acum. ________",
-                            "TRS ☐ não  ☐ sim  ____________",
-                            "Glicemia ____ a ____   ☐ hipo (< 70)")),
-    ("TGI · NUTRIÇÃO", ("Abdome ☐ flácido  ☐ distendido  ☐ doloroso",
-                        "RHA ☐ +  ☐ −   Evacuação última ______",
+                            "TRS □ não  □ sim  ____________",
+                            "Glicemia ____ a ____   □ hipo (< 70)")),
+    ("TGI · NUTRIÇÃO", ("Abdome □ flácido  □ distendido  □ doloroso",
+                        "RHA □ +  □ −   Evacuação última ______",
                         "Dieta ____ % da meta   Resíduo ____")),
     ("INFECTO · PELE", ("Tmáx ____   Foco ________________",
-                        "LPP ☐ não  ☐ sim  ________   Edema ____",
-                        "Mobilização ____   Panturrilhas ☐ livres")),
+                        "LPP □ não  □ sim  ________   Edema ____",
+                        "Mobilização ____   Panturrilhas □ livres")),
 )
 N_INTER = 6  # linhas de intercorrências ao lado do exame: em 10, 9,5 e 9 pt ficam mais baixas que os quadros
 N_INTER_COMPACTO = 4  # com o exame compacto: senão as intercorrências é que seguram a altura da faixa

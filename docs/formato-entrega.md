@@ -58,10 +58,10 @@ Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha
   (PP 46 kg): 276 - 368 ml`. Sem aferição de glicemia (Dx/HGT 6/6 h) e sem escala de correção (insulina
   "conforme Dx", G50% se Dx < 70): o gerador tira esses trechos (02/11/2026). Toda a prescrição sai sem os
   horários de administração ("=> 10-16-22-04"): droga, dose, via e frequência bastam; o gerador tira (02/11/2026).
-- Coluna 3 — PENDÊNCIAS (☐), EXAMES, ANOTAÇÕES / NOVOS EXAMES (linhas, quantas couberem).
+- Coluna 3 — PENDÊNCIAS (□), EXAMES, ANOTAÇÕES / NOVOS EXAMES (linhas, quantas couberem).
 - Faixa de baixo (07/11/2026, no lugar da grade CONTROLES DO PLANTÃO): EXAME FÍSICO sob as colunas 1 e 2, em 6
   quadros por sistema na ordem da evolução (NEURO, RESPIRATÓRIO, HEMODINÂMICA, RENAL · METABÓLICO, TGI · NUTRIÇÃO,
-  INFECTO · PELE), com ☐ para marcar e ____ para escrever, e a hora na faixa | INTERCORRÊNCIAS, CONDUTAS E PASSAGEM
+  INFECTO · PELE), com □ para marcar e ____ para escrever, e a hora na faixa | INTERCORRÊNCIAS, CONDUTAS E PASSAGEM
   sob a coluna 3 (6 linhas). Sem faixa de bundle (FAST HUGS BID) no pé dos quadros: ele mandou tirar.
 - Fora: subtítulos explicativos, rodapé de fontes, frase de comentário. Dúvida de leitura vai para o "Conferir" do chat.
 - Tamanho: corpo 10 pt. Em cada tamanho (10, depois 9,5, depois 9 pt) o ajuste corta primeiro as linhas de anotação

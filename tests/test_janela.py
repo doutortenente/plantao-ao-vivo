@@ -65,5 +65,30 @@ class Janela(unittest.TestCase):
         self.assertEqual(b["perda_total"], 920)  # caso real de 11/10: 70 × 4 + 80 × 8
 
 
+class FichaSegueAJanelaDoMotor(unittest.TestCase):
+    # docs/PENDENTE.md §2, conferido em 11/11/2026: o bloco `ficha` dizia "07 - 05 h" (24 h) e a ficha imprimia isso
+    # mesmo com o motor rebaixando para "19 - 05 h" por falta do diurno: o erro de 11/10/2026 voltando pela ficha.
+    def test_titulo_da_ficha_segue_o_rebaixamento_do_motor(self):
+        import json
+        import tempfile
+        sys.path.insert(0, str(RAIZ / "gerador"))
+        import ficha_cola
+        from docx import Document
+        from docx.oxml.ns import qn
+        dados = json.loads((RAIZ / "gerador" / "exemplo" / "plantao-exemplo.json").read_text(encoding="utf-8"))
+        l = dados["leitos"][0]
+        for serie in l["vitais"].values():  # tira o diurno: só sobra 19 a 05 h
+            if isinstance(serie, dict):
+                for h in [h for h in serie if 7 <= int(h) <= 18]:
+                    del serie[h]
+        self.assertIn("07 - 05 h", l["ficha"]["janela_controles"])  # o bloco continua dizendo 24 h
+        with tempfile.TemporaryDirectory() as tmp:
+            cola = Path(tmp) / "cola.docx"
+            ficha_cola.gerar(dados, cola, {})
+            texto = "".join(t.text or "" for t in Document(str(cola)).element.body.iter(qn("w:t")))
+        self.assertIn("19 - 05 h", texto)
+        self.assertNotIn("07 - 05 h", texto)
+
+
 if __name__ == "__main__":
     unittest.main()

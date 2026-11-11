@@ -118,6 +118,8 @@ def main():
             sys.exit("ERRO: cabeçalho fora do modelo ('LL - NOME' / 'ADMISSÃO UTI N - DD-MM-AA'); passe o nome .docx")
         destino.mkdir(parents=True, exist_ok=True)
         destino = destino / nome
+    import entrega  # a versão anterior (Word e PDF) vai para historico/, como na evolução
+    entrega.guardar_anterior(destino.parent, [destino.name, destino.with_suffix(".pdf").name])
     gerar(a.nota, destino, a.margem)
     erros, n = conferir_admissao(destino)
     print(destino)
