@@ -26,7 +26,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "idade_sexo": "36F",
     "dia_uti": "D4 UTI",                    // calculado se houver admissao_uti (diverge = aviso e vale a conta)
     "admissao_uti": "08/10/2026",           // dia da admissão = D1
-    "diagnostico": "Problema 1  ·  Problema 2",   // HD do cabeçalho da ficha (rótulo impresso HD:; fonte única)
+    "diagnostico": "Problema 1  ·  Problema 2",   // hipóteses diagnósticas: na ficha imprime HD: (não é vitais.Dx)
     "alergia": "Nega",                      // fonte única; != "nega" sai em CAIXA ALTA e negrito; sem saber: "?"
     "dieta": "geral VO",                    // vai na linha de balanço
     "peso": {"kg": 66, "altura_cm": 153, "fonte": "EcoTT", "data": "06/12/2025"},  // opcional; ver "Peso" abaixo
@@ -38,7 +38,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
       "PAS": [146, 126, "?", 122],          // aceito, mas sem hora o motor não confere a janela (aviso)
       "PAD": {"max": 94, "min": 71, "flag": 0},          // agregado: flag = nº de vezes no 1º limiar
       "TAX": {"max": 36.8, "min": 35.0, "flag": {"< 35,5": 3}},
-      "Dx": [255, 141, "< 20", 176]
+      "Dx": [255, 141, "< 20", 176]          // glicemia (rótulo Dx na grade de controles da ficha)
     },
     "sup_o2": "AA" ,                        // AA/cateter → (AA) no SpO2; VM → linha própria
     "ganhos": [{"nome": "dieta SNE", "serie": {"07": 100, "09": 100}}, {"nome": "soro EV", "ml": 500}],
@@ -144,7 +144,7 @@ Todo número de `lab` tem de estar em `laboratorio`, e o ATB da ficha tem de bat
   "janela_controles": "11/10  ·  07 - 23 h",      // padrão: "<data>  ·  07 - 05 h" (24 h) ou a janela do leito
   "janela_balanco": "07 - 18 h",                  // padrão: "07 - 05 h" (24 h) ou a janela do leito
   "alergia": "nega",                              // padrão: leito.alergia. Diferente do leito = ERRO na validação
-  "dx": "Problema 1  ·  Problema 2  ·  AP",       // padrão: leito.diagnostico → imprime HD: (aviso se diferente)
+  "dx": "Problema 1  ·  Problema 2  ·  AP",       // chave legada: mesmo texto que diagnostico; imprime HD:
   "disp": "TQT 06/10  ·  PICC MSD 15/09",         // padrão: leito.dispositivos (aviso se diferente)
   "infusoes": [["ATB", ["Meronem (meropenem) 1 g EV 8/8 h (D3, I: 09/10) => 14-22-06"]],  // INFUSÕES E TERAPIAS:
                ["VM", ["PCV  ·  PEEP 8  ·  FiO2 40%"]],
