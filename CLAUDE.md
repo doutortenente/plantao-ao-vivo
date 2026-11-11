@@ -19,7 +19,7 @@ Admissão de leito novo: só `skills/admissao-uti/SKILL.md` (não a `sasi-ingest
   24 h, impressão, plano. Sem identificação, HPMA, antecedentes, dispositivos ou exames antigos.
 - **Balanço = soma das células.** Rodapé da folha só confere; divergência no rodapé "Conferir".
 - **Ficha-cola**: modelo aprovado em 12/10/2026, `gerador/ficha_cola.py` (bloco `ficha` no JSON). 1 folha
-  paisagem por leito — conferir TODAS as páginas do PDF; mandar .docx + .pdf. Dx no cabeçalho; prescrição em 2 blocos
+  paisagem por leito — conferir TODAS as páginas do PDF; mandar .docx + .pdf. HD no cabeçalho; prescrição em 2 blocos
   (infusões/terapias + por sistemas); profilaxia só TEV/LAMG; texto curto, sem encheção. Embaixo, EXAME FÍSICO em 6
   quadros por sistema no lugar de CONTROLES DO PLANTÃO, sem faixa de bundle (07/11/2026).
 - **Fonte**: Times New Roman 10 em tudo; destaque só por negrito (rótulos, flags, alertas). Sem vermelho, sem cor.

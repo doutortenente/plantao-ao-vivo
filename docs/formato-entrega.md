@@ -36,13 +36,15 @@ Uma página por leito não é obrigatória na evolução (a regra de 1 folha é 
 Modelo aprovado em 12/10/2026 (plantão UTI 2 de 11/10). Gerador: `gerador/ficha_cola.py`, a partir do bloco
 `ficha` de cada leito (`gerador/schema-plantao.md`). 6 leitos = 6 folhas.
 
-- Cabeçalho: caixa `LEITO XX` | nome em destaque + idade/sexo + dia de UTI + peso com fonte e data (`66 kg (EcoTT,
-  06/12/2025)`, só quando o JSON traz `peso`); embaixo `Dx:` (problemas ativos separados por " · ") e `Disp.:`
+- Cabeçalho: caixa `LEITO XX` | nome em destaque; na linha seguinte (mesmo parágrafo, 9 pt) `D3 UTI`, `Idade:`,
+  `Sexo:`, `Peso:` e `Altura:` **sempre** (bloco `peso` do JSON, sem fonte/data no cabeçalho; ausente = `?`;
+  peso e altura independentes); depois `HD:` e `Disp.:`
   (dispositivo com data) | `ALERGIA:` em caixa preta, caixa alta e negrito, se houver (sem alergia: `Alergia: nega`,
   sem caixa) e turno/data.
   Diagnósticos ficam no cabeçalho, não em coluna própria.
 - Coluna 1 — CONTROLES: sinais vitais em grade de 2 colunas (PAS/FR, PAD/SpO2, PAM/TAX, FC), Máx - Mín, alerta
-  `[Nx<lim]` em negrito na mesma linha; Dx em linha própria; BALANÇO em grade (Ganhos — da conta do motor, já que a evolução não traz mais a ingesta —, Diurese, perdas, BH; com
+  `[Nx<lim]` em negrito na mesma linha; Dx (glicemia) em linha própria; BALANÇO em grade (Diurese, perdas, BH; sem
+  Ganhos; com
   peso, `Débito  0,38 ml/kg/h em 12 h  KDIGO 2`, flag em negrito; Evac.); LABORATÓRIO, um grupo por linha, e com
   peso a linha `ClCr 26 ml/min (Cockcroft-Gault)` do motor. Linha sim, linha não em cinza nos vitais, no balanço e
   no laboratório (guia de leitura — o Dr. é disléxico); flag e BH em caixinha (07/11/2026).
