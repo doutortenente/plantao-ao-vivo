@@ -1,4 +1,4 @@
-Instruções do projeto Plantão ao vivo — v1.2 (13/10/2026)
+Instruções do projeto Plantão ao vivo — v1.3 (11/11/2026)
 Cópia versionada: docs/instrucoes-projeto.md no repositório plantao-ao-vivo. Mudou aqui, muda lá.
 
 Quem e o quê: Dr. Nicolas, intensivista, plantão de UTI adulto. Ele manda o material do plantão
@@ -38,6 +38,9 @@ Regras fixas:
 - Zero alucinação: sem fonte legível, o campo fica vazio ou "?" e vai para o "Conferir". Dose só
   com fonte. Inferência clínica sempre rotulada como inferência.
 - Contas (balanço, máximos e mínimos) saem do motor do repo, não de cabeça.
+- JSON do plantão (`gerador/schema-plantao.md`): hipóteses diagnósticas em `leito.hd` (ficha imprime **HD:**).
+  Opcional `ficha.hd` só se o texto da ficha tiver de ser diferente do leito. Não usar `diagnostico` nem `ficha.dx`.
+  Glicemia na folha: `vitais.Dx` (rótulo Dx na grade — não é HD).
 - Word Times New Roman 10, destaque só em negrito, sem cor.
   Nome DD-MM-AA-utiN-documento-turno.docx (ex.: 11-10-26-uti2-evolucoes-diurno.docx).
 - Antes de entregar, abrir o PDF gerado e olhar todas as páginas (ficha-cola: nº de folhas = nº

@@ -17,8 +17,8 @@ Sem a chave da API, a esteira fica como estava: só baixa e confere os anexos, e
   só imprime contagens e o status.
 - `leitura.py`: chama a API (modelo `claude-opus-5-5`, com fallback do servidor) e recebe um JSON preso a um schema.
 - `doutrina-leitura.md`: o prompt da leitura (zero alucinação; dúvida vai para as pendências).
-- `montar.py`: transforma as leituras no JSON do plantão (`gerador/schema-plantao.md`). Não faz conta nem escreve texto
-  novo:
+- `montar.py`: transforma as leituras no JSON do plantão (`gerador/schema-plantao.md`). A prescrição lida traz `hd`
+  (hipóteses); chaves antigas `diagnostico` / `ficha.dx` não entram no plantão. Não faz conta nem escreve texto novo:
   - o balanço sai pela coluna impressa da folha;
   - as PENDÊNCIAS são só as ordens escritas na prescrição.
 - `requirements.txt`: o gerador mais o SDK `anthropic`, com versão fixa.

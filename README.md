@@ -23,6 +23,7 @@ correções listadas em `docs/DECISOES.md`.
 2. O Claude lê o material (skill `skills/plantao/SKILL.md`, doutrina em `skills/controles-vitais-janela/`), ou a
    página `extracao-web` exporta o JSON.
 3. O Claude monta um JSON no contrato `gerador/schema-plantao.md` com os números **crus** (células, séries).
+   Hipóteses diagnósticas: campo `hd` no leito (`vitais.Dx` continua sendo glicemia).
 4. O motor `skills/sasi-ingest-export/scripts/build_passagem.py` faz toda a conta e cruza a prescrição
    (`checagens.py`):
    - Máx - Mín, flags e balanço pela soma das células;

@@ -2,6 +2,8 @@
 
 O que ficou em aberto entre sessões. Quem continuar o trabalho lê isto primeiro e risca o que fechar.
 
+Estado em 11/11/2026: contrato JSON `hd` (fim de `diagnostico` / `ficha.dx`) na `main` — PR [#14](https://github.com/doutortenente/plantao-ao-vivo/pull/14).
+
 Estado em 21/10/2026: o PR [#2](https://github.com/doutortenente/plantao-ao-vivo/pull/2) entrou na `main`
 (commit `4db762b`). As etapas 1 a 20 do plano de 19/10 estão feitas, e as lentes de segurança e de esteira da
 revisão final estão corrigidas, com teste. O projeto do claude.ai já lê esta versão.
