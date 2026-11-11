@@ -11,9 +11,9 @@ Erros (o gerar_docx.py não gera):
   - item de balanço fora do dicionário do motor (CANON): sairia fora da conta e o BH ficaria errado;
   - "(revisar)" em qualquer texto que vai para o bloco ou para a ficha (`avisos` e `alertas` podem).
 Avisos (vão para o "Conferir"):
-  - "?" em texto livre, colado a número ("1?00 mg") ou no D do ATB ("D?"), e no cabeçalho (alergia, Dx, disp.);
+  - "?" em texto livre, colado a número ("1?00 mg") ou no D do ATB ("D?"), e no cabeçalho (alergia, HD, disp.);
   - PROFILAXIA com item que não é TEV/LAMG; item que não vai na ficha (colírio, pele…);
-  - Dx ou dispositivos diferentes entre leito e ficha; número do lab da ficha que não está em `laboratorio`;
+  - hipóteses ou dispositivos diferentes entre leito e ficha; número do lab da ficha que não está em `laboratorio`;
     ATB da ficha que não está nas terapias (e vice-versa);
   - setas na Impressão; plano sem linha de Profilaxias; menos itens de plano que problemas na Impressão;
   - pendências fora de 3 a 7; mais de 3 alertas.
@@ -35,7 +35,7 @@ META_OBRIGATORIO = ("unidade", "data", "turno", "data_prescricao")
 LEITO_OBRIGATORIO = ("leito", "nome", "idade_sexo", "dia_uti")
 FICHA_OBRIGATORIO = ("infusoes", "sistemas", "vigiar", "lab")
 # cabeçalho da ficha: no leito (fonte única) ou sobrescrito no bloco `ficha` (texto mais curto)
-CABECALHO = {"alergia": "alergia", "dx": "diagnostico", "disp": "dispositivos"}
+CABECALHO = {"alergia": "alergia", "hd": "diagnostico", "disp": "dispositivos"}
 
 # O que não vai para a ficha-cola (decisão de 11/10/2026): pele, colírios, lágrima, simeticona…
 CLASSES_FORA_DA_FICHA = {"SINTOMÁTICOS", "OFTALMO", "PELE", "TÓPICOS"}
@@ -101,7 +101,9 @@ def _tipos(leito, ficha, L):
         v = ficha.get(k)
         if v is not None and not (isinstance(v, list) and all(isinstance(x, str) for x in v)):
             erros.append(f"{L}: `ficha.{k}` tem de ser lista de textos")
-    for k in ("alergia", "dx", "disp", "janela_controles", "janela_balanco", "lab_titulo"):
+    if ficha.get("dx") is not None:
+        erros.append(f"{L}: `ficha.dx` foi renomeado para `ficha.hd` (hipóteses diagnósticas)")
+    for k in ("alergia", "hd", "disp", "janela_controles", "janela_balanco", "lab_titulo"):
         if ficha.get(k) is not None and not isinstance(ficha[k], str):
             erros.append(f"{L}: `ficha.{k}` tem de ser texto")
     return erros

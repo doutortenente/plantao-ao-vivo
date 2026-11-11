@@ -234,7 +234,7 @@ def droga(p, item):
 # ── dados do cabeçalho: uma fonte só ────────────────────────────────────────
 # alergia, HD (diagnóstico) e dispositivos moram no leito; o bloco `ficha` só sobrescreve
 # quando precisa de um texto mais curto. Divergência entre os dois vira erro/aviso no gerador/validar.py.
-CABECALHO = {"alergia": "alergia", "dx": "diagnostico", "disp": "dispositivos"}
+CABECALHO = {"alergia": "alergia", "hd": "diagnostico", "disp": "dispositivos"}
 
 
 def idade_sexo_ficha(txt):
@@ -591,7 +591,7 @@ def pagina(doc, meta, leito, n_anot, n_inter, primeiro, compacto=False):
     t(q, peso, tam=demo)
     t(q, "     Altura:  ", b=True, tam=demo)
     t(q, altura, tam=demo)
-    rk(rotulo_cabecalho(b, "HD", after=0), dado(leito, "dx"), tam=demo)
+    rk(rotulo_cabecalho(b, "HD", after=0), dado(leito, "hd"), tam=demo)
     rk(rotulo_cabecalho(b, "Disp.", after=1), dado(leito, "disp"), tam=demo)
     al = dado(leito, "alergia")
     q = P(c, True, 3)
