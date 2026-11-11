@@ -52,6 +52,36 @@ class RevisaoDe21Out(unittest.TestCase):
         self.assertEqual(labs.anteriores(["HB: 11,2 -> 10,8 g/dl | PLAQ: 210.000 -> 180.000 /mm3", "PCR: < 5 mg/l"]),
                          {"HB": "10,8", "PLAQ": "180.000", "PCR": "< 5"})
 
+    # docs/PENDENTE.md §2, conferido em 11/11/2026
+    def test_resultado_em_texto_nao_vira_o_numero_da_referencia(self):
+        valores, avisos = labs.extrair("Potássio      HEMOLISADO      3,5 a 5,1 mEq/L\n"
+                                       "Creatinina:   Pendente   (0,6 a 1,2)\n"
+                                       "Sódio   138 mEq/L\n")
+        self.assertNotIn("K", valores)
+        self.assertNotIn("CR", valores)
+        self.assertEqual(valores["NA"], "138")
+        self.assertTrue(any(a.startswith("lab: K ") and "HEMOLISADO" in a for a in avisos), avisos)
+        self.assertTrue(any(a.startswith("lab: CR ") and "Pendente" in a for a in avisos), avisos)
+
+    def test_decimal_com_ponto_nao_e_truncado(self):
+        valores, _ = labs.extrair("Creatinina: 1.7 mg/dl\npH 7.31\nBE -2.5\nPlaquetas: 150.000 /mm3\n")
+        self.assertEqual(valores["CR"], "1,7")
+        self.assertEqual(valores["pH"], "7,31")
+        self.assertEqual(valores["BE"], "-2,5")
+        self.assertEqual(valores["PLAQ"], "150.000")  # ponto de milhar continua milhar
+
+    def test_decimal_com_ponto_na_evolucao_anterior(self):
+        self.assertEqual(labs.anteriores(["CR: 1.7 mg/dl"]), {"CR": "1,7"})
+
+    def test_unidade_de_outra_escala_nao_sai_com_a_unidade_fixa(self):
+        # o bloco escreve g/dl, /mm3 e mg/dl fixos: "16,2 x10³/µL" sairia "LEUCO: 16,2 /mm3" (1000× menor)
+        valores, avisos = labs.extrair("Leucócitos: 16,2 x10³/µL\nHemoglobina: 108 g/L\nCreatinina: 150 µmol/L\n"
+                                       "Plaquetas: 180 mil/mm3\nHematócrito: 32 %\nUréia: 72 mg/dL\n")
+        for sigla in ("LEUCO", "HB", "CR", "PLAQ"):
+            self.assertNotIn(sigla, valores)
+            self.assertTrue(any(a.startswith(f"lab: {sigla} ") and "unidade" in a for a in avisos), (sigla, avisos))
+        self.assertEqual((valores["HT"], valores["UR"]), ("32", "72"))
+
 
 if __name__ == "__main__":
     unittest.main()
