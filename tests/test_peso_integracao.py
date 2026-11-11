@@ -25,7 +25,7 @@ META = {"unidade": "UTI 2", "data": "31/10/2026", "turno": "noturno", "janela": 
 HORAS = ["07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18"]
 NAIR = {
     "leito": "11", "nome": "Paciente Teste", "idade_sexo": "90F", "dia_uti": "D4 UTI",
-    "diagnostico": "AVCi", "alergia": "nega", "dispositivos": "TOT", "dieta": "SNE 40 ml/h",
+    "hd": "AVCi", "alergia": "nega", "dispositivos": "TOT", "dieta": "SNE 40 ml/h",
     "sup_o2": "VM em PCV, PEEP 6, FiO2 30%",
     "peso": {"kg": 66, "altura_cm": 153, "fonte": "EcoTT", "data": "06/12/2025"},
     "vitais": {"PAM": {"07": 81, "09": 89, "19": 95}},

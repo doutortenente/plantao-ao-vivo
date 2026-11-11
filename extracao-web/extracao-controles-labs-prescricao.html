@@ -978,7 +978,7 @@ function buildBed(P, jan, janTxt){
   });
   var sups = afs.map(function(a){ return a.suporte ? String(a.suporte).trim() : ""; }).filter(function(t){ return t && t !== "?"; });
   var leito = {leito: P.leito || "?", nome: nomes[0] || "?", idade_sexo: (String(idade).replace(/\D/g, "") + sexo.charAt(0)) || "?",
-    diagnostico: cab.diagnostico || "?", alergia: cab.alergia || "?", dieta: dieta || undefined,
+    hd: cab.diagnostico || "?", alergia: cab.alergia || "?", dieta: dieta || undefined,
     vitais: vitais, sup_o2: sups.length ? sups[sups.length - 1] : undefined, ganhos: ganhos, perdas: perdas,
     conferencia_enfermagem: Object.keys(conf).length ? conf : undefined, evacuacao: evac || undefined,
     outros_balanco: bics.length ? ["BIC: " + bics.join(" · ")] : undefined,
