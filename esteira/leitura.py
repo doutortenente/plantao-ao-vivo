@@ -72,7 +72,7 @@ SCHEMA = {
         rodape=_obj(ganhos_24h=_txt(), perdas_24h=_txt(), diurese_24h=_txt(), bh_24h=_txt()),
         evacuacao=_txt(), dieta=_txt(), pendencias=_lista(_txt())),
     "prescricao": _obj(
-        identificacao=IDENTIFICACAO, diagnostico=_txt(), alergias=_txt(), dispositivos=_txt(), dieta=_txt(),
+        identificacao=IDENTIFICACAO, hd=_txt(), alergias=_txt(), dispositivos=_txt(), dieta=_txt(),
         itens=_lista(_obj(nome=_txt(), dose=_txt(), via=_txt(), frequencia=_txt(), horarios=_txt(),
                           grupo=_enum(GRUPOS), inicio=_txt())),
         suspensos=_lista(_txt()), ordens=_lista(_txt()), pendencias=_lista(_txt())),

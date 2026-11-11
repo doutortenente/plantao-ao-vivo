@@ -26,7 +26,7 @@ const bal = Object.assign({}, ident, {
   rodape: { ganhos_24h: "1.836", perdas_24h: "680", diurese_24h: "660", bh_24h: "+ 1.156" },
 });
 const rx = Object.assign({}, ident, {
-  data_folha: "01/01/2026", pendencias: [], diagnostico: "PAC grave", alergias: "Dipirona", dieta_prescrita: "Enteral 50 ml/h",
+  data_folha: "01/01/2026", pendencias: [], hd: "PAC grave", alergias: "Dipirona", dieta_prescrita: "Enteral 50 ml/h",
   itens: [{ texto: "Tazocin — 4,5 g — EV — 6/6 h", bloco: "Infeccioso e Respiratório", revisar_ocr: true }],
   suspensos: [], procedimentos: [], recomendacoes: [], safety: "Nenhum risco imediato detectado com base nos dados fornecidos.",
 });

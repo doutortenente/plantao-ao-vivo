@@ -403,7 +403,7 @@ desc,
 "- evacuacao: episódios + quantidade + qualidade, ex.: 1x (++, pastosa). Legenda: P pastosa, L líquida, E endurecida, ME melena, SC sangue/coágulos; + pequena, ++ média, +++ grande. Sem registro legível: \"s/ registro legível\".",
 "",
 "REGRAS DO TIPO prescricao:",
-"- diagnostico, alergias, dieta_prescrita: como escritos; null se não constam.",
+"- hd (hipóteses diagnósticas), alergias, dieta_prescrita: como escritos; null se não constam.",
 "- itens: uma entrada por droga ATIVA. texto no formato \"Nome [se comercial, (genérico) ao lado] — dose — via — frequência/horário\". Vias: VO, EV, SNE, SNG, SC, IM, VR. Unidades: mg, mcg, g, mL, gts. Mantenha a vírgula decimal.",
 "- bloco: exatamente um destes nomes: " + BLOCOS.map(function(b){ return "\"" + b + "\""; }).join(", ") + ".",
 "  Cardiovascular e Hemodinâmica: anti-HAS, vasopressor, inotrópico, antiarrítmico, diurético. SNC e Psiquiatria: sedativo, opioide, anticonvulsivante, antipsicótico, antidepressivo. Gastrointestinal e Endócrino: procinético, laxante, antiemético, insulina, hormônio tireoidiano, hipoglicemiante. Infeccioso e Respiratório: ATB, antifúngico, antiviral, broncodilatador, corticoide, VNI. Hematológico e Profilaxias: antitrombótico, anticoagulante, antiagregante, protetor gástrico. Nutrição, Eletrólitos e Soluções: dieta enteral/parenteral, vitamina, soroterapia, reposição de eletrólito. Sintomáticos e Se Necessário (SN): analgésico simples, antitérmico, qualquer droga ACM ou SN.",
@@ -422,7 +422,7 @@ desc,
 "  \"afericoes\": [{\"hora\": texto, \"t\": texto|null, \"fr\": texto|null, \"fc\": texto|null, \"pa\": [{\"pas\": texto|null, \"pad\": texto|null, \"pam\": texto|null}], \"dx\": texto|null, \"spo2\": texto|null, \"suporte\": texto|null}],",
 "  \"dieta\": texto|null, \"balanco\": [{\"coluna\": texto, \"rotulo\": texto|null, \"celulas\": [{\"hora\": texto, \"ml\": texto}]}],",
 "  \"rodape\": {\"ganhos_24h\": texto|null, \"perdas_24h\": texto|null, \"diurese_24h\": texto|null, \"bh_24h\": texto|null}, \"evacuacao\": texto|null,",
-"  \"diagnostico\": texto|null, \"alergias\": texto|null, \"dieta_prescrita\": texto|null, \"itens\": [{\"texto\": texto, \"bloco\": texto, \"revisar_ocr\": booleano}], \"suspensos\": [texto], \"procedimentos\": [texto], \"recomendacoes\": [texto], \"safety\": texto|null,",
+"  \"hd\": texto|null, \"alergias\": texto|null, \"dieta_prescrita\": texto|null, \"itens\": [{\"texto\": texto, \"bloco\": texto, \"revisar_ocr\": booleano}], \"suspensos\": [texto], \"procedimentos\": [texto], \"recomendacoes\": [texto], \"safety\": texto|null,",
 "  \"exames\": [{\"nome\": texto, \"unidade\": texto|null, \"serie\": [{\"data\": texto|null, \"valor\": texto}]}],",
 "  \"pendencias\": [texto]",
 "}]}"
@@ -910,7 +910,7 @@ function buildBed(P, jan, janTxt){
   if (labs.length){ L.push("Laboratório:"); labs.forEach(function(s){ L.push(s); }); L.push(""); }
 
   /* prescrição */
-  var cab = {diagnostico: null, alergia: null}, prescLida = {};
+  var cab = {hd: null, alergia: null}, prescLida = {};
   if (P.presc.length){
     function pf(key, rot){
       var r = firstVal(P.presc, key);
@@ -918,10 +918,10 @@ function buildBed(P, jan, janTxt){
       return r.v;
     }
     L.push("Prescrição do dia:");
-    L.push("DIAGNÓSTICO IDENTIFICADO: " + (pf("diagnostico", "diagnóstico") || "(não consta na imagem)"));
+    L.push("HD: " + (pf("hd", "HD") || "(não consta na imagem)"));
     L.push("ALERGIAS: " + (pf("alergias", "alergias") || "(não consta)"));
     L.push("DIETA: " + (pf("dieta_prescrita", "dieta") || "(não consta)"));
-    cab.diagnostico = firstVal(P.presc, "diagnostico").v; cab.alergia = firstVal(P.presc, "alergias").v;
+    cab.hd = firstVal(P.presc, "hd").v; cab.alergia = firstVal(P.presc, "alergias").v;
     var porBloco = {}, semBloco = [], susp = [], proc = [], rec = [], safety = [];
     BLOCOS.forEach(function(b){ porBloco[b] = []; });
     P.presc.forEach(function(pc){
@@ -978,7 +978,7 @@ function buildBed(P, jan, janTxt){
   });
   var sups = afs.map(function(a){ return a.suporte ? String(a.suporte).trim() : ""; }).filter(function(t){ return t && t !== "?"; });
   var leito = {leito: P.leito || "?", nome: nomes[0] || "?", idade_sexo: (String(idade).replace(/\D/g, "") + sexo.charAt(0)) || "?",
-    hd: cab.diagnostico || "?", alergia: cab.alergia || "?", dieta: dieta || undefined,
+    hd: cab.hd || "?", alergia: cab.alergia || "?", dieta: dieta || undefined,
     vitais: vitais, sup_o2: sups.length ? sups[sups.length - 1] : undefined, ganhos: ganhos, perdas: perdas,
     conferencia_enfermagem: Object.keys(conf).length ? conf : undefined, evacuacao: evac || undefined,
     outros_balanco: bics.length ? ["BIC: " + bics.join(" · ")] : undefined,

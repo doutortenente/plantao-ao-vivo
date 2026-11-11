@@ -264,7 +264,7 @@ class Montar(unittest.TestCase):
 
     def test_cabecalho_sem_fonte_vira_interrogacao(self):
         def mudar(d):
-            d["prescricao"]["diagnostico"] = None  # chave da leitura; no JSON do leito vira hd
+            d["prescricao"]["hd"] = None
             d["prescricao"]["dispositivos"] = None
         _, l, _ = self.montado(mudar)
         self.assertEqual((l["hd"], l["dispositivos"]), ("?", "?"))

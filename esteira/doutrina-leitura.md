@@ -67,7 +67,7 @@ PRESCRIÇÃO MÉDICA:
 - Anotação à mão de suspender, riscado ou X: a droga sai de "itens" e entra em "suspensos". "Modificado para": use a
   versão modificada.
 - "ordens": cuidados e solicitações escritos na prescrição (coletas, exames, cabeceira, curativo), como escritos.
-- "diagnostico" na leitura da prescrição vira `hd` no JSON do leito; "alergias", "dispositivos": como escritos.
+- "hd" (hipóteses diagnósticas da prescrição), "alergias", "dispositivos": como escritos.
 
 LABORATÓRIO (laudo escaneado ou anotação à mão):
 
