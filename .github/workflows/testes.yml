@@ -30,6 +30,20 @@ jobs:
           sudo apt-get install -y -q --no-install-recommends libreoffice-writer poppler-utils fonts-liberation
           pip install -r esteira/requirements.txt
 
+      - name: Diagnóstico LibreOffice (temporário, ramo diag)
+        run: |
+          soffice --version
+          fc-match "Times New Roman"; fc-match "Liberation Serif"
+          python diag/lo26.py saida-diag
+
+      - name: Diagnóstico (artefato)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diag-lo26
+          path: saida-diag/
+          if-no-files-found: ignore
+
       - name: Testes
         run: python -m unittest discover -s tests -v
 
