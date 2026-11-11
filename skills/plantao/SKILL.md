@@ -57,7 +57,7 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
 5. **JSON do plantão.** Montar um arquivo no contrato `gerador/schema-plantao.md`, com:
    vitais (séries), células de balanço, laboratório, terapias, exame físico (copiado da evolução anterior), eventos
    24 h, impressão, plano, até 3 alertas para o chat e o bloco `ficha` de cada leito (obrigatório: hipóteses
-   diagnósticas (`diagnostico` no leito — na ficha imprime **HD:**), dispositivos, alergia, prescrição em
+   diagnósticas (campo JSON `hd` no leito — na ficha imprime **HD:**), dispositivos, alergia, prescrição em
    infusões/terapias + por sistemas, 3 a 7 pendências tiradas do plano, exames e lab).
    Cabeçalho da ficha-cola (gerador): `Idade`/`Sexo` legíveis a partir de `idade_sexo`; `Peso`/`Altura` sempre
    (bloco `peso`, sem fonte/data no cabeçalho; ver `docs/formato-entrega.md`). Balanço da ficha sem Ganhos.

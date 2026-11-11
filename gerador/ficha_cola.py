@@ -234,7 +234,7 @@ def droga(p, item):
 # ── dados do cabeçalho: uma fonte só ────────────────────────────────────────
 # alergia, HD (diagnóstico) e dispositivos moram no leito; o bloco `ficha` só sobrescreve
 # quando precisa de um texto mais curto. Divergência entre os dois vira erro/aviso no gerador/validar.py.
-CABECALHO = {"alergia": "alergia", "hd": "diagnostico", "disp": "dispositivos"}
+CABECALHO = {"alergia": "alergia", "hd": "hd", "disp": "dispositivos"}
 
 
 def idade_sexo_ficha(txt):

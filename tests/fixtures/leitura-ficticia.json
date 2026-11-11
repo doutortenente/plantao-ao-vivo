@@ -420,7 +420,7 @@
    "unidade": "UTI ADULTO 2",
    "data": "01/01/2026"
   },
-  "diagnostico": "PAC grave · Choque séptico",
+  "hd": "PAC grave · Choque séptico",
   "alergias": "Dipirona",
   "dispositivos": "CVC VJID 01/01 · SVD 30/12",
   "dieta": "Enteral 50 ml/h SNE",

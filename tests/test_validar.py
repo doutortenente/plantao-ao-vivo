@@ -24,9 +24,9 @@ class Validar(unittest.TestCase):
         self.assertEqual(V.validar(EXEMPLO), ([], []))
 
     def test_campo_obrigatorio(self):
-        erros, _ = com(lambda l, d: (l["ficha"].pop("lab"), l.pop("diagnostico"), d["meta"].pop("data_prescricao")))
+        erros, _ = com(lambda l, d: (l["ficha"].pop("lab"), l.pop("hd"), d["meta"].pop("data_prescricao")))
         self.assertIn("L99: falta `ficha.lab`", erros)
-        self.assertIn("L99: falta `diagnostico` (ou `ficha.hd`)", erros)
+        self.assertIn("L99: falta `hd` (ou `ficha.hd`)", erros)
         self.assertIn("meta: falta `data_prescricao`", erros)
 
     def test_alergia_divergente_e_erro(self):
@@ -34,8 +34,12 @@ class Validar(unittest.TestCase):
         erros, _ = com(lambda l, d: l["ficha"].__setitem__("alergia", "nega"))
         self.assertTrue(any("alergia diverge" in e for e in erros))
 
+    def test_diagnostico_no_leito_e_erro(self):
+        erros, _ = com(lambda l, d: l.__setitem__("diagnostico", "PAC"))
+        self.assertTrue(any("`diagnostico` foi renomeado para `hd`" in e for e in erros))
+
     def test_ficha_dx_antigo_e_erro(self):
-        erros, _ = com(lambda l, d: l["ficha"].__setitem__("dx", l["diagnostico"]))
+        erros, _ = com(lambda l, d: l["ficha"].__setitem__("dx", l["hd"]))
         self.assertTrue(any("ficha.dx` foi renomeado" in e for e in erros))
 
     def test_copias_divergentes_sao_aviso(self):
@@ -46,7 +50,7 @@ class Validar(unittest.TestCase):
             l["ficha"]["infusoes"][i] = ["ATB", ["Rocefin (ceftriaxona) 2 g EV 1x/dia (D2, I: 31/12)"]]
         _, avisos = com(mudar)
         txt = "\n".join(avisos)
-        self.assertIn("diagnostico diverge", txt)
+        self.assertIn("hd diverge", txt)
         self.assertIn("12,1", txt)
         self.assertIn("ATB da ficha (ceftriaxona, rocefin) não bate", txt)
 
@@ -92,7 +96,7 @@ class RevisaoDe19Out(unittest.TestCase):
         self.assertTrue(any("`data` tem de ser dd/mm/aaaa" in e for e in erros), erros)
 
     def test_tipos_errados_sao_erro_e_nao_quebram(self):
-        for mudar, trecho in ((lambda l, d: l.__setitem__("diagnostico", ["PAC", "Choque"]), "`diagnostico` tem de ser texto"),
+        for mudar, trecho in ((lambda l, d: l.__setitem__("hd", ["PAC", "Choque"]), "`hd` tem de ser texto"),
                               (lambda l, d: l.__setitem__("alergia", ["Dipirona"]), "`alergia` tem de ser texto"),
                               (lambda l, d: l.__setitem__("leito", 5), "`leito` tem de ser texto"),
                               (lambda l, d: l["ficha"]["sistemas"].append(["SN", "Zofran 8 mg EV"]), "`ficha.sistemas`"),

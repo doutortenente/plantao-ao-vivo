@@ -362,7 +362,7 @@ def montar(leituras, contexto):
     idade = (re.match(r"\D*(\d{1,3})", primeiro("idade") or "") or [None, ""])[1]  # "68a 3m" → 68
     sexo = (primeiro("sexo") or "")[:1].upper()
     cabecalho = {}
-    for campo, chave in (("diagnostico", "diagnostico"), ("alergias", "alergia"), ("dispositivos", "dispositivos")):
+    for campo, chave in (("hd", "hd"), ("alergias", "alergia"), ("dispositivos", "dispositivos")):
         v = limpar(rx.get(campo), avisos, "prescrição")
         if not v:
             avisos.append(f"{chave}: não consta na prescrição: ficou \"?\"")

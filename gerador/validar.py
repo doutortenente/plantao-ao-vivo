@@ -35,7 +35,7 @@ META_OBRIGATORIO = ("unidade", "data", "turno", "data_prescricao")
 LEITO_OBRIGATORIO = ("leito", "nome", "idade_sexo", "dia_uti")
 FICHA_OBRIGATORIO = ("infusoes", "sistemas", "vigiar", "lab")
 # cabeçalho da ficha: no leito (fonte única) ou sobrescrito no bloco `ficha` (texto mais curto)
-CABECALHO = {"alergia": "alergia", "hd": "diagnostico", "disp": "dispositivos"}
+CABECALHO = {"alergia": "alergia", "hd": "hd", "disp": "dispositivos"}
 
 # O que não vai para a ficha-cola (decisão de 11/10/2026): pele, colírios, lágrima, simeticona…
 CLASSES_FORA_DA_FICHA = {"SINTOMÁTICOS", "OFTALMO", "PELE", "TÓPICOS"}
@@ -55,7 +55,7 @@ PROFILAXIA_TEV_LAMG = re.compile(
 SETAS = re.compile(r"[↑↓→]|(?<![<>=!])=(?![=>])")
 DUVIDA = re.compile(r"(?<![\w])\?(?![\w])|\d\?|\?\d|\bD\?")  # "?" sozinho, colado a número, ou "D?"
 DATA = re.compile(r"^\s*\d{2}/\d{2}/\d{4}\s*$")
-TEXTO = ("leito", "nome", "idade_sexo", "dia_uti", "alergia", "diagnostico", "dispositivos", "dieta", "sup_o2",
+TEXTO = ("leito", "nome", "idade_sexo", "dia_uti", "alergia", "hd", "dispositivos", "dieta", "sup_o2",
          "evacuacao", "admissao_uti", "iniciais", "janela")
 LISTA = ("laboratorio", "terapias", "exame_fisico", "evolucao", "impressao", "conduta", "alertas", "avisos",
          "outros_balanco", "plano_anterior")
@@ -303,6 +303,8 @@ def validar_leito(leito, meta):
     for k in FICHA_OBRIGATORIO:
         if k not in ficha:
             erros.append(f"{L}: falta `ficha.{k}`")
+    if leito.get("diagnostico") is not None:
+        erros.append(f"{L}: `diagnostico` foi renomeado para `hd` (hipóteses diagnósticas)")
     tipo = _tipos(leito, ficha, L)
     if tipo:
         return erros + tipo, avisos  # o resto das checagens supõe os tipos certos
@@ -326,7 +328,7 @@ def validar_leito(leito, meta):
         for txt in _textos(valor):
             if "(revisar)" in txt.lower():
                 erros.append(f"{L}: \"(revisar)\" em `{campo}`: dúvida vai para o Conferir, nunca para o bloco")
-    for campo in ("alergia", "diagnostico", "dispositivos", "dia_uti", "laboratorio", "terapias", "exame_fisico",
+    for campo in ("alergia", "hd", "dispositivos", "dia_uti", "laboratorio", "terapias", "exame_fisico",
                   "evolucao", "impressao", "conduta", "ficha", "sup_o2", "dieta", "outros_balanco", "evacuacao"):
         for txt in _textos(leito.get(campo, [])):
             if DUVIDA.search(txt):

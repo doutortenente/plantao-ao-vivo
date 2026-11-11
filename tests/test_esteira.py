@@ -264,9 +264,10 @@ class Montar(unittest.TestCase):
 
     def test_cabecalho_sem_fonte_vira_interrogacao(self):
         def mudar(d):
-            d["prescricao"]["diagnostico"] = None; d["prescricao"]["dispositivos"] = None
+            d["prescricao"]["hd"] = None
+            d["prescricao"]["dispositivos"] = None
         _, l, _ = self.montado(mudar)
-        self.assertEqual((l["diagnostico"], l["dispositivos"]), ("?", "?"))
+        self.assertEqual((l["hd"], l["dispositivos"]), ("?", "?"))
 
     def test_colirio_sai_da_ficha(self):
         _, l, _ = self.montado()
