@@ -28,7 +28,8 @@ lugar deles, na mesma linha: "Sup O2: ..." logo depois do Dx (SÓ se VM; nunca s
 (fonte, dd/mm/aaaa) | Altura: ... cm | Peso predito: ... kg (VC 6 - 8 ml/kg: ... - ... ml)" antes da Dieta;
 "Débito urinário: ... ml/kg/h em N h [KDIGO n pelo débito]" depois da Diurese; outras perdas (dreno, SNG,
 resíduo); e as bombas, "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 => 2 ml/h (0,05 => 0,03 mcg/kg/min)", antes
-do BH. Peso, débito e bombas são do motor. Sem "Ingesta hídrica" no bloco: os ganhos ficam só na ficha-cola.)
+do BH. Peso, débito e bombas são do motor. Sem "Ingesta hídrica" no bloco evolução; a grade de balanço da
+ficha-cola também não traz Ganhos (11/11/2026).)
 
 ## Laboratório:
 HB: v1 => v2 g/dl | HT: v1 => v2 % | PLAQ: v1 => v2 /mm3

@@ -26,7 +26,7 @@ Campo sem fonte → omitido. Ilegível → `"?"` dentro da série.
     "idade_sexo": "36F",
     "dia_uti": "D4 UTI",                    // calculado se houver admissao_uti (diverge = aviso e vale a conta)
     "admissao_uti": "08/10/2026",           // dia da admissão = D1
-    "diagnostico": "Problema 1  ·  Problema 2",   // Dx do cabeçalho da ficha (fonte única)
+    "diagnostico": "Problema 1  ·  Problema 2",   // HD do cabeçalho da ficha (rótulo impresso HD:; fonte única)
     "alergia": "Nega",                      // fonte única; != "nega" sai em CAIXA ALTA e negrito; sem saber: "?"
     "dieta": "geral VO",                    // vai na linha de balanço
     "peso": {"kg": 66, "altura_cm": 153, "fonte": "EcoTT", "data": "06/12/2025"},  // opcional; ver "Peso" abaixo
@@ -131,6 +131,9 @@ validar: ficaria fora da conta e o BH sairia errado.
 ## Bloco `ficha` (ficha-cola, modelo aprovado em 12/10/2026)
 
 Um por leito, obrigatório. Sem ele o gerador para com erro (a ficha-cola antiga foi aposentada em 19/10/2026).
+Cabeçalho impresso (não vem no bloco `ficha`): dia de UTI, Idade/Sexo, Peso e Altura na linha sob o nome
+(valores de `idade_sexo` e do bloco `peso`; peso/altura independentes; sem fonte/data no papel), rótulo **HD:**
+(a partir de `diagnostico` / `ficha.dx`) e `Disp.`. Grade de balanço na ficha: sem linha Ganhos (11/11/2026).
 Texto curto, sem frase explicativa. `**negrito**` só para alerta (dose divergente, item suspenso, valor crítico).
 Todo número de `lab` tem de estar em `laboratorio`, e o ATB da ficha tem de bater com o das terapias
 (gerador/validar.py avisa).
@@ -141,7 +144,7 @@ Todo número de `lab` tem de estar em `laboratorio`, e o ATB da ficha tem de bat
   "janela_controles": "11/10  ·  07 - 23 h",      // padrão: "<data>  ·  07 - 05 h" (24 h) ou a janela do leito
   "janela_balanco": "07 - 18 h",                  // padrão: "07 - 05 h" (24 h) ou a janela do leito
   "alergia": "nega",                              // padrão: leito.alergia. Diferente do leito = ERRO na validação
-  "dx": "Problema 1  ·  Problema 2  ·  AP",       // padrão: leito.diagnostico (aviso se diferente)
+  "dx": "Problema 1  ·  Problema 2  ·  AP",       // padrão: leito.diagnostico → imprime HD: (aviso se diferente)
   "disp": "TQT 06/10  ·  PICC MSD 15/09",         // padrão: leito.dispositivos (aviso se diferente)
   "infusoes": [["ATB", ["Meronem (meropenem) 1 g EV 8/8 h (D3, I: 09/10) => 14-22-06"]],  // INFUSÕES E TERAPIAS:
                ["VM", ["PCV  ·  PEEP 8  ·  FiO2 40%"]],
