@@ -22,10 +22,9 @@ Quem chama é o Hermes, pela skill `exames-lab`.
 | Banco | `Gravar valores`, `Gravar laudos` | Tabelas do n8n `exames_valores` (um valor por linha) e `exames_laudos` (um laudo por linha). |
 | Resposta | `Valores da internação`, `Montar resposta` | Monta a resposta com o `montar_resposta.js`. |
 
-**Banco de dados.** São tabelas internas do n8n ("Data table"), que ficam no próprio PC, em
-`~/.local/state/n8n/database.sqlite`. Não precisam de senha nova e não mandam dado de paciente para serviço de fora.
-Supabase (projeto antigo do SASI) e MongoDB (acesso por IA desligado e sem credencial no n8n) ficaram de fora.
-Airtable é proibido para dado de paciente.
+**Banco de dados.** São tabelas internas do n8n ("Data table"), gravadas no próprio PC, em
+`~/.local/state/n8n/database.sqlite`, sem credencial nova. Supabase (projeto antigo do SASI) e MongoDB (acesso por IA
+desligado e sem credencial no n8n) ficaram de fora.
 
 ## Leitor (`ler_laudo.js`)
 

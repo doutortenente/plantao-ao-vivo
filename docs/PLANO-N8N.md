@@ -4,9 +4,6 @@ Objetivo: o plantão sai do jeito que está descrito no `CLAUDE.md` (entrada →
 mensagem), mas quem dispara e liga as peças é o n8n. O Hermes executa as etapas que precisam do PC. Os arquivos
 ficam sincronizados com o OneDrive.
 
-Regra fixa: dado de paciente só circula entre o PC, o OneDrive dele e o site do laboratório. Nada vai para o
-Airtable, nada vai para o repositório público e nada vai na URL de nenhuma chamada.
-
 ## Onde cada coisa roda (medido em 12/11/2026)
 
 | Peça | Onde | Por quê |
