@@ -75,7 +75,8 @@ class Doutrina(unittest.TestCase):
                                       check=True).stdout.split()
         except (OSError, subprocess.CalledProcessError):
             self.skipTest("sem git")
-        permitidos = ("gerador/exemplo/", "skills/sasi-ingest-export/assets/", "tests/fixtures/")
+        # n8n/: definição de fluxo exportada (sem dado de paciente), não é plantão
+        permitidos = ("gerador/exemplo/", "skills/sasi-ingest-export/assets/", "tests/fixtures/", "n8n/")
         dados = [a for a in arquivos if re.search(r"\.(json|docx|pdf)$", a) and not a.startswith(permitidos)]
         self.assertEqual(dados, [], "JSON/Word/PDF de plantão versionado (só exemplos fictícios)")
 

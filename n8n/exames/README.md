@@ -7,7 +7,7 @@ O fluxo do n8n "Exames - Banco de Resultados" faz o seguinte:
 3. lê todos os laudos desde a admissão;
 4. devolve cada valor preso à **data da coleta**, nunca à data da liberação.
 
-Quem chama é o Hermes, pela skill `exames-lab`.
+Quem chama é o Hermes, pela skill `skills/exames-lab/SKILL.md` deste repositório.
 
 ## Como funciona
 

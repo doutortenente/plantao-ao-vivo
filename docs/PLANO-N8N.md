@@ -17,7 +17,7 @@ ficam sincronizados com o OneDrive.
 
 ### 1. Exames de laboratório: feito (12/11/2026)
 
-Fluxo "Exames - Banco de Resultados", tabelas `exames_valores` e `exames_laudos`, skill `exames-lab` do Hermes.
+Fluxo "Exames - Banco de Resultados", tabelas `exames_valores` e `exames_laudos`, skill `skills/exames-lab/SKILL.md`.
 Pendências na seção 8 do `docs/PENDENTE.md`.
 
 ### 2. Sincronizar `entrada/` e `saida/` com o OneDrive (rclone)

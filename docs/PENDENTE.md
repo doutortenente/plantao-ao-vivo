@@ -99,7 +99,7 @@ exemplo e passa.
 Feito: o fluxo "Exames - Banco de Resultados" (detalhes em `n8n/exames/README.md`).
 - Está publicado e só aceita chamada do próprio PC; de fora, devolve 403.
 - Guarda tudo nas tabelas do n8n e lê só laudo novo.
-- O Hermes chama pela skill `exames-lab`.
+- O Hermes chama pela skill `skills/exames-lab/SKILL.md`.
 - O leitor foi calibrado em 227 laudos reais. O plano do resto está em `docs/PLANO-N8N.md`.
 
 - [ ] Ligar o fluxo no passo a passo do plantão (`skills/plantao`):

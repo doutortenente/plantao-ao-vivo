@@ -66,6 +66,9 @@ skills/
   hemodinamica-calculada/       calculadora hemodinâmica por eco (scripts/calc_hemo.py)
   admissao-uti/                 nota de admissão
   analise-ecott/                leitura de ecocardiograma
+  exames-lab/                   Hermes chama o fluxo n8n de exames (labs da internação, presos à data da coleta)
+n8n/
+  exames/                       fluxo "Exames - Banco de Resultados": leitor do laudo, resposta, fluxo exportado
 gerador/
   gerar_docx.py                 gera evolução + ficha-cola (chama validar, conferir e entrega)
   ficha_cola.py                 a ficha-cola (modelo de 12/10/2026) e o ajuste em 1 folha
