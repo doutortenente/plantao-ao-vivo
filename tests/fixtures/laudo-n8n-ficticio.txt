@@ -1,0 +1,147 @@
+Instituto de Biomedicina do ABC
+Análises Clínicas, Citopatologia, Teste de DNA e Pesquisa Clínicas.
+Paciente: PACIENTE FICTÍCIO DA SILVA
+Idade
+70 (A)
+Local Coleta
+UTI-9
+RESULTADO
+UREIA 40,0
+mg/dL
+Método : Enzimático
+Material de Coleta : Sangue
+Amostra :
+Soro
+V.R. : 15 a 45 mg/dL
+Comentário: * Atenção: Novos valores de referência a partir de 13/05/2025
+Data da Coleta: 10/01/2030 00:20:00 Resultado liberado em: 10/01/2030 03:00:00
+CREATININA 1,3
+mg/dL
+Método :
+Jaffé modificado
+Material de Coleta : Sangue
+Amostra : Soro
+V.R. : 0,4 a 1,4 mg/dL
+Data da Coleta: 10/01/2030 00:20:00 Resultado liberado em: 10/01/2030 03:00:00
+POTASSIO 4,1 mmol/L
+Material de Coleta : Sangue
+Amostra : Soro
+Método : Eletrodo Seletivo
+V.R. : 3,50 a 5,50
+Data da Coleta: 10/01/2030 00:20:00 Resultado liberado em: 10/01/2030 03:00:00
+CÁLCIO IÔNICO 0,30 mmol/L
+Material de Coleta : Sangue
+Amostra : Soro
+Método : Eletrodo Seletivo
+V.R. : 1 - 18 anos..: 1,20 a 1,38 mmol/L
+Adultos......: 1,15 a 1,35 mmol/L
+Observação: MAQUINA
+Data da Coleta: 10/01/2030 00:20:00 Resultado liberado em: 10/01/2030 03:00:00
+Os valores dos testes de laboratórios sofrem influência de estados fisiológicos, uso de medicamentos, incluindo regime alimentar e/ou
+tempode jejum. Somente um profissional qualificado tem condições de interpretar corretamente estes resultados.
+Folha: 1 de 2
+Dra. Responsável Fictícia - CRBM: 00000 (Resp. Técnico) Laudo liberado eletronicamente
+
+Instituto de Biomedicina do ABC
+Paciente: PACIENTE FICTÍCIO DA SILVA
+RESULTADO
+HEMOGRAMA
+Valores de Referência
+Eritrograma
+MULHER HOMEM
+Hemácias em milhões: 3,10
+milh/mm
+3
+( 3,9 - 5,0) (4,3 - 5,7)
+Hemoglobina .......: 9,30
+g/dL (12,0 - 15,5) (13,5 - 17,5)
+Hematócrito .......: 27,90
+% (35,0 - 45,0) (39,0 - 50,0)
+Leucograma
+Leucócitos ........: 10.300
+/mm
+3
+(3500 - 10500)
+Bastonetes ........: 2
+% 0 - 5
+206
+/mm
+3
+(0 - 105)
+Segmentados .......: 81
+% (54 - 62%)
+8.343
+/mm
+3
+(1890 - 6510)
+Plaquetas
+Plaquetas .........: 250.000
+/mm
+3
+150.000 - 450.000
+Material de Coleta : SANGUE TOTAL EDTA
+Amostra :SANGUE TOTAL EDTA
+Método : Impedância elétrica e Dispersão a laser
+Data da Coleta: 10/01/2030 00:20:00 Resultado liberado em: 10/01/2030 02:10:00
+GASOMETRIA STAT
+SERINGA
+pH
+:
+7,456
+pCO2 :
+34,2
+mmHg
+Lac
+:
+2,7
+mmol/L
+CALCULADO
+HCO3
+:
+24,3
+mmol/L
+BE-ecf
+:
+-3,2
+mmol/L
+SO2% : 96,2
+Valores de Referência
+Parâmetros Arterial Venoso
+pH 7,35 - 7,45 7,31 - 7,41
+Data da Coleta: 10/01/2030 05:40:00 Resultado liberado em: 10/01/2030 05:50:00
+TEMPO DE ATIVIDADE DA PROTROMBINA
+Tempo de Protrombina
+:
+13.7
+seg.
+INR
+:
+1.03
+Material de Coleta : Sangue
+Amostra : Plasma
+Método : Coagulométrico
+Data da Coleta: 10/01/2030 00:20:00 Resultado liberado em: 10/01/2030 02:47:19
+PROTEÍNA C REATIVA 12,50
+Material de Coleta : Sangue
+Amostra : Soro
+Método : Turbidimetria
+V.R. : INFERIOR A 6,0 mg/L
+Data da Coleta: 09/01/2030 Resultado liberado em: 09/01/2030 04:25:51
+HEMOCULTURA
+Resultado
+:
+Não houve crescimento bacteriano em 5 dias de
+incubação.
+Material de Coleta : Sangue
+Amostra : Sangue
+Data da Coleta: 03/01/2030 08:00:00 Resultado liberado em: 08/01/2030 10:00:00
+ANTIBIOGRAMA
+Microorganismo: Bactéria fictícia
+Antibacterianos CIM Sensibilidade Antibacterianos CIM Sensibilidade
+Amicacina
+2 S
+Ceftriaxona
+.>=64 R
+Método : Automação
+Data da Coleta: 03/01/2030 08:00:00 Resultado liberado em: 08/01/2030 10:00:00
+Folha: 2 de 2

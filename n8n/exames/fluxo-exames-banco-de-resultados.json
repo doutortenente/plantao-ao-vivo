@@ -1,0 +1,786 @@
+{
+ "name": "Exames - Banco de Resultados",
+ "id": "KXXBvZ21FYxW72de",
+ "nodes": [
+  {
+   "id": "481c0336-c545-4b20-b42b-194c0e1ebc43",
+   "name": "Pedido",
+   "webhookId": "91d29458-204a-43d1-95af-0f67d2e5aef3",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2.2,
+   "position": [
+    0,
+    0
+   ],
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "exames-lab",
+    "responseMode": "responseNode",
+    "options": {
+     "ipWhitelist": "127.0.0.1,::1"
+    }
+   }
+  },
+  {
+   "id": "366bfac1-f837-49fe-a737-224ac2f35b99",
+   "name": "Entrar no site",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.5,
+   "position": [
+    448,
+    0
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "https://www.resultados.com.br/Autenticacao/Auth",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpCustomAuth",
+    "sendHeaders": true,
+    "specifyHeaders": "keypair",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/x-www-form-urlencoded"
+      },
+      {
+       "name": "User-Agent",
+       "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+      }
+     ]
+    },
+    "options": {
+     "redirect": {
+      "redirect": {
+       "followRedirects": false
+      }
+     },
+     "response": {
+      "response": {
+       "fullResponse": true,
+       "neverError": true,
+       "responseFormat": "text"
+      }
+     },
+     "timeout": 30000
+    }
+   },
+   "credentials": {
+    "httpCustomAuth": {
+     "id": "MCCLLwulOGZdegV7",
+     "name": "Banco de Resultados"
+    }
+   },
+   "executeOnce": true
+  },
+  {
+   "id": "19c7f223-a064-48fb-a421-7f12ce4d6b76",
+   "name": "Sessao",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    672,
+    0
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "const r = $input.first().json;\nconst h = r.headers || {};\nconst sc = h['set-cookie'] || [];\nconst lista = Array.isArray(sc) ? sc : [sc];\nconst cookie = lista.map((c) => String(c).split(';')[0]).filter(Boolean).join('; ');\nconst loc = String(h.location || '');\nif (!cookie || !loc) {\n  const corpo = String(r.data || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();\n  const pista = (corpo.match(/(inv.lid[^.]{0,80}|incorret[^.]{0,80}|bloquead[^.]{0,80}|n.o encontrad[^.]{0,80})/i) || [])[0] || '';\n  throw new Error('Login recusado pelo site (status ' + r.statusCode + '). ' + pista);\n}\nreturn $('Pacientes').all().map((p) => ({ json: Object.assign({}, p.json, { cookie }) }));"
+   }
+  },
+  {
+   "id": "27dd0382-8652-40f4-835c-f30bbfc85467",
+   "name": "Resposta",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.5,
+   "position": [
+    4032,
+    300
+   ],
+   "parameters": {
+    "respondWith": "firstIncomingItem"
+   }
+  },
+  {
+   "id": "feeca210-08a4-4bc4-8f35-adc5c493e844",
+   "name": "Buscar por nome",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.5,
+   "position": [
+    896,
+    0
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "https://www.resultados.com.br/Lista/PesquisarResultados/",
+    "authentication": "none",
+    "sendHeaders": true,
+    "specifyHeaders": "keypair",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Cookie",
+       "value": "={{ $json.cookie }}"
+      },
+      {
+       "name": "User-Agent",
+       "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+      },
+      {
+       "name": "X-Requested-With",
+       "value": "XMLHttpRequest"
+      }
+     ]
+    },
+    "sendBody": true,
+    "contentType": "json",
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ tipo: 'di', titulo: $json.nome, data_ini: $json.ini, data_fim: $json.ate, pasta: 1, pagina: 1 }) }}",
+    "options": {
+     "response": {
+      "response": {
+       "fullResponse": true,
+       "neverError": true,
+       "responseFormat": "text"
+      }
+     },
+     "timeout": 30000,
+     "pagination": {
+      "pagination": {
+       "paginationMode": "updateAParameterInEachRequest",
+       "parameters": {
+        "parameters": [
+         {
+          "type": "body",
+          "name": "pagina",
+          "value": "={{ $pageCount + 1 }}"
+         }
+        ]
+       },
+       "paginationCompleteWhen": "other",
+       "completeExpression": "={{ !JSON.stringify($response.body).includes('id_doc') || $pageCount >= Number((JSON.stringify($response.body).match(/total_pages\\\\*\"?\\s*:\\s*(\\d+)/) || [0, 1])[1]) }}",
+       "limitPagesFetched": true,
+       "maxRequests": 30,
+       "requestInterval": 300
+      }
+     },
+     "batching": {
+      "batch": {
+       "batchSize": 1,
+       "batchInterval": 300
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "a5d86f94-9727-448f-8d54-44c1dc97ad3c",
+   "name": "Laudo PDF",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.5,
+   "position": [
+    2016,
+    300
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "https://www.resultados.com.br/Lista/GetBase64/",
+    "authentication": "none",
+    "sendHeaders": true,
+    "specifyHeaders": "keypair",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Cookie",
+       "value": "={{ $('Sessao').first().json.cookie }}"
+      },
+      {
+       "name": "User-Agent",
+       "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+      },
+      {
+       "name": "X-Requested-With",
+       "value": "XMLHttpRequest"
+      }
+     ]
+    },
+    "sendBody": true,
+    "contentType": "json",
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ id_doc: /^\\d+$/.test(String($json.id_doc)) ? Number($json.id_doc) : $json.id_doc }) }}",
+    "options": {
+     "response": {
+      "response": {
+       "fullResponse": true,
+       "neverError": true,
+       "responseFormat": "text"
+      }
+     },
+     "timeout": 60000,
+     "batching": {
+      "batch": {
+       "batchSize": 2,
+       "batchInterval": 400
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "88871019-3aa5-42f2-992c-07e6bd11d63e",
+   "name": "PDF base64",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2240,
+    300
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "const fila = $('A baixar').all();\nreturn $input.all().map((it, i) => {\n  const s = String(it.json.data || '').trim();\n  let b64 = s;\n  if (b64.startsWith('\"')) { try { b64 = JSON.parse(b64); } catch (e) {} }\n  const ok = /^JVBERi0/.test(b64);\n  return { json: Object.assign({}, fila[i] ? fila[i].json : {}, { b64: ok ? b64 : '', erro_pdf: ok ? '' : 'o site não devolveu o PDF' }) };\n});"
+   }
+  },
+  {
+   "id": "70fd101d-907c-4e28-a74d-26be03118602",
+   "name": "PDF arquivo",
+   "type": "n8n-nodes-base.convertToFile",
+   "typeVersion": 1.2,
+   "position": [
+    2464,
+    300
+   ],
+   "parameters": {
+    "operation": "toBinary",
+    "sourceProperty": "b64",
+    "options": {
+     "fileName": "laudo.pdf",
+     "mimeType": "application/pdf"
+    }
+   },
+   "onError": "continueRegularOutput"
+  },
+  {
+   "id": "0acec908-7d00-4335-a5d9-eb6e0f841e59",
+   "name": "PDF texto",
+   "type": "n8n-nodes-base.extractFromFile",
+   "typeVersion": 1.2,
+   "position": [
+    2688,
+    300
+   ],
+   "parameters": {
+    "operation": "pdf",
+    "options": {}
+   },
+   "onError": "continueRegularOutput"
+  },
+  {
+   "id": "2cdbd107-0a20-4b72-a16c-6f4c00f2e3fb",
+   "name": "Ler laudo",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2912,
+    300
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "'use strict';\n/*\n * ler_laudo.js — lê o texto de um laudo do Instituto de Biomedicina do ABC (Banco de Resultados), do jeito que o\n * nó \"Extract from File\" (PDF) do n8n entrega, e devolve cada valor preso à DATA DA COLETA do bloco onde ele está.\n * A data de liberação vem junto só como informação; nunca é âncora.\n *\n * Mesmo código no nó \"Ler laudo\" do fluxo \"Exames - Banco de Resultados\" e nos testes (node).\n * Bloco = linhas até \"Data da Coleta: dd/mm/aaaa hh:mm:ss Resultado liberado em: ...\".\n * Formatos vistos (88 laudos reais, 12/11/2026): valor na linha do nome (bioquímica), \"rótulo : valor\" (gaso,\n * coagulação, painel cardíaco, culturas), hemograma em tabela, antibiograma (droga + \"CIM S/I/R\").\n */\n\n// a hora da coleta às vezes falta (\"Data da Coleta: 02/11/2026 Resultado liberado em: ...\")\nconst RE_COLETA = /^Data da Coleta:\\s*(\\d{2})\\/(\\d{2})\\/(\\d{4})(?:\\s+(\\d{2}):(\\d{2})(?::(\\d{2}))?)?(?:\\s+Resultado liberado em:\\s*(\\d{2})\\/(\\d{2})\\/(\\d{4})(?:\\s+(\\d{2}):(\\d{2})(?::(\\d{2}))?)?)?/i;\nconst RE_LIBERADO = /^Resultado liberado em:\\s*(\\d{2})\\/(\\d{2})\\/(\\d{4})(?:\\s+(\\d{2}):(\\d{2})(?::(\\d{2}))?)?/i;\nconst RE_META = /^(Material de Coleta|Amostra|M[ée]todo)\\s*:/i;\nconst RE_CAMPO = /^(Material de Coleta|Amostra|M[ée]todo|V\\.\\s?R\\.|Valor(?:es)? de Refer[êe]ncia|Coment[áa]rio|Observa[çc](?:[ãa]o|[õo]es)|Nota)\\s*:\\s*(.*)$/i;\nconst RE_ROTULO = /^([^:]*?[^\\s.:])[\\s.]*:\\s*(.*)$/;\nconst RE_TITULO_VALOR = /^(.+?)\\s+([<>]=?\\s*)?(\\d[\\d.]*(?:,\\d+)?)(?:\\s+([^\\s]*[a-zμµ%/][^\\s]*))?$/;\nconst RE_REF_ROTULO = /^(Normal|V\\.?\\s*R\\.?|Refer[êe]ncia|Sens[íi]vel|Resistente|Intermedi[áa]rio)$/i;\nconst RE_DESCARTE = /^(Lote|Validade)\\b/i;\nconst RE_CABECALHO = /^(Eritrograma|Leucograma|Plaquetas|Exame (F[íi]sico|Qu[íi]mico|Microsc[óo]pico)|CALCULADO|SERINGA|MULHER HOMEM|Valores de Refer[êe]ncia|Antibacterianos\\b.*)$/i;\nconst RE_CULTURA = /CULTURA|SWAB|URINA C\\/|ANTIBIOGRAMA|INIBIT|DIFFICILE/i;\nconst UNIDADES_SOLTAS = new Set(['fL', 'fl', 'pg', 'mmHg', 'seg.', 'seg', 's', 'ml', 'mL', 'UI', 'U', 'g', 'mg', 'ng', 'mm', 'mEq']);\n\n// sigla do BRIEFING (docs/BRIEFING.md) por grupo (título do bloco) e rótulo; chaves sem acento, só A-Z0-9\nconst SIGLA_GRUPO = [\n  ['HEMOGRAMA', { HEMOGLOBINA: 'HB', HEMATOCRITO: 'HT', LEUCOCITOS: 'LEUCO', SEGMENTADOS: 'SEG', BASTONETES: 'BAST', PLAQUETAS: 'PLAQ' }],\n  ['GASOMETRIA', { PH: 'pH', PCO2: 'pCO2', PO2: 'pO2', HCO3: 'HCO3', BEECF: 'BE', SO2: 'SatO2', LAC: 'Lactato' }],\n  ['PAINELCARDIACO', { TROPONINA: 'Troponina' }],\n  ['TEMPODEATIVIDADEDAPROTROMBINA', { INR: 'INR' }],\n];\n// bloco de um exame só (título = nome do exame)\nconst SIGLA_UNICO = {\n  UREIA: 'UR', CREATININA: 'CR', SODIO: 'NA', POTASSIO: 'K', MAGNESIO: 'MG', CALCIOIONICO: 'CAI', FOSFORO: 'P',\n  PROTEINACREATIVA: 'PCR', DIMERO: 'D-dímero', DDIMERO: 'D-dímero', HEMOGLOBINA: 'HB', HEMATOCRITO: 'HT',\n  LACTATO: 'Lactato', TROPONINA: 'Troponina',\n};\n\nfunction chave(s) {\n  return String(s || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');\n}\n\n// data do laudo (horário de Brasília, sem horário de verão desde 2019) -> ISO em UTC\nfunction iso(d, m, a, h, mi, s) {\n  return new Date(a + '-' + m + '-' + d + 'T' + (h || '00') + ':' + (mi || '00') + ':' + (s || '00') + '-03:00').toISOString();\n}\n\nfunction nomeChave(s) {\n  return String(s || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\\s+/g, ' ').trim();\n}\n\n// dia (aaaa-mm-dd) em Brasília\nfunction diaBr(t) {\n  return new Date(Date.parse(t) - 3 * 3600e3).toISOString().slice(0, 10);\n}\n\nfunction ehUnidade(t) {\n  return t === '%' || (t.length <= 12 && (t.includes('/') || UNIDADES_SOLTAS.has(t)));\n}\n\nfunction ehNumero(s) {\n  return /^[<>]?=?\\s*-?\\d[\\d.,]*$/.test(String(s).trim());\n}\n\n// \"10.300\" = 10300; \"9,30\" = 9.3; \"1.03\" e \"13.7\" = decimal com ponto (INR, TAP); densidade \"1.010\" = 1.01\nfunction paraNumero(v, rotulo) {\n  const s = String(v == null ? '' : v).trim();\n  if (!/^-?\\d[\\d.,]*$/.test(s)) return null;\n  let n;\n  if (s.includes(',')) n = Number(s.replace(/\\./g, '').replace(',', '.'));\n  else if (/^\\d{1,3}(\\.\\d{3})+$/.test(s) && !/densidade/i.test(rotulo || '')) n = Number(s.replace(/\\./g, ''));\n  else n = Number(s);\n  return Number.isFinite(n) ? n : null;\n}\n\nfunction unidadeDaRef(vr) {\n  const m = String(vr || '').match(/\\d\\s*([a-zA-Zμµ%/][\\w/.μµ%]*)/);\n  return m && ehUnidade(m[1]) ? m[1] : '';\n}\n\n// tira cabeçalho e rodapé de cada página; guarda nome do paciente e local de coleta do cabeçalho\nfunction linhasDoLaudo(texto) {\n  const linhas = [];\n  const cab = { paciente: '', local: '' };\n  let dentro = false;\n  let anterior = '';\n  for (const bruto of String(texto || '').split('\\n')) {\n    const l = bruto.trim();\n    if (!l) continue;\n    if (/^Instituto de Biomedicina do ABC/i.test(l)) { dentro = true; anterior = l; continue; }\n    if (dentro) {\n      if (/^RESULTADO$/i.test(l)) { dentro = false; continue; }\n      const p = l.match(/^Paciente\\s*:\\s*(.+)$/i);\n      if (p && !cab.paciente) cab.paciente = p[1].trim();\n      const lc = l.match(/^Local Coleta\\s*:?\\s*(.*)$/i);\n      if (lc && lc[1] && !cab.local) cab.local = lc[1].trim();\n      else if (/^Local Coleta/i.test(anterior) && !cab.local) cab.local = l;\n      anterior = l;\n      continue;\n    }\n    if (/^Os valores dos testes de laborat|^tempo ?de jejum|^Folha:\\s*\\d+\\s*de\\s*\\d+|Laudo liberado eletronicamente/i.test(l)) continue;\n    linhas.push(l);\n  }\n  return { linhas, cab };\n}\n\nfunction lerMeta(L) {\n  const f = { material: '', amostra: '', metodo: '', vr: '', obs: [] };\n  let atual = null;\n  for (let i = 0; i < L.length; i++) {\n    const l = L[i];\n    if (/^M[ée]todo$/i.test(l) && L[i + 1] === ':') { atual = 'metodo'; i++; continue; }\n    const m = l.match(RE_CAMPO);\n    if (m) {\n      const k = /^Mat/i.test(m[1]) ? 'material' : /^Amo/i.test(m[1]) ? 'amostra' : /^M[ée]t/i.test(m[1]) ? 'metodo'\n        : /^(V|Valor)/i.test(m[1]) ? 'vr' : 'obs';\n      atual = k;\n      if (k === 'obs') f.obs.push(m[2].trim());\n      else f[k] = (f[k] + ' ' + m[2]).trim();\n      continue;\n    }\n    if (atual === 'obs' && f.obs.length) f.obs[f.obs.length - 1] += ' ' + l;\n    else if (atual) f[atual] = (f[atual] + ' ' + l).trim();\n  }\n  f.obs = f.obs.map((o) => o.trim()).filter((o) => o && !/Novos valores de refer/i.test(o));\n  return f;\n}\n\n// linhas que vêm depois de \"rótulo: valor\": unidade, faixa de referência, valor absoluto (diferencial) e texto\nfunction detalhar(r, cultura) {\n  const d = [];\n  for (let i = 0; i < r.depois.length; i++) {\n    const l = r.depois[i];\n    if (r.depois[i + 1] === '3' && /mm$/.test(l.split(' ')[0])) { d.push(l.replace(/^(\\S*mm)/, (x) => x + '3')); i++; }\n    else d.push(l);\n  }\n  let valor = String(r.valor).trim();\n  let unidade = '';\n  let ref = r.ref || '';\n  let abs = null;\n  let absU = '';\n  let absRef = '';\n  let fase = 'v';\n  const vu = valor.match(/^([<>]?=?\\s*-?\\d[\\d.,]*)\\s+(\\S+)$/);\n  if (vu && ehUnidade(vu[2])) { valor = vu[1]; unidade = vu[2]; }\n  const numerico = ehNumero(valor);\n  const textos = [];\n  for (const l of d) {\n    const t = l.split(/\\s+/)[0];\n    const resto = l.slice(t.length).trim();\n    if (numerico && /^\\d[\\d.,]*$/.test(l) && unidade === '%' && abs === null) { abs = l; fase = 'a'; continue; }\n    if (ehUnidade(t)) {\n      if (fase === 'v' && !unidade) { unidade = t; if (/\\d/.test(resto)) ref = (ref + ' ' + resto).trim(); continue; }\n      if (fase === 'a' && !absU) { absU = t; if (/\\d/.test(resto)) absRef = (absRef + ' ' + resto).trim(); continue; }\n    }\n    if (/^\\(|^[<>]?\\s*\\d[\\d.,]*\\s*(-|a\\b|at[ée])/.test(l)) {\n      if (fase === 'a') absRef = (absRef + ' ' + l).trim(); else ref = (ref + ' ' + l).trim();\n      continue;\n    }\n    if (RE_CABECALHO.test(l)) continue;\n    textos.push(l);\n  }\n  // resultado em texto quebrado na linha do PDF (\"... em 5 dias de\" / \"incubação.\"): linha que começa minúscula continua o valor\n  if (!numerico) while (textos.length && /^[a-zà-ú]/.test(textos[0])) valor += ' ' + textos.shift();\n  const out = [{ exame: r.exame, valor, unidade, referencia: ref, obs: (cultura || !numerico) ? textos.join(' ').slice(0, 400) : '' }];\n  if (abs !== null) out.push({ exame: r.exame + ' (abs)', valor: abs, unidade: absU, referencia: absRef, obs: '' });\n  return out;\n}\n\n// bloco com vários exames: \"rótulo : valor\", com o \":\" e o valor às vezes em linhas separadas\nfunction lerRegistros(linhas, cultura) {\n  const regs = [];\n  const obs = [];\n  const pend = [];\n  let cur = null;\n  let aguardando = null;\n  for (let i = 0; i < linhas.length; i++) {\n    const l = linhas[i];\n    if (/^Valores de Refer[êe]ncia$/i.test(l)) { if (regs.length) break; continue; }\n    if (aguardando !== null) { cur = { exame: aguardando, valor: l, depois: [] }; regs.push(cur); aguardando = null; continue; }\n    if (l === ':') {\n      if (!cur) {\n        const bons = pend.filter((x) => !(x === x.toUpperCase() && /[A-Z]/.test(x)));\n        aguardando = (bons.length ? bons : pend.slice(-1)).join(' ');\n      } else aguardando = cur.depois.pop() || '';\n      pend.length = 0;\n      continue;\n    }\n    const m = l.match(RE_ROTULO);\n    if (m && !/^[(\\d<>]/.test(m[1])) {\n      pend.length = 0;\n      if (RE_REF_ROTULO.test(m[1])) { if (cur) cur.ref = ((cur.ref || '') + ' ' + l).trim(); continue; }\n      if (/^Observa[çc]/i.test(m[1])) { if (m[2]) obs.push(m[2]); continue; }\n      if (m[2] === '') { aguardando = m[1]; continue; }\n      cur = { exame: m[1], valor: m[2], depois: [] };\n      regs.push(cur);\n      continue;\n    }\n    if (cur) cur.depois.push(l); else pend.push(l);\n  }\n  const valores = [];\n  for (const r of regs) if (!RE_DESCARTE.test(r.exame)) valores.push(...detalhar(r, cultura));\n  return { valores, obs };\n}\n\nfunction lerAntibiograma(res) {\n  let org = '';\n  const valores = [];\n  for (let i = 1; i < res.length; i++) {\n    const l = res[i];\n    const mo = l.match(/^Micro-?organismo\\s*:\\s*(.+)$/i);\n    if (mo) { org = mo[1].trim(); continue; }\n    const prox = res[i + 1] || '';\n    const r = prox.match(/^(\\S*)\\s+([SIR])$/) || prox.match(/^()([SIR])$/);\n    if (r && /^[A-Za-zÀ-ú]/.test(l) && !/^Antibacterianos/i.test(l)) {\n      valores.push({ exame: l, valor: r[2], unidade: '', referencia: r[1] ? 'CIM ' + r[1] : '', obs: org });\n      i++;\n    }\n  }\n  if (!valores.length) {\n    // disco-difusão: tabela com colunas S / I / R; o texto do PDF perde a coluna, então não se adivinha\n    const drogas = res.slice(1).filter((l) => /^[A-Za-zÀ-ú]/.test(l) && !/^(Sens[íi]vel|Resistente|exposi[çc][ãa]o|Intermedi|Micro)/i.test(l));\n    valores.push({ exame: 'ANTIBIOGRAMA', valor: 'ler no PDF (tabela S/I/R por colunas)', unidade: '', referencia: '', obs: drogas.join(', ').slice(0, 400) });\n  }\n  return { grupo: 'ANTIBIOGRAMA' + (org ? ' - ' + org : ''), valores, obs: [] };\n}\n\nfunction lerBloco(L) {\n  const titulo = L[0] || '';\n  let iMeta = L.length;\n  for (let i = 1; i < L.length; i++) {\n    if (RE_META.test(L[i]) || (/^M[ée]todo$/i.test(L[i]) && L[i + 1] === ':')) { iMeta = i; break; }\n  }\n  const res = L.slice(0, iMeta);\n  const meta = lerMeta(L.slice(iMeta));\n  let grupo = titulo;\n  let valores = [];\n  let obsRes = [];\n  if (/^ANTIBIOGRAMA/i.test(titulo)) {\n    ({ grupo, valores } = lerAntibiograma(res));\n  } else {\n    const m = titulo.match(RE_TITULO_VALOR);\n    if (m && (res.length === 1 || (res.length === 2 && ehUnidade(res[1])))) {\n      grupo = m[1].trim();\n      valores.push({\n        exame: grupo, valor: (m[2] ? m[2].replace(/\\s+/g, '') : '') + m[3],\n        unidade: m[4] || (res.length === 2 ? res[1] : '') || unidadeDaRef(meta.vr), referencia: meta.vr, obs: '',\n      });\n    } else {\n      const linhas = m ? [m[1].trim() + ' : ' + (m[2] || '') + m[3] + (m[4] ? ' ' + m[4] : '')].concat(res.slice(1)) : res.slice(1);\n      if (m) grupo = m[1].trim();\n      ({ valores, obs: obsRes } = lerRegistros(linhas, RE_CULTURA.test(titulo)));\n      if (!valores.length && !m && res.length >= 2 && !RE_ROTULO.test(res[1])) {\n        valores.push({ exame: titulo, valor: res.slice(1).join(' ').slice(0, 400), unidade: '', referencia: meta.vr, obs: '' });\n      }\n    }\n  }\n  const obs = obsRes.concat(meta.obs);\n  const maquina = /M[AÁ]QUINA/i.test(obs.join(' ') + ' ' + meta.amostra);\n  const gk = chave(grupo);\n  const par = SIGLA_GRUPO.find(([k]) => gk.startsWith(k));\n  for (const v of valores) {\n    const ek = chave(v.exame);\n    v.sigla = maquina ? '' : par ? (par[1][ek] || '') : valores.length === 1 ? (SIGLA_UNICO[ek] || '') : '';\n    v.valor_num = paraNumero(v.valor, v.exame);\n    if (maquina) v.obs = (v.obs ? v.obs + ' | ' : '') + 'amostra da máquina (circuito de diálise): não é do paciente';\n  }\n  return { grupo, valores, material: meta.material, amostra: meta.amostra, metodo: meta.metodo, obs: obs.join(' | ') };\n}\n\nfunction lerLaudo(texto) {\n  const { linhas, cab } = linhasDoLaudo(texto);\n  const blocos = [];\n  const avisos = [];\n  let atual = [];\n  for (const l of linhas) {\n    const c = l.match(RE_COLETA);\n    if (c) {\n      const b = lerBloco(atual);\n      b.coleta = iso(c[1], c[2], c[3], c[4], c[5], c[6]);\n      b.coleta_sem_hora = !c[4];\n      b.liberado = c[7] ? iso(c[7], c[8], c[9], c[10], c[11], c[12]) : null;\n      blocos.push(b);\n      atual = [];\n      continue;\n    }\n    const lib = l.match(RE_LIBERADO);\n    if (lib && !atual.length && blocos.length && !blocos[blocos.length - 1].liberado) {\n      blocos[blocos.length - 1].liberado = iso(lib[1], lib[2], lib[3], lib[4], lib[5], lib[6]);\n      continue;\n    }\n    atual.push(l);\n  }\n  if (atual.length) avisos.push('trecho sem Data da Coleta ignorado: \"' + atual[0].slice(0, 50) + '\"');\n  for (const b of blocos) {\n    if (!b.valores.length) avisos.push('bloco sem valor lido: \"' + String(b.grupo).slice(0, 50) + '\"');\n    if (b.valores.some((v) => /^ler no PDF/.test(v.valor))) avisos.push('antibiograma em colunas: ler S/I/R no PDF');\n  }\n  return { paciente: cab.paciente, local: cab.local, blocos, avisos };\n}\n\n/*\n * Linhas das tabelas exames_valores e exames_laudos para um laudo baixado.\n * meta = {id_doc, paciente (nome normalizado), leito, coleta (dt_doc_real, ISO), inclusao, exames, pendente}\n * Coleta sem hora no laudo: usa a hora do pedido (dt_doc_real) se for o mesmo dia, e avisa no obs.\n */\nfunction paraBanco(meta, texto, erro, agora) {\n  const r = erro ? { paciente: '', blocos: [], avisos: ['PDF não lido: ' + erro] } : lerLaudo(texto);\n  const avisos = r.avisos.slice();\n  const nomePdf = nomeChave(r.paciente);\n  if (nomePdf && meta.paciente && nomePdf !== meta.paciente) {\n    avisos.push('nome no PDF diferente do pedido: laudo descartado');\n    r.blocos = [];\n  }\n  const valores = [];\n  const cont = {};\n  for (const b of r.blocos) {\n    let coleta = b.coleta;\n    let obsColeta = '';\n    if (b.coleta_sem_hora) {\n      if (meta.coleta && diaBr(meta.coleta) === diaBr(b.coleta)) { coleta = meta.coleta; obsColeta = 'hora da coleta tirada do pedido (laudo sem hora)'; }\n      else obsColeta = 'laudo sem hora da coleta';\n    }\n    for (const v of b.valores) {\n      const base = [meta.id_doc, coleta, chave(b.grupo), chave(v.exame)].join('|');\n      cont[base] = (cont[base] || 0) + 1;\n      valores.push({\n        chave: base + (cont[base] > 1 ? '#' + cont[base] : ''), id_doc: meta.id_doc, paciente: meta.paciente, leito: meta.leito,\n        grupo: b.grupo, exame: v.exame, sigla: v.sigla, valor: v.valor, valor_num: v.valor_num, unidade: v.unidade,\n        referencia: String(v.referencia || '').slice(0, 300), material: b.material, coleta, liberado: b.liberado,\n        obs: [v.obs, b.obs, obsColeta].filter(Boolean).join(' | ').slice(0, 500),\n      });\n    }\n  }\n  const laudo = {\n    id_doc: meta.id_doc, paciente: meta.paciente, leito: meta.leito, coleta: meta.coleta, inclusao: meta.inclusao,\n    exames: meta.exames, pendente: !!meta.pendente, n_valores: valores.length, aviso: avisos.join(' | ').slice(0, 500), lido_em: agora,\n  };\n  return { valores, laudo };\n}\n\nif (typeof module !== 'undefined' && module.exports) module.exports = { lerLaudo, paraBanco, paraNumero, chave, nomeChave };\n\n// ---- nó \"Ler laudo\" do n8n: um item por valor (tipo valor) e um por laudo (tipo laudo) ----\nconst metas = $('PDF base64').all();\nconst agora = new Date().toISOString();\nconst saida = [];\n$input.all().forEach((it, i) => {\n  const m = metas[i] ? metas[i].json : {};\n  const erro = it.json.error ? String(it.json.error.message || it.json.error) : (m.erro_pdf || '');\n  const { valores, laudo } = paraBanco(m, String(it.json.text || ''), erro, agora);\n  for (const v of valores) saida.push({ json: Object.assign({ tipo: 'valor' }, v) });\n  saida.push({ json: Object.assign({ tipo: 'laudo' }, laudo) });\n});\nreturn saida;\n"
+   }
+  },
+  {
+   "id": "5d615b05-8e30-4705-aee1-3139c8108b12",
+   "name": "Pacientes",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    224,
+    0
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "const b = $('Pedido').first().json.body || {};\nconst hoje = $now.setZone('America/Sao_Paulo').toFormat('yyyy-MM-dd');\nconst ate = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(b.ate || '')) ? b.ate : hoje;\nconst norm = (s) => String(s || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\\s+/g, ' ').trim();\nconst dataIso = (s) => {\n  s = String(s || '').trim();\n  let m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\n  if (m) return m[1] + '-' + m[2] + '-' + m[3];\n  m = s.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})$/);\n  if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');\n  return null;\n};\nconst lista = Array.isArray(b.pacientes) ? b.pacientes : (b.nome ? [b] : []);\nif (!lista.length) throw new Error('Pedido sem pacientes. Formato: {\"pacientes\":[{\"leito\":\"08\",\"nome\":\"NOME COMPLETO\",\"desde\":\"AAAA-MM-DD\"}]}');\nreturn lista.map((p, i) => {\n  const nome = norm(p.nome);\n  const desde = dataIso(p.desde || p.admissao || p.admissao_uti);\n  if (nome.split(' ').length < 2) throw new Error('Paciente ' + (i + 1) + ': mande o nome completo');\n  if (!desde) throw new Error('Paciente ' + (i + 1) + ': falta \"desde\" (data da admissão, AAAA-MM-DD ou DD/MM/AAAA)');\n  const limite = new Date(Date.parse(ate + 'T12:00:00Z') - 365 * 864e5).toISOString().slice(0, 10);\n  return { json: { leito: p.leito ? String(p.leito).padStart(2, '0') : '', nome, desde, ini: desde < limite ? limite : desde, ate, forcar: b.forcar === true } };\n});"
+   }
+  },
+  {
+   "id": "0f0d442c-7ad3-4507-b42d-6d305d8b18a7",
+   "name": "Documentos",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1120,
+    0
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "const pacs = $('Pacientes').all().map((x) => x.json);\nconst norm = (s) => String(s || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\\s+/g, ' ').trim();\nconst num = (v) => { const m = String(v == null ? '' : v).match(/-?\\d{10,}/); return m ? Number(m[0]) : null; };\nconst iso = (n) => (n == null ? null : new Date(n).toISOString());\nconst lerJson = (t) => { let d = t; for (let k = 0; k < 2 && typeof d === 'string'; k++) { try { d = JSON.parse(d); } catch (e) { break; } } return d; };\nconst listaExames = (s) => {\n  const d = lerJson(s);\n  let e = d && d.SL_EXAMES && d.SL_EXAMES.EXAME;\n  if (!e) return [];\n  if (!Array.isArray(e)) e = [e];\n  return e.map((x) => ({ nome: String((x && x.NOME) || '').trim(), pendente: String((x && x.PENDENTE) || 'N').trim().toUpperCase() !== 'N' }));\n};\nconst unicos = new Map();\nlet paginas = 0, falhas = 0;\nfor (const it of $input.all()) {\n  paginas++;\n  const d = lerJson(it.json.data);\n  if (!d || typeof d !== 'object') { falhas++; continue; }\n  for (const x of d.lista_docs || []) if (x && x.id_doc != null) unicos.set(String(x.id_doc), x);\n}\nconst resumo = {};\nfor (const p of pacs) resumo[p.nome] = { docs: 0, antes_da_admissao: 0, nome_parecido: 0 };\nconst docs = [];\nfor (const x of unicos.values()) {\n  const nomeDoc = norm(String(x.nm_doc_titulo || '').replace(/^.*?\\d{6,}\\s*-\\s*/, ''));\n  const p = pacs.find((q) => q.nome === nomeDoc);\n  if (!p) {\n    const td = new Set(nomeDoc.split(' '));\n    for (const q of pacs) { const tq = q.nome.split(' '); if (tq.every((t) => td.has(t)) || [...td].every((t) => tq.includes(t))) resumo[q.nome].nome_parecido++; }\n    continue;\n  }\n  const coletaMs = num(x.dt_doc_real);\n  if (coletaMs == null || coletaMs < Date.parse(p.desde + 'T00:00:00-03:00')) { resumo[p.nome].antes_da_admissao++; continue; }\n  const ex = listaExames(x.ds_doc_exames);\n  resumo[p.nome].docs++;\n  docs.push({ id_doc: String(x.id_doc), cd_doc: String(x.cd_doc || ''), leito: p.leito, paciente: p.nome, coleta: iso(coletaMs), inclusao: iso(num(x.dt_doc_incl)), exames: ex.map((e) => e.nome).join(' | '), pendente: ex.some((e) => e.pendente), pendentes: ex.filter((e) => e.pendente).map((e) => e.nome) });\n}\ndocs.sort((a, b) => a.coleta.localeCompare(b.coleta));\nconst minDesde = pacs.map((p) => p.desde).sort()[0] + 'T03:00:00.000Z';\nreturn [{ json: { docs, minDesde, paginas, falhas, pacientes: pacs.map((p) => Object.assign({ leito: p.leito, nome: p.nome, desde: p.desde }, resumo[p.nome])) } }];"
+   }
+  },
+  {
+   "id": "3ed00cdc-bd76-4505-8c0a-8a24d78db6b4",
+   "name": "Laudos já lidos",
+   "type": "n8n-nodes-base.dataTable",
+   "typeVersion": 1.1,
+   "position": [
+    1344,
+    0
+   ],
+   "parameters": {
+    "resource": "row",
+    "operation": "get",
+    "dataTableId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "CsAyyN1KRtHJBGsJ"
+    },
+    "matchType": "allConditions",
+    "filters": {
+     "conditions": [
+      {
+       "keyName": "coleta",
+       "condition": "gte",
+       "keyValue": "={{ $json.minDesde }}"
+      }
+     ]
+    },
+    "returnAll": true
+   },
+   "alwaysOutputData": true,
+   "executeOnce": true
+  },
+  {
+   "id": "b59f5627-d780-4dee-80ab-6b12623c416f",
+   "name": "A baixar",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1568,
+    0
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "const D = $('Documentos').first().json;\nconst forcar = $('Pacientes').first().json.forcar;\nconst iso = (v) => { if (!v) return null; const d = new Date(v); return isNaN(d) ? null : d.toISOString(); };\nconst lidos = new Map();\nfor (const it of $input.all()) if (it.json && it.json.id_doc) lidos.set(String(it.json.id_doc), it.json);\nconst fila = D.docs.filter((d) => {\n  const r = lidos.get(d.id_doc);\n  if (forcar || !r) return true;\n  return iso(r.inclusao) !== d.inclusao || Boolean(r.pendente) !== d.pendente || !(Number(r.n_valores) > 0);\n});\nif (!fila.length) return [{ json: { nada: true, ja_lidos: D.docs.length } }];\nreturn fila.map((d) => ({ json: d }));"
+   }
+  },
+  {
+   "id": "32fcdeca-d14c-4b9f-9c00-c41e4aa9f91a",
+   "name": "Tem laudo novo?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    1792,
+    0
+   ],
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ !!$json.id_doc }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "3bd31345-e93f-4fc0-9565-635151093c7b",
+   "name": "Valores",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    3136,
+    200
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "return $input.all().filter((x) => x.json.tipo === 'valor').map((x) => { const r = Object.assign({}, x.json); delete r.tipo; return { json: r }; });"
+   }
+  },
+  {
+   "id": "abddec5d-bab0-4b3f-a39f-2945a1cb9426",
+   "name": "Gravar valores",
+   "type": "n8n-nodes-base.dataTable",
+   "typeVersion": 1.1,
+   "position": [
+    3360,
+    200
+   ],
+   "parameters": {
+    "resource": "row",
+    "operation": "upsert",
+    "dataTableId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "LS2mZRMisDQZUWse"
+    },
+    "matchType": "allConditions",
+    "filters": {
+     "conditions": [
+      {
+       "keyName": "chave",
+       "condition": "eq",
+       "keyValue": "={{ $json.chave }}"
+      }
+     ]
+    },
+    "columns": {
+     "mappingMode": "autoMapInputData",
+     "value": {},
+     "matchingColumns": [],
+     "schema": [],
+     "attemptToConvertTypes": false,
+     "convertFieldsToString": false
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "a3d843e0-a42b-4adc-9f79-373535fb5c69",
+   "name": "Laudos",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    3136,
+    450
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "return $input.all().filter((x) => x.json.tipo === 'laudo').map((x) => { const r = Object.assign({}, x.json); delete r.tipo; return { json: r }; });"
+   }
+  },
+  {
+   "id": "9ecce8fb-860d-4dc0-b410-33b477823e87",
+   "name": "Gravar laudos",
+   "type": "n8n-nodes-base.dataTable",
+   "typeVersion": 1.1,
+   "position": [
+    3360,
+    450
+   ],
+   "parameters": {
+    "resource": "row",
+    "operation": "upsert",
+    "dataTableId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "CsAyyN1KRtHJBGsJ"
+    },
+    "matchType": "allConditions",
+    "filters": {
+     "conditions": [
+      {
+       "keyName": "id_doc",
+       "condition": "eq",
+       "keyValue": "={{ $json.id_doc }}"
+      }
+     ]
+    },
+    "columns": {
+     "mappingMode": "autoMapInputData",
+     "value": {},
+     "matchingColumns": [],
+     "schema": [],
+     "attemptToConvertTypes": false,
+     "convertFieldsToString": false
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "a5a3f7c4-f207-455c-9853-1c5aa59f86e9",
+   "name": "Valores da internação",
+   "type": "n8n-nodes-base.dataTable",
+   "typeVersion": 1.1,
+   "position": [
+    3584,
+    300
+   ],
+   "parameters": {
+    "resource": "row",
+    "operation": "get",
+    "dataTableId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "LS2mZRMisDQZUWse"
+    },
+    "matchType": "allConditions",
+    "filters": {
+     "conditions": [
+      {
+       "keyName": "coleta",
+       "condition": "gte",
+       "keyValue": "={{ $('Documentos').first().json.minDesde }}"
+      }
+     ]
+    },
+    "returnAll": true
+   },
+   "alwaysOutputData": true,
+   "executeOnce": true
+  },
+  {
+   "id": "a0270bf6-606d-467d-bde8-ef7b828aa531",
+   "name": "Montar resposta",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    3808,
+    300
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "'use strict';\n/*\n * montar_resposta.js — a partir das linhas do banco (tabela exames_valores do n8n), monta por paciente:\n *   - laboratorio: seção \"Laboratório:\" no formato do docs/BRIEFING.md (anterior => atual; eletrólitos só o atual);\n *   - coletas: data/hora da coleta de cada valor usado nessas linhas (âncora = coleta, nunca a liberação);\n *   - culturas, pendentes, avisos e exames (série completa de cada exame da internação, com a data da coleta).\n * Mesmo código no nó \"Montar resposta\" do fluxo \"Exames - Banco de Resultados\" e nos testes.\n */\n\nconst UNIDADE_BRIEFING = { HB: 'g/dl', HT: '%', PLAQ: '/mm3', LEUCO: '/mm3', UR: 'mg/dl', CR: 'mg/dl' };\nconst RE_GRUPO_CULTURA = /CULTURA|SWAB|URINA C\\/|ANTIBIOGRAMA|INIBIT|DIFFICILE/i;\nconst GASO = ['pH', 'pCO2', 'pO2', 'HCO3', 'BE', 'SatO2', 'Lactato'];\nconst OUTROS = ['PCR', 'Troponina', 'D-dímero', 'INR'];\nconst JANELA_H = 36; // \"atual\" = colhido nas 36 h antes do pedido (cobre a coleta da madrugada nos dois turnos)\nconst PENDENTE_DIAS = 7; // pendência mais velha que isso vira só contagem nos avisos\n\n// \"dd/mm hh:mm\" em Brasília\nfunction dataBr(t) {\n  const d = new Date(Date.parse(t) - 3 * 3600e3).toISOString();\n  return d.slice(8, 10) + '/' + d.slice(5, 7) + ' ' + d.slice(11, 16);\n}\n\nfunction chaveTexto(s) {\n  return String(s || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');\n}\n\nconst daMaquina = (r) => /máquina/.test(String(r.obs || ''));\nconst sufixo = (r) => (String(r.chave || '').match(/#\\d+$/) || [''])[0];\nconst isoTxt = (v) => {\n  const d = v instanceof Date ? v : new Date(String(v || ''));\n  return isNaN(d) ? String(v || '') : d.toISOString();\n};\n\n// um valor por (exame, coleta): laudo reemitido repete o mesmo valor; fica o de liberação mais recente\nfunction semRepetir(linhas, chaveDe) {\n  const m = new Map();\n  for (const r of linhas) {\n    const k = chaveDe(r) + '|' + r.coleta;\n    const v = m.get(k);\n    if (!v || String(r.liberado || '') > String(v.liberado || '')) m.set(k, r);\n  }\n  return [...m.values()].sort((a, b) => Date.parse(a.coleta) - Date.parse(b.coleta) || String(a.chave).localeCompare(String(b.chave)));\n}\n\n// mesmo desenho do montar() de skills/sasi-ingest-export/scripts/labs.py\n// \"atual\" só se colhido a partir de janelaIni (ms); valor mais velho fica fora das linhas (continua em exames)\nfunction laboratorio(S, janelaIni) {\n  const ult = (k) => {\n    const s = S[k] || [];\n    const u = s[s.length - 1];\n    return u && Date.parse(u.coleta) >= (janelaIni || 0) ? u : null;\n  };\n  const ant = (k) => (ult(k) && S[k].length > 1 ? S[k][S[k].length - 2] : null);\n  const serie = (k) => {\n    const u = ult(k);\n    if (!u) return null;\n    const a = ant(k);\n    return k + ': ' + (a ? a.valor + ' => ' : '') + u.valor + (UNIDADE_BRIEFING[k] ? ' ' + UNIDADE_BRIEFING[k] : '');\n  };\n  const atual = (k) => (ult(k) ? k + ': ' + ult(k).valor : null);\n  const linhas = [];\n  let g = ['HB', 'HT', 'PLAQ'].map(serie).filter(Boolean);\n  if (g.length) linhas.push(g.join(' | '));\n  const leu = ult('LEUCO');\n  if (leu) {\n    const mesma = (k) => (S[k] || []).filter((r) => r.coleta === leu.coleta).pop();\n    const seg = mesma('SEG');\n    const bast = mesma('BAST');\n    linhas.push(serie('LEUCO') + (seg && bast ? ' (seg ' + seg.valor + ' % / bast ' + bast.valor + ' %)' : ''));\n  }\n  g = [serie('UR'), serie('CR')].concat(['NA', 'K', 'MG', 'CAI', 'P'].map(atual)).filter(Boolean);\n  if (g.length) linhas.push(g.join(' | '));\n  const comGaso = GASO.filter((k) => ult(k));\n  if (comGaso.length) {\n    const t = comGaso.map((k) => ult(k).coleta).sort().pop();\n    const partes = GASO.map((k) => (S[k] || []).filter((r) => r.coleta === t).pop()).map((r, i) => (r ? GASO[i] + ' ' + r.valor : null));\n    linhas.push('Gaso: ' + partes.filter(Boolean).join(' / '));\n  }\n  const o = OUTROS.filter((k) => ult(k)).map((k) => k + ' ' + ult(k).valor);\n  if (o.length) linhas.push('Outros: ' + o.join(' / '));\n  return linhas;\n}\n\n// extras = {avisos, pendentes, ref (ISO: momento do pedido ou fim do dia \"ate\")}\nfunction montarPaciente(p, linhasBrutas, extras) {\n  const ex = extras || {};\n  const avisos = (ex.avisos || []).slice();\n  const refMs = Date.parse(ex.ref || new Date().toISOString());\n  const janelaIni = refMs - JANELA_H * 3600e3;\n  const linhas = linhasBrutas.map((r) => Object.assign({}, r, { coleta: isoTxt(r.coleta), liberado: r.liberado ? isoTxt(r.liberado) : null }))\n    .filter((r) => Date.parse(r.coleta) <= refMs);\n  const S = {};\n  for (const r of semRepetir(linhas.filter((x) => x.sigla && !daMaquina(x)), (x) => x.sigla)) (S[r.sigla] = S[r.sigla] || []).push(r);\n  const coletas = {};\n  for (const k of Object.keys(S)) {\n    const s = S[k];\n    coletas[k] = { atual: dataBr(s[s.length - 1].coleta), anterior: s.length > 1 ? dataBr(s[s.length - 2].coleta) : null };\n  }\n  const todas = semRepetir(linhas, (r) => chaveTexto(r.grupo) + '|' + chaveTexto(r.exame) + sufixo(r) + (daMaquina(r) ? '|MAQ' : ''));\n  const series = new Map();\n  const cult = new Map();\n  for (const r of todas) {\n    if (RE_GRUPO_CULTURA.test(r.grupo)) {\n      const k = r.coleta + '|' + r.grupo;\n      if (!cult.has(k)) cult.set(k, { coleta: dataBr(r.coleta), liberado: r.liberado ? dataBr(r.liberado) : null, exame: r.grupo, itens: [] });\n      cult.get(k).itens.push(r);\n      continue;\n    }\n    const k = chaveTexto(r.grupo) + '|' + chaveTexto(r.exame) + sufixo(r) + (daMaquina(r) ? '|MAQ' : '');\n    if (!series.has(k)) {\n      const nome = chaveTexto(r.grupo) === chaveTexto(r.exame) ? r.exame : r.exame + ' (' + r.grupo + ')';\n      series.set(k, { nome: nome + (daMaquina(r) ? ' [máquina]' : ''), sigla: daMaquina(r) ? '' : (r.sigla || ''), unidade: '', referencia: '', serie: [] });\n    }\n    const s = series.get(k);\n    s.serie.push(r.valor + ' (' + dataBr(r.coleta) + ')');\n    s.unidade = r.unidade || s.unidade;\n    s.referencia = r.referencia || s.referencia;\n  }\n  const culturas = [...cult.values()].map((c) => {\n    let resultado;\n    if (/^ANTIBIOGRAMA/i.test(c.exame) && c.itens.every((r) => /^[SIR]$/.test(r.valor))) {\n      const por = { S: [], I: [], R: [] };\n      for (const r of c.itens) por[r.valor].push(r.exame);\n      resultado = ['S', 'I', 'R'].filter((k) => por[k].length).map((k) => k + ': ' + por[k].join(', ')).join(' | ');\n    } else {\n      resultado = c.itens.map((r) => (chaveTexto(r.exame) === chaveTexto(c.exame) ? '' : r.exame + ': ') + r.valor\n        + (r.unidade ? ' ' + r.unidade : '') + (r.obs ? ' (' + r.obs + ')' : '')).join(' | ');\n    }\n    return { coleta: c.coleta, liberado: c.liberado, exame: c.exame, resultado: resultado.slice(0, 1200) };\n  });\n  if (!linhas.length) avisos.push('nenhum valor de laboratório desde ' + String(p.desde).split('-').reverse().join('/'));\n  else {\n    const ultima = linhas.reduce((m, r) => (r.coleta > m ? r.coleta : m), '');\n    if (Date.parse(ultima) < janelaIni) {\n      avisos.push('nenhuma coleta nas ' + JANELA_H + ' h antes de ' + dataBr(new Date(refMs).toISOString()) + ' (última: ' + dataBr(ultima)\n        + '); seção Laboratório vazia, ver a série em exames');\n    }\n  }\n  return {\n    leito: p.leito, nome: p.nome, desde: p.desde, laboratorio: laboratorio(S, janelaIni), coletas, culturas,\n    pendentes: ex.pendentes || [], avisos, exames: [...series.values()].map((s) => Object.assign({}, s, { serie: s.serie.join(' | ') })),\n  };\n}\n\n// e = {pacientes (nó Pacientes), documentos (nó Documentos), linhas (banco), lidos (laudos lidos agora), agora, ref}\nfunction montarResposta(e) {\n  const D = e.documentos || {};\n  const ref = e.ref || e.agora;\n  const limitePend = Date.parse(ref) - PENDENTE_DIAS * 864e5;\n  const pacientes = e.pacientes.map((p) => {\n    const desdeMs = Date.parse(p.desde + 'T00:00:00-03:00');\n    const meus = e.linhas.filter((r) => r.paciente === p.nome && Date.parse(isoTxt(r.coleta)) >= desdeMs);\n    const resumo = (D.pacientes || []).find((x) => x.nome === p.nome) || {};\n    const avisos = [];\n    if (!resumo.docs) {\n      avisos.push('nenhum laudo com o nome exato desde ' + p.desde.split('-').reverse().join('/')\n        + (resumo.nome_parecido ? ': ' + resumo.nome_parecido + ' laudo(s) com nome parecido, conferir a grafia' : ''));\n    }\n    for (const l of e.lidos || []) if (l.paciente === p.nome && l.aviso) avisos.push('laudo colhido em ' + dataBr(l.coleta) + ': ' + l.aviso);\n    const comPend = (D.docs || []).filter((d) => d.paciente === p.nome && d.pendentes && d.pendentes.length && Date.parse(d.coleta) <= Date.parse(ref));\n    const velhos = comPend.filter((d) => Date.parse(d.coleta) < limitePend).length;\n    if (velhos) avisos.push(velhos + ' pedido(s) colhido(s) há mais de ' + PENDENTE_DIAS + ' dias ainda com exame sem resultado no site');\n    const pendentes = comPend.filter((d) => Date.parse(d.coleta) >= limitePend)\n      .map((d) => ({ coleta: dataBr(d.coleta), exames: [...new Set(d.pendentes)] }));\n    return montarPaciente(p, meus, { avisos, pendentes, ref });\n  });\n  const avisos = [];\n  if (D.falhas) avisos.push(D.falhas + ' página(s) da busca não vieram em JSON');\n  return {\n    gerado_em: e.agora, referencia: ref, janela_atual_h: JANELA_H, ancora: 'data da coleta (nunca a da liberação)', laudos_no_site: (D.docs || []).length,\n    laudos_lidos_agora: (e.lidos || []).length, avisos, pacientes,\n  };\n}\n\nif (typeof module !== 'undefined' && module.exports) module.exports = { montarResposta, montarPaciente, laboratorio, dataBr };\n\n// ---- nó \"Montar resposta\" do n8n ----\nlet lidos = [];\ntry { lidos = $('Ler laudo').all().map((x) => x.json).filter((x) => x.tipo === 'laudo'); } catch (e) { lidos = []; }\nconst P = $('Pacientes').all().map((x) => x.json);\nconst corpo = $('Pedido').first().json.body || {};\nconst agora = new Date().toISOString();\nconst hoje = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);\nlet ref = agora;\nif (corpo.referencia && !isNaN(Date.parse(corpo.referencia))) ref = new Date(corpo.referencia).toISOString();\nelse if (P.length && P[0].ate < hoje) ref = new Date(P[0].ate + 'T23:59:59-03:00').toISOString();\nreturn [{ json: montarResposta({\n  pacientes: P,\n  documentos: $('Documentos').first().json,\n  linhas: $input.all().map((x) => x.json).filter((r) => r && r.chave),\n  lidos,\n  agora,\n  ref,\n}) }];\n"
+   }
+  }
+ ],
+ "connections": {
+  "Entrar no site": {
+   "main": [
+    [
+     {
+      "node": "Sessao",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Sessao": {
+   "main": [
+    [
+     {
+      "node": "Buscar por nome",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Laudo PDF": {
+   "main": [
+    [
+     {
+      "node": "PDF base64",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "PDF base64": {
+   "main": [
+    [
+     {
+      "node": "PDF arquivo",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "PDF arquivo": {
+   "main": [
+    [
+     {
+      "node": "PDF texto",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "PDF texto": {
+   "main": [
+    [
+     {
+      "node": "Ler laudo",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Pedido": {
+   "main": [
+    [
+     {
+      "node": "Pacientes",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Pacientes": {
+   "main": [
+    [
+     {
+      "node": "Entrar no site",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Buscar por nome": {
+   "main": [
+    [
+     {
+      "node": "Documentos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Documentos": {
+   "main": [
+    [
+     {
+      "node": "Laudos já lidos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Laudos já lidos": {
+   "main": [
+    [
+     {
+      "node": "A baixar",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "A baixar": {
+   "main": [
+    [
+     {
+      "node": "Tem laudo novo?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Tem laudo novo?": {
+   "main": [
+    [
+     {
+      "node": "Laudo PDF",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Valores da internação",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Ler laudo": {
+   "main": [
+    [
+     {
+      "node": "Valores",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Laudos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Valores": {
+   "main": [
+    [
+     {
+      "node": "Gravar valores",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Laudos": {
+   "main": [
+    [
+     {
+      "node": "Gravar laudos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Gravar laudos": {
+   "main": [
+    [
+     {
+      "node": "Valores da internação",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Valores da internação": {
+   "main": [
+    [
+     {
+      "node": "Montar resposta",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Montar resposta": {
+   "main": [
+    [
+     {
+      "node": "Resposta",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1",
+  "availableInMCP": true,
+  "saveDataSuccessExecution": "none"
+ }
+}
