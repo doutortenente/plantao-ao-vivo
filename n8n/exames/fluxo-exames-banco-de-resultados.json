@@ -16,9 +16,7 @@
     "httpMethod": "POST",
     "path": "exames-lab",
     "responseMode": "responseNode",
-    "options": {
-     "ipWhitelist": "127.0.0.1,::1"
-    }
+    "options": {}
    }
   },
   {

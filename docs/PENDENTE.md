@@ -97,7 +97,7 @@ exemplo e passa.
 ## 8. Exames pelo n8n (12/11/2026, branch `feat/exames-n8n`)
 
 Feito: o fluxo "Exames - Banco de Resultados" (detalhes em `n8n/exames/README.md`).
-- Está publicado e só aceita chamada do próprio PC; de fora, devolve 403.
+- Está publicado; aceita chamada do PC e de fora.
 - Guarda tudo nas tabelas do n8n e lê só laudo novo.
 - O Hermes chama pela skill `skills/exames-lab/SKILL.md`.
 - O leitor foi calibrado em 227 laudos reais. O plano do resto está em `docs/PLANO-N8N.md`.

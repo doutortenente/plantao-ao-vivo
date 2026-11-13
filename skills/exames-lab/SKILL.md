@@ -12,7 +12,9 @@ preso à DATA DA COLETA, nunca à da liberação.
 Os valores ficam guardados nas tabelas do n8n `exames_valores` e `exames_laudos`. No plantão seguinte o fluxo só
 baixa laudo novo: na 2ª chamada dos 7 leitos, 19 s e nenhum download (medido em 12/11/2026).
 
-## Chamar (só deste PC; de fora o n8n devolve 403)
+## Chamar
+
+Do PC, como abaixo, ou de fora, pelo endereço público do n8n com o mesmo caminho `/webhook/exames-lab`.
 
 ```bash
 curl -s -X POST http://127.0.0.1:5678/webhook/exames-lab -H 'Content-Type: application/json' \

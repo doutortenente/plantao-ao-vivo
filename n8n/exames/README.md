@@ -13,7 +13,7 @@ Quem chama é o Hermes, pela skill `skills/exames-lab/SKILL.md` deste repositór
 
 | Etapa | Nó do n8n | O que faz |
 |---|---|---|
-| Pedido | `Pedido` | Endereço (webhook) `POST /webhook/exames-lab`. Só aceita chamada deste PC (127.0.0.1); de fora, 403. |
+| Pedido | `Pedido` | Endereço (webhook) `POST /webhook/exames-lab`, chamado do PC ou de fora. |
 | Validação | `Pacientes` | Exige nome completo e data de admissão antes de entrar no site. |
 | Login | `Entrar no site`, `Sessao` | Usa a credencial "Banco de Resultados" guardada no n8n (a senha não fica no repositório). |
 | Busca | `Buscar por nome`, `Documentos` | Percorre todas as páginas. Fica só com laudo de **nome exato** (homônimo fica de fora) e **coleta ≥ admissão**. A janela de datas do site filtra pela inclusão, não pela coleta, por isso a data é conferida depois. |
