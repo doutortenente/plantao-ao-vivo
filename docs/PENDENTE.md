@@ -102,3 +102,24 @@ exemplo e passa.
 - O JSON da página `extracao-web` não monta o bloco `ficha`: quem monta é o Claude no chat, a partir de
   `prescricao_lida`.
 - O teste da página precisa de node e playwright e é pulado no CI.
+
+## 8. Exames pelo n8n (12/11/2026, branch `feat/exames-n8n`)
+
+Feito: o fluxo "Exames - Banco de Resultados" (detalhes em `n8n/exames/README.md`).
+- Está publicado; aceita chamada do PC e de fora.
+- Guarda tudo nas tabelas do n8n e lê só laudo novo.
+- O Hermes chama pela skill `skills/exames-lab/SKILL.md`.
+- O leitor foi calibrado em 227 laudos reais. O plano do resto está em `docs/PLANO-N8N.md`.
+
+- [ ] Ligar o fluxo no passo a passo do plantão (`skills/plantao`):
+  - o Hermes chama o fluxo com os leitos do JSON e cola as linhas de `laboratorio`;
+  - o `labs.py` continua para o PDF que chegar em `entrada/`, e os itens dele na seção 2 continuam valendo.
+- [ ] Antibiograma por disco-difusão: a tabela S/I/R vem em colunas, e o texto do PDF perde a coluna. Hoje sai
+  "ler no PDF". Para ler sozinho seria preciso usar a posição de cada palavra na página.
+- [ ] Há pedidos de semanas atrás ainda marcados como pendentes no site: perguntar a ele se o site marca exame
+  cancelado como pendente. Hoje, pendência com mais de 7 dias vira só contagem nos avisos.
+- [ ] `desde` = admissão na UTI (`admissao_uti`). Exame do PS de antes da UTI fica de fora, a menos que o pedido mande
+  um `desde` mais cedo.
+- [ ] Apagar, com o OK dele (são dados de paciente):
+  - as execuções de teste do fluxo no n8n (17 a 25);
+  - os PDFs e textos de teste na pasta temporária da sessão.
