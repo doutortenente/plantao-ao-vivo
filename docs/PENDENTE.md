@@ -2,6 +2,9 @@
 
 O que ficou em aberto entre sessões. Quem continuar o trabalho lê isto primeiro e risca o que fechar.
 
+Estado em 22/11/2026: branch `feat/plantao-22-11-correcoes` (correções dos plantões de 21 e 22/11 e a sincronização
+com o OneDrive) em PR, à espera do "prosseguir" para o merge. Ver a seção 9.
+
 Estado em 11/11/2026: contrato JSON `hd` (fim de `diagnostico` / `ficha.dx`) na `main` — PR [#14](https://github.com/doutortenente/plantao-ao-vivo/pull/14).
 
 Estado em 21/10/2026: o PR [#2](https://github.com/doutortenente/plantao-ao-vivo/pull/2) entrou na `main`
@@ -123,3 +126,17 @@ Feito: o fluxo "Exames - Banco de Resultados" (detalhes em `n8n/exames/README.md
 - [ ] Apagar, com o OK dele (são dados de paciente):
   - as execuções de teste do fluxo no n8n (17 a 25);
   - os PDFs e textos de teste na pasta temporária da sessão.
+
+## 9. Plantões de 21 e 22/11/2026 (branch `feat/plantao-22-11-correcoes`)
+
+Feito: prescrição inteira na ficha, ACM na coluna 3, LAMG em PROFILAXIA, variantes do ajuste, laboratório de 72 h
+(`gerador/labs_72h.py`), evolução sem "Terapias vigentes", checagens com ACM e a sincronização com o OneDrive
+(`sync/`, timer instalado no Tijolão em 22/11).
+
+- [ ] Merge na `main`: só com o "prosseguir" dele.
+- [ ] O clone do PC (`~/src/plantao-ao-vivo`) está em `7bc895e` (15/11), com mudanças locais não versionadas em
+  `CLAUDE.md`, `docs/BRIEFING.md` e `docs/instrucoes-projeto.md`. Perguntar a ele o que fica antes de atualizar.
+- [ ] `labs_72h.py` é BETA como o `labs.py`: conferir contra o PDF nos próximos plantões. Leitura de cálcio total e
+  albumina entrou no `labs.py` (siglas CA e ALB) só para a série da ficha.
+- [ ] A página `extracao-web` e a esteira não conhecem o ACM na coluna 3 nem a série de 72 h.
+- [ ] Ver no papel: o "denso" (menos ar entre as linhas) ainda é legível para ele?
