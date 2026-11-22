@@ -27,16 +27,16 @@ class Serie72h(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         d = Path(self.tmp.name)
         arquivos = {
-            "03-tania-labs-19-11-26.txt": laudo("19/11/2026 00:05:00", HB="10,10", UR="120,0"),
-            "03-tania-labs-20-11-26.txt": laudo("20/11/2026 00:05:00", HB="9,60", PLAQ="248.000", UR="135,3",
+            "03-teste-labs-19-11-26.txt": laudo("19/11/2026 00:05:00", HB="10,10", UR="120,0"),
+            "03-teste-labs-20-11-26.txt": laudo("20/11/2026 00:05:00", HB="9,60", PLAQ="248.000", UR="135,3",
                                                CR="1,2", NA="163,2"),
-            "03-tania-labs-21-11-26.txt": laudo("21/11/2026 00:05:00", HB="7,80", PLAQ="237.000", UR="133,9",
+            "03-teste-labs-21-11-26.txt": laudo("21/11/2026 00:05:00", HB="7,80", PLAQ="237.000", UR="133,9",
                                                CR="1,4", NA="163,0"),
-            "03-tania-labs-22-11-26.txt": laudo("22/11/2026 00:03:00", HB="8,30", PLAQ="247.000", UR="143,1",
+            "03-teste-labs-22-11-26.txt": laudo("22/11/2026 00:03:00", HB="8,30", PLAQ="247.000", UR="143,1",
                                                CR="1,1"),
-            "03-tania-gaso-22-11-26.txt": laudo("22/11/2026 05:00:00", HB="6,1", NA="150"),
-            "07-jack-labs-21-11-26.txt": laudo("21/11/2026 10:27:00", CA="8,8", CAI="0,96"),
-            "07-jack-labs2-21-11-26.txt": laudo("21/11/2026 18:52:00", CA="8,9", CAI="0,98"),
+            "03-teste-gaso-22-11-26.txt": laudo("22/11/2026 05:00:00", HB="6,1", NA="150"),
+            "07-teste-labs-21-11-26.txt": laudo("21/11/2026 10:27:00", CA="8,8", CAI="0,96"),
+            "07-teste-labs2-21-11-26.txt": laudo("21/11/2026 18:52:00", CA="8,9", CAI="0,98"),
         }
         for nome, txt in arquivos.items():
             (d / nome).write_text(txt, encoding="utf-8")
