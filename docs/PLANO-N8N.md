@@ -22,6 +22,11 @@ Pendências na seção 8 do `docs/PENDENTE.md`.
 
 ### 2. Sincronizar `entrada/` e `saida/` com o OneDrive (rclone)
 
+**Feito de outro jeito em 22/11/2026**: timer do systemd do usuário no Tijolão (`sync/`, sem `rclone rcd` e sem n8n).
+As pastas ele decidiu: `onedrive:000_PLANTÂO_AO_VIVO/<plantão>/` (só o vigente) ↔
+`~/Downloads/DOCS-E-RASCUNHOS-PLANTOES/<plantão>/`; saída em `<plantão>/outputs/`; anteriores em
+`onedrive:Plantao-ao-vivo-historico/`. O texto abaixo fica como registro do plano original.
+
 - **Peça:** `rclone rcd`, o modo servidor do rclone, que recebe ordens por HTTP.
   - Roda como serviço do systemd do usuário.
   - Escuta só em `127.0.0.1:5572`, com usuário e senha.

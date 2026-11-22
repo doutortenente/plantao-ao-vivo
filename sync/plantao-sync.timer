@@ -1,0 +1,11 @@
+[Unit]
+Description=Plantão ao vivo: sincronização com o OneDrive a cada 2 minutos
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
