@@ -20,6 +20,10 @@ def laudo(coleta, **valores):
 
 class Serie72h(unittest.TestCase):
     def setUp(self):
+        # largura fixa por caractere: o teste não depende da fonte instalada (o CI pode não ter a Liberation)
+        self._larg = L.largura_cm
+        L.largura_cm = lambda txt, pt=10: len(txt) * 0.14
+        self.addCleanup(setattr, L, "largura_cm", self._larg)
         self.tmp = tempfile.TemporaryDirectory()
         d = Path(self.tmp.name)
         arquivos = {
@@ -75,3 +79,8 @@ class Serie72h(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Largura(unittest.TestCase):
+    def test_medida_proxima_da_times(self):  # com a fonte ou na estimativa, "Hb … | Plaq …" cabe na coluna
+        self.assertLess(L.largura_cm("Hb 9,6 => 7,8 => 8,3   |   Plaq 248 => 237 => 247 mil"), L.LARGURA_CM)

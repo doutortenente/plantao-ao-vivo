@@ -39,19 +39,28 @@ COLETA = re.compile(r"Data da Coleta:\s*(\d{2}/\d{2}/\d{4})(?:\s+(\d{2}):(\d{2})
 DATA_NOME = re.compile(r"(\d{2})-(\d{2})-(\d{2})(?!\d)")
 LEITO_NOME = re.compile(r"^(\d{1,2})\s*-")
 
-try:
-    from PIL import ImageFont
-    _FONTES = [Path("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf"),
-               Path("/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf")]
-    _F = next((ImageFont.truetype(str(f), 1000) for f in _FONTES if f.exists()), None)
-except Exception:  # noqa: BLE001 — sem PIL/fonte: estimativa por caractere
-    _F = None
+def _fonte():
+    """Times New Roman ou a Liberation Serif (mesma métrica), achadas pelo fontconfig; sem elas, None."""
+    try:
+        import subprocess
+        from PIL import ImageFont
+        for nome in ("Times New Roman", "Liberation Serif"):
+            r = subprocess.run(["fc-match", "-f", "%{file}", nome], capture_output=True, text=True, timeout=10)
+            arq = r.stdout.strip()
+            if arq and Path(arq).exists() and re.search(r"(?i)times|liberationserif|liberation_serif", arq):
+                return ImageFont.truetype(arq, 1000)
+    except Exception:  # noqa: BLE001 — sem PIL, sem fontconfig ou sem a fonte: estimativa por caractere
+        pass
+    return None
+
+
+_F = _fonte()
 
 
 def largura_cm(txt, pt=10):
     if _F is not None:
         return _F.getlength(txt) / 1000 * pt * 2.54 / 72
-    return len(txt) * pt * 0.0165
+    return len(txt) * pt * 0.0148  # média da Times (0,42 em por caractere)
 
 
 def _limpo(v, minimo=0):
