@@ -32,6 +32,7 @@ LAB_ALIAS = {
     "UR": "UR", "UREIA": "UR", "CR": "CR", "CREATININA": "CR", "CREAT": "CR",
     "NA": "NA", "SODIO": "NA", "K": "K", "POTASSIO": "K", "MG": "MG", "MAGNESIO": "MG",
     "CAI": "CAI", "CALCIOIONICO": "CAI", "CAIONICO": "CAI", "CALCIOIONIZADO": "CAI", "P": "P", "FOSFORO": "P",
+    "CALCIO": "CA", "CALCIOTOTAL": "CA", "ALBUMINA": "ALB",  # 22/11/2026: série de cálcio da ficha (labs_72h.py)
     "PH": "pH", "PCO2": "pCO2", "PO2": "pO2", "HCO3": "HCO3", "BICARBONATO": "HCO3", "BE": "BE", "SBE": "BE",
     "EXCESSODEBASE": "BE", "SATO2": "SatO2", "LACTATO": "Lactato", "LAC": "Lactato", "ACIDOLATICO": "Lactato",
     "PCR": "PCR", "PROTEINACREATIVA": "PCR", "PROTEINACREATIVAPCR": "PCR", "TROPONINA": "Troponina",
