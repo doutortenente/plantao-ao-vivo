@@ -173,8 +173,14 @@ class AjusteComExameCompacto(unittest.TestCase):
 
     def test_nada_cabe_sai_compacto_em_9_pt(self):
         res, nao_coube = self.ajustar_com(lambda cfg: False)
-        self.assertEqual(res, {"99": (0, ficha_cola.N_INTER_COMPACTO, 9, True)})
+        self.assertEqual(res, {"99": (0, ficha_cola.N_INTER_COMPACTO, 9, True, ficha_cola.VARIANTES[-1])})
         self.assertEqual(nao_coube, ["99"])
+
+    def test_variante_so_quando_a_mais_arejada_nem_no_minimo_cabe(self):
+        # 22/11/2026: só cabe com o SN na coluna 3: o ajuste passa pelas variantes até achar
+        res, nao_coube = self.ajustar_com(lambda cfg: len(cfg) > 4 and cfg[4] == {"sn_lado": True})
+        self.assertEqual(res["99"][4], {"sn_lado": True})
+        self.assertEqual(nao_coube, [])
 
 
 @unittest.skipUnless(TEM_PDF, "sem LibreOffice/pdftotext")

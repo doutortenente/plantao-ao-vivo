@@ -30,10 +30,10 @@ sys.path.insert(0, str(RAIZ / "skills" / "sasi-ingest-export" / "scripts"))
 import build_passagem as motor  # noqa: E402
 import evolucao_anterior  # noqa: E402
 import labs  # noqa: E402
-import validar  # noqa: E402
 
 INFUSOES = ("DVA", "SEDAÇÃO", "ATB", "VM", "O2", "DIETA", "NPT", "TRS")
-SISTEMAS = ("NEURO", "CV", "RESP", "TGI", "RENAL", "ENDÓCRINO", "ANALGESIA", "PROFILAXIA", "SN")
+# 22/11/2026: a ficha leva a prescrição inteira (OUTRO vira OUTROS) e o ACM em bloco próprio (a princípio suspenso)
+SISTEMAS = ("NEURO", "CV", "RESP", "TGI", "RENAL", "ENDÓCRINO", "ANALGESIA", "OUTROS", "PROFILAXIA", "SN", "ACM")
 COLUNA = {  # coluna impressa do Mod. 0120-01 → (nome no CANON do motor, lado)
     "VO": ("ingesta VO", "ganhos"), "Dieta": ("dieta", "ganhos"), "SNE": ("dieta SNE", "ganhos"),
     "Água": ("água", "ganhos"), "Med": ("medicação", "ganhos"), "Endovenoso": ("EV", "ganhos"),
@@ -255,15 +255,11 @@ def item(it, avisos):
 
 def prescricao(rx, avisos):
     """(infusoes, sistemas, linha ATB das terapias, pendências)."""
-    grupos, fora = {}, []
+    grupos = {}
     for it in rx.get("itens") or []:
         txt = item(it, avisos)
-        if it.get("grupo") == "OUTRO" or validar.ITENS_FORA_DA_FICHA.search(txt):
-            fora.append(txt)
-            continue
-        grupos.setdefault(it.get("grupo"), []).append(txt)
-    if fora:
-        avisos.append("prescrição: fora da ficha-cola: " + "; ".join(fora))
+        g = "OUTROS" if it.get("grupo") == "OUTRO" else it.get("grupo")
+        grupos.setdefault(g, []).append(txt)
     infusoes = [[g, grupos[g]] for g in INFUSOES if g in grupos]
     suspensos = [s for s in (limpar(x, avisos, "prescrição") for x in rx.get("suspensos") or []) if s]
     sistemas = [[g, grupos[g]] for g in SISTEMAS if g in grupos] + ([["SUSPENSOS", suspensos]] if suspensos else [])

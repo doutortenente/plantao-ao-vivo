@@ -37,12 +37,10 @@ FICHA_OBRIGATORIO = ("infusoes", "sistemas", "vigiar", "lab")
 # cabeçalho da ficha: no leito (fonte única) ou sobrescrito no bloco `ficha` (texto mais curto)
 CABECALHO = {"alergia": "alergia", "hd": "hd", "disp": "dispositivos"}
 
-# O que não vai para a ficha-cola (decisão de 11/10/2026): pele, colírios, lágrima, simeticona…
-CLASSES_FORA_DA_FICHA = {"SINTOMÁTICOS", "OFTALMO", "PELE", "TÓPICOS"}
-ITENS_FORA_DA_FICHA = re.compile(
-    r"\b(col[íi]rio|lacrima|lumigan|brixag|ephynal|hirudoid|brava|comfeel|com feel|primoderm|primo derme|"
-    r"rio ?hex|riohex|luftal|simeticona|dersani|fresubin creme|fresubin protein|resource fiber|complexo b|"
-    r"shilley heparinizado)\b", re.I)
+# 22/11/2026: a ficha-cola leva TODOS os itens da prescrição, um por linha (pele, colírio, tópicos e sintomáticos
+# também). A regra de 11/10/2026 que tirava esses itens acabou. ACM = a critério médico = a princípio suspenso: vai no
+# bloco ACM (coluna 3 da ficha), não misturado nos sistemas.
+ACM_NO_ITEM = re.compile(r"\bACM\b|a crit[ée]rio m[ée]dico", re.I)
 # 02/11/2026: em TNE, a água pela sonda vai na linha DIETA da ficha (volume e frequência). Tirá-la foi erro.
 TNE = re.compile(r"\b(SNE|SNG|SOG|GTT|GTM|TNE|enteral|sonda)\b", re.I)
 AGUA = re.compile(r"\b[áa]gua\b", re.I)
@@ -339,11 +337,9 @@ def validar_leito(leito, meta):
         avisos.append(f"{L}: DIETA em TNE sem a água pela sonda na ficha (pôr volume e frequência da prescrição; "
                       "sem água prescrita, escrever \"sem água prescrita\")")
     for rot, itens in (ficha.get("infusoes") or []) + (ficha.get("sistemas") or []):
-        if rot.strip().upper() in CLASSES_FORA_DA_FICHA:
-            avisos.append(f"{L}: classe {rot} não vai na ficha-cola")
         for it in itens:
-            if ITENS_FORA_DA_FICHA.search(it):
-                avisos.append(f"{L}: \"{it[:50]}\" não vai na ficha-cola (pele, colírio, simeticona e afins)")
+            if ACM_NO_ITEM.search(it) and rot.strip().upper() != "ACM":
+                avisos.append(f"{L}: \"{it[:50]}\" é ACM (a princípio suspenso): vai no bloco ACM, não em {rot}")
             if rot.strip().upper() == "PROFILAXIA" and not PROFILAXIA_TEV_LAMG.search(it):
                 avisos.append(f"{L}: PROFILAXIA só tem TEV e LAMG; \"{it[:50]}\" vai em outro sistema")
 
