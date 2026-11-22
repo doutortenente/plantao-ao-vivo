@@ -131,9 +131,9 @@ Feito: o fluxo "Exames - Banco de Resultados" (detalhes em `n8n/exames/README.md
 
 Feito: prescrição inteira na ficha, ACM na coluna 3, LAMG em PROFILAXIA, variantes do ajuste, laboratório de 72 h
 (`gerador/labs_72h.py`), evolução sem "Terapias vigentes", checagens com ACM e a sincronização com o OneDrive
-(`sync/`, timer instalado no Tijolão em 22/11).
+(`sync/`, script instalado no Tijolão em 22/11; sem timer, roda quando o Claude chama).
 
-- [ ] Merge na `main`: só com o "prosseguir" dele.
+- [x] Merge na `main`: ordem dele em 22/11/2026.
 - [ ] O clone do PC (`~/src/plantao-ao-vivo`) está em `7bc895e` (15/11), com mudanças locais não versionadas em
   `CLAUDE.md`, `docs/BRIEFING.md` e `docs/instrucoes-projeto.md`. Perguntar a ele o que fica antes de atualizar.
 - [ ] `labs_72h.py` é BETA como o `labs.py`: conferir contra o PDF nos próximos plantões. Leitura de cálcio total e

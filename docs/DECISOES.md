@@ -28,7 +28,7 @@
 | 22/11/2026 | Ficha-cola com TODOS os itens da prescrição, um por linha (pele, tópicos, sintomáticos também): acabou a regra de 11/10/2026 que os tirava. ACM na coluna 3. |
 | 22/11/2026 | Laboratório da ficha-cola em série de 72 h (`gerador/labs_72h.py`). |
 | 22/11/2026 | Pendências da ficha tiradas das evoluções anteriores dele (o plano), mais as condutas que ele ditar no plantão. |
-| 22/11/2026 | Sincronização automática com o OneDrive pelo rclone (timer `plantao-sync` no Tijolão); `000_PLANTÂO_AO_VIVO/` só com o plantão vigente, os anteriores em `Plantao-ao-vivo-historico/` (ideia dele). |
+| 22/11/2026 | Sincronização com o OneDrive pelo rclone (`sync/plantao_sync.py`), rodada pelo Claude no começo do plantão e depois da entrega. Sem timer: o de 2 min saiu no mesmo dia, a pedido dele. `000_PLANTÂO_AO_VIVO/` só com o plantão vigente, os anteriores em `Plantao-ao-vivo-historico/` (ideia dele). |
 | 12/10/2026 | Ficha-cola: modelo novo aprovado (`gerador/ficha_cola.py`) — hipóteses no cabeçalho (hoje rótulo **HD:** e JSON `hd`; na época imprimia como Dx), prescrição em 2 blocos (infusões/terapias + por sistemas), controles em grade, PDF junto. Profilaxia só TEV/LAMG. Folha que estoura no Word = erro grave. |
 
 ## Correções feitas ao montar este repositório (11/10/2026)

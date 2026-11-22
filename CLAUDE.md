@@ -57,13 +57,16 @@ Admissão de leito novo: só `skills/admissao-uti/SKILL.md` (não a `sasi-ingest
 ## Material e saída pelo OneDrive (22/11/2026)
 
 - Ele sobe o material em `onedrive:000_PLANTÂO_AO_VIVO/<plantão>/` (às vezes com subpasta do turno seguinte, como
-  `22-11-26-uti2-diurno-inputs/`). O timer `plantao-sync` do Tijolão desce tudo para
-  `~/Downloads/DOCS-E-RASCUNHOS-PLANTOES/<plantão>/` e gera as páginas dos PDFs escaneados em JPEG
-  (`<plantão>/paginas-jpg/`). Ler as páginas pelo `read_multiple_files` do Desktop Commander, 4 por chamada: o PDF de
-  20 MB não passa inteiro pela ponte de arquivos (deu timeout em 22/11/2026). Detalhes: `sync/README.md`.
-- A entrega vai para `<plantão>/outputs/` no Tijolão (além do chat): o timer sobe para o OneDrive sozinho.
-- No OneDrive, `000_PLANTÂO_AO_VIVO/` fica só com o plantão vigente; os anteriores vão sozinhos para
-  `Plantao-ao-vivo-historico/` depois de 12 h sem mexida.
+  `22-11-26-uti2-diurno-inputs/`). Antes de ler, rodar no Tijolão (Desktop Commander)
+  `python3 ~/.local/bin/plantao_sync.py -v`: desce tudo para `~/Downloads/DOCS-E-RASCUNHOS-PLANTOES/<plantão>/` e gera
+  as páginas dos PDFs escaneados em JPEG (`<plantão>/paginas-jpg/`). Ler as páginas pelo `read_multiple_files` do
+  Desktop Commander, 4 por chamada: o PDF de 20 MB não passa inteiro pela ponte de arquivos (deu timeout em
+  22/11/2026). Detalhes: `sync/README.md`.
+- A entrega vai para `<plantão>/outputs/` no Tijolão (além do chat); rodar o `plantao_sync.py` de novo para subir para
+  o OneDrive.
+- **Sem timer** (22/11/2026): nada roda sozinho a cada 2 min; o sync só roda quando o Claude chama.
+- No OneDrive, `000_PLANTÂO_AO_VIVO/` fica só com o plantão vigente: a cada rodada do sync, os anteriores com 12 h sem
+  mexida vão para `Plantao-ao-vivo-historico/`.
 
 ## Entrega
 

@@ -20,9 +20,10 @@ description: >
 
 ## Entrada
 
-- O material chega pelo OneDrive (`000_PLANTÂO_AO_VIVO/<plantão>/`) e o timer `plantao-sync` desce para o Tijolão
-  (`~/Downloads/DOCS-E-RASCUNHOS-PLANTOES/<plantão>/`), com as páginas dos PDFs escaneados em `paginas-jpg/`. Ler as
-  páginas pelo Desktop Commander (`read_multiple_files`, 4 por vez); PDF de 20 MB não passa pela ponte de arquivos.
+- O material chega pelo OneDrive (`000_PLANTÂO_AO_VIVO/<plantão>/`). Antes de ler, rodar no Tijolão
+  `python3 ~/.local/bin/plantao_sync.py -v`: desce para `~/Downloads/DOCS-E-RASCUNHOS-PLANTOES/<plantão>/`, com as
+  páginas dos PDFs escaneados em `paginas-jpg/`. Ler as páginas pelo Desktop Commander (`read_multiple_files`, 4 por
+  vez); PDF de 20 MB não passa pela ponte de arquivos.
 - Evoluções anteriores (docx ou txt, um leito após o outro; ou o PDF escaneado das evoluções dele: ler as páginas).
 - Folhas de controle: 2 páginas por leito (sinais vitais + balanço), modelo Beneficência Portuguesa.
 - Prescrições do dia (eletrônica impressa + anotação à mão).
@@ -92,5 +93,6 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
   (ex.: droga suspensa).
 - Plano: verbo de comando, contingência ("se X → Y"), meta numérica, profilaxias. Raso = refaz.
 - Supabase: fora do fluxo padrão. Só se o operador pedir.
-- OneDrive: entrada e saída pelo timer `plantao-sync` (`sync/README.md`). A entrega vai também para
-  `<plantão>/outputs/` no Tijolão; arquivo refeito com sufixo `-v2`, `-v3`.
+- OneDrive: entrada e saída pelo `plantao_sync.py`, que o Claude roda no começo e de novo depois da entrega (sem
+  timer; `sync/README.md`). A entrega vai também para `<plantão>/outputs/` no Tijolão; arquivo refeito com sufixo
+  `-v2`, `-v3`.

@@ -22,7 +22,8 @@ Pendências na seção 8 do `docs/PENDENTE.md`.
 
 ### 2. Sincronizar `entrada/` e `saida/` com o OneDrive (rclone)
 
-**Feito de outro jeito em 22/11/2026**: timer do systemd do usuário no Tijolão (`sync/`, sem `rclone rcd` e sem n8n).
+**Feito de outro jeito em 22/11/2026**: script `sync/plantao_sync.py` no Tijolão, rodado pelo Claude no começo do
+plantão e depois da entrega (sem `rclone rcd`, sem n8n e sem timer).
 As pastas ele decidiu: `onedrive:000_PLANTÂO_AO_VIVO/<plantão>/` (só o vigente) ↔
 `~/Downloads/DOCS-E-RASCUNHOS-PLANTOES/<plantão>/`; saída em `<plantão>/outputs/`; anteriores em
 `onedrive:Plantao-ao-vivo-historico/`. O texto abaixo fica como registro do plano original.

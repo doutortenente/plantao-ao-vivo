@@ -1,9 +1,0 @@
-[Unit]
-Description=Plantão ao vivo: sincroniza a pasta do plantão entre o OneDrive e o Tijolão (rclone)
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/python3 %h/.local/bin/plantao_sync.py
-Nice=10
-TimeoutStartSec=15min

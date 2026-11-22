@@ -85,7 +85,7 @@ gerador/
   requirements.txt
 extracao-web/                   página-artefato que lê os scans no navegador e exporta o JSON (ver README dela)
 esteira/                        esteira Airtable → GitHub Actions: leitura com a API do Claude (ver README dela)
-sync/                           OneDrive ↔ Tijolão pelo rclone, timer do systemd (ver README dela)
+sync/                           OneDrive ↔ Tijolão pelo rclone, rodado pelo Claude sob demanda (ver README dela)
 .github/workflows/              testes.yml (a cada push e PR) e plantao.yml (esteira, disparo manual)
 tests/                          motor, checagens, dias, janela, validar, conferir, gerador, esteira, página, doutrina…
 ```

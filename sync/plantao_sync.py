@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """plantao_sync.py — pasta do plantão sincronizada entre o OneDrive e o Tijolão, pelo rclone (22/11/2026).
 
-Roda sozinho pelo timer do systemd do usuário (`sync/plantao-sync.timer`, a cada 2 min). A cada rodada:
+Roda quando o Claude chama, no Tijolão: no começo do plantão e depois de pôr a entrega em `outputs/` (sem timer,
+22/11/2026). A cada rodada:
 
 1. Arquiva: no OneDrive, `000_PLANTÂO_AO_VIVO/` fica só com o plantão vigente (a pasta com a data mais recente no
    nome, "DD-MM-AA-…"). As mais antigas vão para `Plantao-ao-vivo-historico/` quando ficam 12 h sem mexida (move no
