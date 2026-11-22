@@ -11,6 +11,9 @@ Não mudam nada no texto: cada achado vira aviso "ALERTA: …", que sai no topo 
      "suspendo X e mantenho Y" só suspende X; "não suspender X", "se sangrar, suspender X" e "avaliar suspensão"
      não contam.
 Item suspenso (bloco SUSPENSOS, ou "suspenso/a" na mesma oração) não conta como prescrito.
+Item ACM ("a critério médico": bloco ACM ou "ACM" no item) é a princípio suspenso (21/11/2026): não conta como droga em
+uso para TEV, duplicidade e suspenso-no-plano (Clexane prescrito + Xarelto ACM não são 2 anticoagulantes); para alergia
+conta, porque pode ser dado.
 
 O dicionário abaixo é a única fonte: marca e genérico → classe. Droga fora dele não é checada.
 Para acrescentar: uma linha em DROGAS. Alergia escrita como classe ("AINE", "sulfa", "beta-lactâmico",
@@ -254,9 +257,17 @@ def _tem_outra_coisa(oracao):
     return bool(SO_LISTA.sub(" ", resto).strip())
 
 
-def _itens_prescritos(leito):
+ACM = re.compile(r"\bACM\b|a crit[ée]rio m[ée]dico", re.I)
+
+
+def e_acm(rotulo, texto):
+    """Item "a critério médico" (bloco ACM ou "ACM" escrito no item): a princípio suspenso."""
+    return rotulo.strip().upper() == "ACM" or bool(ACM.search(texto))
+
+
+def _itens_prescritos(leito, com_acm=False):
     """(rótulo, texto) de cada item da prescrição: as bombas de `infusoes_continuas` (a ficha as escreve pelo motor)
-    e as linhas da ficha; SUSPENSOS (e variantes) fica de fora."""
+    e as linhas da ficha; SUSPENSOS (e variantes) fica de fora, e ACM também, salvo `com_acm` (alergia)."""
     f = leito.get("ficha") or {}
     bombas = []
     for it in leito.get("infusoes_continuas") or []:
@@ -264,7 +275,8 @@ def _itens_prescritos(leito):
         if d:
             bombas.append((d["grupo"], f"{it['droga']} ({d['nome'].lower()})"))
     return bombas + [(rot.strip().upper(), it) for rot, itens in linhas_da_ficha(f, "infusoes")
-                     + linhas_da_ficha(f, "sistemas") if not rot.strip().upper().startswith("SUSPENS") for it in itens]
+                     + linhas_da_ficha(f, "sistemas") if not rot.strip().upper().startswith("SUSPENS")
+                     for it in itens if com_acm or not e_acm(rot, it)]
 
 
 def _alergia(leito):
@@ -276,12 +288,18 @@ def checar(leito):
     """Lista de avisos 'ALERTA: …' do leito."""
     alertas = []
     itens = _itens_prescritos(leito)
-    textos = [t for _, t in itens] + lista(leito.get("terapias"))
-    prescritas = []
-    for t in textos:
-        for g in prescritas_em(t):
-            if g not in prescritas:
-                prescritas.append(g)
+    textos = [t for _, t in itens] + [t for t in lista(leito.get("terapias")) if not ACM.search(t)]
+
+    def drogas(ts):
+        out = []
+        for t in ts:
+            for g in prescritas_em(t):
+                if g not in out:
+                    out.append(g)
+        return out
+    prescritas = drogas(textos)
+    # alergia: o ACM também conta (pode ser dado)
+    com_acm = drogas([t for _, t in _itens_prescritos(leito, com_acm=True)] + lista(leito.get("terapias")))
 
     # 1. alergia ("Nega outras; dipirona": a oração negativa sai, o resto é checado)
     escrita = _alergia(leito)
@@ -295,7 +313,7 @@ def checar(leito):
                 classes |= cls
         for g in drogas_em(alergia):
             classes.add(DROGAS[g][0])
-        for g in prescritas:
+        for g in com_acm:
             cls = DROGAS[g][0]
             if cls in classes:
                 alertas.append(f"ALERTA: alergia a {escrita} e {g} prescrito ({cls})")

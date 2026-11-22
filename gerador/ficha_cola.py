@@ -165,7 +165,9 @@ def P(cell, first=False, after=1.5, before=0):
     else:
         p = cell.add_paragraph()
     f = p.paragraph_format
-    f.space_before = Pt(before); f.space_after = Pt(after); f.line_spacing = S["ls"]
+    if S.get("denso"):  # 22/11/2026: variante "denso" do ajuste: menos ar entre as linhas (prescrição inteira)
+        after, before = min(after, 0.5), min(before, 2)
+    f.space_before = Pt(before); f.space_after = Pt(after); f.line_spacing = 1.0 if S.get("denso") else S["ls"]
     return p
 
 
@@ -473,13 +475,57 @@ def infusoes_da_ficha(r, f):
     return linhas
 
 
+# 22/11/2026: a ficha leva a prescrição INTEIRA, um item por linha (pele, tópicos e sintomáticos também). ACM ("a
+# critério médico" = a princípio suspenso) e SUSPENSOS saem da coluna da prescrição e vão para a coluna 3, abaixo das
+# PENDÊNCIAS. SN fica com os sistemas; vai para a coluna 3 só quando a folha não comporta (variante do ajuste).
+LADO_DIREITO = ("ACM", "SUSPENSOS")
+TITULOS_LADO = (("SN", "SE NECESSÁRIO"), ("ACM", "ACM  ·  a princípio suspenso"), ("SUSPENSOS", "SUSPENSOS"))
+# PROFILAXIA = TEV + LAMG (21/11/2026): IBP ou anti-H2 escrito em outro sistema (TGI…) vai para PROFILAXIA
+LAMG = re.compile(r"\b(pantoprazol|pantozol|omeprazol|losec|esomeprazol|nexium|lansoprazol|rabeprazol|"
+                  r"ranitidina|famotidina)\b", re.I)
+
+
+def _fora_da_prescricao(rot):
+    R = rot.strip().upper()
+    return R in ("SN", "ACM") or R.startswith("SUSPENS")
+
+
+def profilaxia_com_lamg(sistemas):
+    """Move IBP/anti-H2 dos sistemas comuns para PROFILAXIA (criada antes de SN/ACM/SUSPENSOS se não houver)."""
+    lamg, out = [], []
+    for rot, itens in sistemas:
+        if rot.strip().upper() == "PROFILAXIA" or _fora_da_prescricao(rot):
+            out.append([rot, list(itens)])
+            continue
+        fica = [i for i in itens if not LAMG.search(i)]
+        lamg += [i for i in itens if LAMG.search(i)]
+        if fica:
+            out.append([rot, fica])
+    if lamg:
+        k = next((i for i, (r, _) in enumerate(out) if r.strip().upper() == "PROFILAXIA"), None)
+        if k is None:
+            pos = next((i for i, (r, _) in enumerate(out) if _fora_da_prescricao(r)), len(out))
+            out.insert(pos, ["PROFILAXIA", lamg])
+        else:
+            out[k][1] = out[k][1] + lamg
+    return out
+
+
+def lado_direito(f):
+    """Rótulos que vão para a coluna 3: `ficha.lado_direito` manda; senão a variante do ajuste (SN só se preciso)."""
+    if f.get("lado_direito") is not None:
+        return tuple(x.strip().upper() for x in f["lado_direito"])
+    return (("SN",) if S.get("sn_lado") else ()) + LADO_DIREITO
+
+
 def col_rx(C, leito, meta, r=None):
     f = leito["ficha"]
     sec(C, f"PRESCRIÇÃO  {meta['data_prescricao']}", first=True)
     subsec(C, "INFUSÕES E TERAPIAS", before=1)
     bloco_rx(C, infusoes_da_ficha(r or {}, f))
     subsec(C, "POR SISTEMAS", before=4)
-    bloco_rx(C, f["sistemas"])
+    lado = lado_direito(f)
+    bloco_rx(C, [x for x in profilaxia_com_lamg(f["sistemas"]) if x[0].strip().upper() not in lado])
 
 
 def col_acao(C, leito, n_anot):
@@ -489,6 +535,19 @@ def col_acao(C, leito, n_anot):
         q = P(C, after=2.5)
         q.paragraph_format.left_indent = Cm(0.55); q.paragraph_format.first_line_indent = Cm(-0.55)
         t(q, "□  "); rk(q, it)
+    vai = lado_direito(f)
+    lado = {}
+    for rot, itens in sem_horarios(sem_glicemia(profilaxia_com_lamg(f["sistemas"]))):
+        R = "SUSPENSOS" if rot.strip().upper().startswith("SUSPENS") else rot.strip().upper()
+        if R in vai:
+            lado.setdefault(R, []).extend(itens)
+    for chave, titulo in TITULOS_LADO:
+        if lado.get(chave):
+            sec(C, titulo)
+            for it in lado[chave]:
+                q = P(C, after=0.5)
+                q.paragraph_format.left_indent = Cm(0.3); q.paragraph_format.first_line_indent = Cm(-0.3)
+                droga(q, it)
     if f.get("exames"):
         sec(C, "EXAMES")
         for it in f["exames"]:
@@ -563,8 +622,11 @@ def exame(cell, compacto=False):
 
 
 # ── página ─────────────────────────────────────────────────────────────────
-def pagina(doc, meta, leito, n_anot, n_inter, primeiro, compacto=False):
+def pagina(doc, meta, leito, n_anot, n_inter, primeiro, compacto=False, variante=None):
     r = motor.compute_leito(leito, meta)
+    v = variante or {}
+    S["denso"] = bool(leito["ficha"].get("denso", v.get("denso")))
+    S["sn_lado"] = bool(v.get("sn_lado"))
     if not primeiro:
         q = doc.add_paragraph(); q.paragraph_format.page_break_before = True
         q.paragraph_format.space_after = Pt(0); t(q, " ", tam=E.ESPACADOR)
@@ -670,13 +732,14 @@ def gerar(plantao, caminho, cfg=None, folga=0.0):
     s.bottom_margin = Cm(E.MARGEM_FICHA_PE + folga)
     s.header_distance = s.footer_distance = Cm(E.DISTANCIA_CABECALHO)
     for i, leito in enumerate(plantao["leitos"]):
-        n_anot, n_inter, tam, *compacto = (cfg or {}).get(leito["leito"], (6, N_INTER, E.CORPO, False))
+        n_anot, n_inter, tam, *resto = (cfg or {}).get(leito["leito"], (6, N_INTER, E.CORPO, False))
         S["tam"] = tam
-        pagina(doc, meta, leito, n_anot, n_inter, i == 0, compacto=bool(compacto and compacto[0]))
+        pagina(doc, meta, leito, n_anot, n_inter, i == 0, compacto=bool(resto and resto[0]),
+               variante=resto[1] if len(resto) > 1 else None)
     body = doc.element.body
     if body[0].tag == qn("w:p") and not "".join(body[0].itertext()).strip():
         body.remove(body[0])
-    S["tam"] = E.CORPO
+    S["tam"] = E.CORPO; S["denso"] = S["sn_lado"] = False
     sanear(doc)
     doc.save(caminho)
 
@@ -687,31 +750,48 @@ def n_paginas(docx):
     return int(re.search(r"Pages:\s+(\d+)", out).group(1))
 
 
+# Variantes do ajuste (22/11/2026), da mais arejada para a mais apertada. A prescrição não perde item: quem cede é o
+# espaço entre as linhas e, por último, o SN, que vai para a coluna 3 (com o ACM).
+VARIANTES = ({}, {"denso": True}, {"sn_lado": True}, {"sn_lado": True, "denso": True})
+
+
 def ajustar(plantao, folga=E.FOLGA_MEDICAO):
-    """Devolve (cfg por leito, leitos que não couberam nem em 9 pt sem anotações)."""
+    """Devolve (cfg por leito, leitos que não couberam nem em 9 pt sem anotações).
+
+    cfg = (anotações, intercorrências, fonte, exame compacto[, variante]). Para cada variante, primeiro mede o mínimo
+    (9 pt, exame compacto, sem anotações); se nem assim cabe, passa à próxima. Na primeira que cabe, procura como
+    antes: em cada tamanho descem as anotações, depois o exame fica compacto, e só então a fonte desce."""
     res, nao_coube = {}, []
     with tempfile.TemporaryDirectory() as tmp:
+        fx = Path(tmp) / "x.docx"
+
+        def cabe(um, L, tentativa):
+            gerar(um, fx, {L: tentativa}, folga=folga)
+            return n_paginas(fx) == 1
+
         for leito in plantao["leitos"]:
+            L = leito["leito"]
             um = {"meta": plantao["meta"], "leitos": [leito]}
             achou = None
-            # Em cada tamanho: primeiro descem as anotações (as intercorrências ficam ao lado do exame e não
-            # aumentam a folha); depois o exame fica compacto, com 4 intercorrências; só então a fonte desce.
-            for tam in E.AJUSTE:
-                for compacto, n_inter in ((False, N_INTER), (True, N_INTER_COMPACTO)):
-                    for n_anot in (14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0):
-                        fx = Path(tmp) / "x.docx"
-                        tentativa = (n_anot, n_inter, tam, compacto)
-                        gerar(um, fx, {leito["leito"]: tentativa}, folga=folga)
-                        if n_paginas(fx) == 1:
-                            achou = tentativa; break
+            for var in VARIANTES:
+                extra = (var,) if var else ()
+                if len(VARIANTES) > 1 and not cabe(um, L, (0, N_INTER_COMPACTO, E.AJUSTE[-1], True) + extra):
+                    continue
+                for tam in E.AJUSTE:
+                    for compacto, n_inter in ((False, N_INTER), (True, N_INTER_COMPACTO)):
+                        for n_anot in (14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0):
+                            tentativa = (n_anot, n_inter, tam, compacto) + extra
+                            if cabe(um, L, tentativa):
+                                achou = tentativa; break
+                        if achou:
+                            break
                     if achou:
                         break
-                if achou:
-                    break
-            res[leito["leito"]] = achou or (0, N_INTER_COMPACTO, 9, True)
+                break
+            res[L] = achou or (0, N_INTER_COMPACTO, E.AJUSTE[-1], True) + ((VARIANTES[-1],) if VARIANTES[-1] else ())
             if not achou:
-                nao_coube.append(leito["leito"])
-            print(leito["leito"], res[leito["leito"]], "OK" if achou else "NAO COUBE", file=sys.stderr)
+                nao_coube.append(L)
+            print(L, res[L], "OK" if achou else "NAO COUBE", file=sys.stderr)
     return res, nao_coube
 
 

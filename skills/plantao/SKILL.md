@@ -20,7 +20,11 @@ description: >
 
 ## Entrada
 
-- Evoluções anteriores (docx ou txt, um leito após o outro).
+- O material chega pelo OneDrive (`000_PLANTÂO_AO_VIVO/<plantão>/`). Antes de ler, rodar no Tijolão
+  `python3 ~/.local/bin/plantao_sync.py -v`: desce para `~/Downloads/DOCS-E-RASCUNHOS-PLANTOES/<plantão>/`, com as
+  páginas dos PDFs escaneados em `paginas-jpg/`. Ler as páginas pelo Desktop Commander (`read_multiple_files`, 4 por
+  vez); PDF de 20 MB não passa pela ponte de arquivos.
+- Evoluções anteriores (docx ou txt, um leito após o outro; ou o PDF escaneado das evoluções dele: ler as páginas).
 - Folhas de controle: 2 páginas por leito (sinais vitais + balanço), modelo Beneficência Portuguesa.
 - Prescrições do dia (eletrônica impressa + anotação à mão).
 - Laudos de laboratório (PDF com texto).
@@ -43,11 +47,14 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
 2. **Laboratório.** `python3 skills/sasi-ingest-export/scripts/labs.py laudo.pdf --anterior "<linhas de Laboratório
    da evolução anterior>"` monta a seção com série `anterior => atual` (UR e CR na linha dos eletrólitos, que vão sem série) e ignora "AMOSTRA MAQUINA" (circuito de
    diálise). BETA até calibrar com um laudo real: conferir contra o PDF; divergência vale o PDF e vai para o Conferir.
+   Ficha-cola: `python3 gerador/labs_72h.py <pasta dos labs> --json` monta `ficha.lab_titulo` e `ficha.lab` com a série
+   de 72 h (eletrólitos também; `--por-coleta` para cálcio 8/8 h e afins).
 3. **Folhas de controle.** Ler os PNG que o `preparar.py` gerou (150 dpi visão geral, metades a 300 dpi).
    Transcrever as 12 aferições (07 h a 05 h) **com a hora** (`{"07": 146, "09": 126, …}`) — **janela 24 h é o padrão**,
    e o motor confere pelas horas (faltou o diurno = ALERTA). Balanço: transcrever as CÉLULAS, também com a hora.
 4. **Prescrição.** Ler cada página; incorporar o manuscrito (riscado, "suspenso", "modificado"). Doses só como
-   escritas. Cada bomba da tabela das calculadoras (DVA, sedação, BNM) vai para `infusoes_continuas` com a diluição
+   escritas. A ficha leva TODOS os itens, um por linha, por sistema (pele, tópicos e sintomáticos também); o que é
+   ACM ("a critério médico", a princípio suspenso) vai no bloco ACM; IBP vai em PROFILAXIA (TEV + LAMG). Cada bomba da tabela das calculadoras (DVA, sedação, BNM) vai para `infusoes_continuas` com a diluição
    da prescrição (droga, ampolas, diluente): a dose por kg é do motor. Peso: o Claude CAÇA no material, como os
    outros dados-chave (folha de controle, prescrição, evolução anterior, admissão, laudo de EcoTT): nunca pede ao
    Dr. A fonte e a data do `peso` são o documento onde foi achado e a data dele, preenchidas pelo Claude. Não achou
@@ -58,7 +65,8 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
    vitais (séries), células de balanço, laboratório, terapias, exame físico (copiado da evolução anterior), eventos
    24 h, impressão, plano, até 3 alertas para o chat e o bloco `ficha` de cada leito (obrigatório: hipóteses
    diagnósticas (campo JSON `hd` no leito — na ficha imprime **HD:**), dispositivos, alergia, prescrição em
-   infusões/terapias + por sistemas, 3 a 7 pendências tiradas do plano, exames e lab).
+   infusões/terapias + por sistemas, 3 a 7 pendências tiradas do plano das evoluções anteriores dele e das condutas
+   que ele ditar, exames e lab de 72 h).
    Cabeçalho da ficha-cola (gerador): `Idade`/`Sexo` legíveis a partir de `idade_sexo`; `Peso`/`Altura` sempre
    (bloco `peso`, sem fonte/data no cabeçalho; ver `docs/formato-entrega.md`). Balanço da ficha sem Ganhos.
    Em TNE, a linha DIETA leva a água pela sonda (volume e frequência, sem os horários).
@@ -84,4 +92,7 @@ Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
 - Exame físico: copiar o da evolução anterior (o `evolucao_anterior.py` copia literal); só tirar o que ficou falso
   (ex.: droga suspensa).
 - Plano: verbo de comando, contingência ("se X → Y"), meta numérica, profilaxias. Raso = refaz.
-- Supabase/OneDrive: fora do fluxo padrão. Só se o operador pedir.
+- Supabase: fora do fluxo padrão. Só se o operador pedir.
+- OneDrive: entrada e saída pelo `plantao_sync.py`, que o Claude roda no começo e de novo depois da entrega (sem
+  timer; `sync/README.md`). A entrega vai também para `<plantão>/outputs/` no Tijolão; arquivo refeito com sufixo
+  `-v2`, `-v3`.

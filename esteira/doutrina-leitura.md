@@ -61,7 +61,8 @@ PRESCRIÇÃO MÉDICA:
   (anti-hipertensivo, antiarrítmico, diurético), RESP (broncodilatador, corticoide inalatório), TGI (procinético,
   laxante, antiemético fixo), RENAL, ENDÓCRINO (insulina, hormônio, hipoglicemiante), ANALGESIA (analgésico em
   horário fixo), PROFILAXIA (só TEV e lesão aguda de mucosa gástrica: heparina, enoxaparina, IBP, compressão
-  pneumática), SN (se necessário, a critério médico), OUTRO (soro de manutenção, vitamina, tópico, colírio).
+  pneumática), SN (se necessário), ACM (a critério médico: a princípio suspenso), OUTRO (soro de manutenção,
+  vitamina, tópico, colírio: também vai para a ficha).
   Reposição de eletrólito, bicarbonato e quelante vão em RENAL.
 - "inicio": só para ATB, a data de início impressa (dd/mm). Sem data impressa: "". Não converta "D3" em data.
 - Anotação à mão de suspender, riscado ou X: a droga sai de "itens" e entra em "suspensos". "Modificado para": use a

@@ -537,7 +537,9 @@ def compute_leito(leito, meta=None):
 
     secoes = [(f"{TITULOS['vitais']} {jan}:", linhas)]
     clcr = None
-    for chave in ("laboratorio", "terapias", "exame_fisico", "evolucao", "impressao", "conduta"):
+    # 21/11/2026: a evolução sai sem "Terapias vigentes" (a ficha-cola já traz a prescrição). O campo `terapias`
+    # continua no JSON: o motor conta os dias de ATB nele e as checagens o leem.
+    for chave in ("laboratorio", "exame_fisico", "evolucao", "impressao", "conduta"):
         cont = leito.get(chave)
         if not cont:
             continue

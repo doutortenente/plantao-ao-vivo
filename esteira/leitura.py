@@ -57,7 +57,7 @@ IDENTIFICACAO = _obj(leito=_txt(), nome=_txt(), idade=_txt(), sexo=_txt(), unida
 COLUNAS = ("VO", "Dieta", "SNE", "Água", "Med", "Endovenoso", "Infus. Rápida", "Dil.",
            "Diurese", "SNG/SNE", "Evacuação", "Resíduo Gástrico", "Dreno/SVD", "outra (ganho)", "outra (perda)")
 GRUPOS = ("DVA", "SEDAÇÃO", "ATB", "VM", "O2", "DIETA", "NPT", "TRS", "NEURO", "CV", "RESP", "TGI", "RENAL",
-          "ENDÓCRINO", "ANALGESIA", "PROFILAXIA", "SN", "OUTRO")
+          "ENDÓCRINO", "ANALGESIA", "PROFILAXIA", "SN", "ACM", "OUTRO")
 SIGLAS = ("HB", "HT", "PLAQ", "LEUCO", "SEG", "BAST", "UR", "CR", "NA", "K", "MG", "CAI", "P", "PH", "PCO2", "PO2",
           "HCO3", "BE", "SATO2", "LACTATO", "PCR", "TROPONINA", "INR")
 

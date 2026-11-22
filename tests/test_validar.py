@@ -75,9 +75,17 @@ class Validar(unittest.TestCase):
             l["ficha"]["vigiar"] = ["só uma"]
         _, avisos = com(mudar)
         txt = "\n".join(avisos)
-        for trecho in ("PROFILAXIA só tem TEV e LAMG", "classe OFTALMO", "não vai na ficha-cola", "seta",
-                       "\"?\" em `terapias`", "1 pendência(s)"):
+        for trecho in ("PROFILAXIA só tem TEV e LAMG", "seta", "\"?\" em `terapias`", "1 pendência(s)"):
             self.assertIn(trecho, txt)
+        # 22/11/2026: a ficha leva a prescrição inteira (colírio, pele, tópicos): nada de "não vai na ficha-cola"
+        self.assertNotIn("não vai na ficha-cola", txt)
+        self.assertNotIn("classe OFTALMO", txt)
+
+    def test_item_acm_fora_do_bloco_acm_avisa(self):
+        _, avisos = com(lambda l, d: l["ficha"]["sistemas"].append(["CV", ["Tridil 50 mg/250 ml EV em BIC ACM"]]))
+        self.assertTrue(any("é ACM (a princípio suspenso): vai no bloco ACM" in a for a in avisos), avisos)
+        _, avisos = com(lambda l, d: l["ficha"]["sistemas"].append(["ACM", ["Tridil 50 mg/250 ml EV em BIC"]]))
+        self.assertFalse(any("é ACM" in a for a in avisos), avisos)
 
     def test_meta_maior_ou_igual_nao_e_seta(self):
         _, avisos = com(lambda l, d: l["impressao"].append("Choque, meta PAM >= 65 atingida"))

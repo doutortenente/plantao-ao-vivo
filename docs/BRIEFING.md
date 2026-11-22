@@ -1,7 +1,8 @@
 # 🪖 BRIEFING OBRIGATÓRIO — Extração e Compilação Clínica (UTI / SASI)
 
 > Leia ISTO antes de tocar em QUALQUER folha/lab/prescrição do Dr. Nicolas.
-> Revisado em 11/10/2026: janela padrão 24 h, evolução só com os blocos que mudam, entrega em Word
+> Revisado em 11/10/2026 (e em 21/11/2026: sem "Terapias vigentes"): janela padrão 24 h, evolução só com os
+> blocos que mudam, entrega em Word
 > (`docs/formato-entrega.md`), motor em `skills/sasi-ingest-export/scripts/build_passagem.py`.
 > Output = instrumento clínico-legal que ele cola no prontuário. Sem explicação,
 > sem preâmbulo, sem elogio. Só dado clínico limpo.
@@ -39,15 +40,6 @@ Gaso: pH / HCO3 / SBE / Lactato (se houver)
 Outros: PCR / troponina / D-dímero / INR (se houver)
 CLCR (Cockcroft-Gault): ... ml/min    ← motor, com peso e a linha CR (não escrever à mão)
 
-## Terapias vigentes:
-CV: ...
-ATB: ... (D[n], I: dd/mm)    ← D conta do motor: dia de início = D0 (começou ontem: hoje D1)
-RENAL/HE: ...
-ENDÓCRINO: ...
-HEMATO: ...
-TGI/NUTRIÇÃO: ...
-NEURO / RESP / OUTROS / DISPOSITIVOS: ...
-
 ## Exame físico:
 Neurológico: ...
 Cardiovascular: ...
@@ -57,7 +49,8 @@ Renal: ...
 (SEM labs aqui — labs já foram na seção Laboratório)
 
 ## Evolução / Eventos 24 h:
-{só o Δ do período — eventos, picos, procedimentos, suspensões/introduções. Verbo de ação.}
+{só o Δ do período — eventos, procedimentos, suspensões/introduções. Verbo de ação. Só fato que NÃO está nos blocos
+de vitais e de laboratório; a interpretação vai na Impressão (21/11/2026).}
 
 ## Impressão / Problemas ativos:
 1. {Problema}: {leitura de 1 linha}.
@@ -71,8 +64,9 @@ Renal: ...
 
 ### O que NÃO entra na evolução do dia
 
-Identificação, HPMA/admissão, antecedentes, medicações de uso domiciliar, dispositivos e exames complementares
-antigos. Já estão no prontuário. Entram só as 7 seções acima.
+Identificação, HPMA/admissão, antecedentes, medicações de uso domiciliar, dispositivos, exames complementares
+antigos e "Terapias vigentes" (a ficha-cola traz a prescrição: 21/11/2026). Já estão no prontuário. Entram só as 6
+seções acima.
 
 ## 2. Formatação inegociável
 
@@ -93,8 +87,8 @@ antigos. Já estão no prontuário. Entram só as 7 seções acima.
   (`peso`) e cada bomba com a diluição DA PRESCRIÇÃO (`infusoes_continuas`: droga, ampolas, diluente); o motor
   escreve a dose (mcg/kg/min e afins, contas do app calculadoras-uti), o débito urinário em ml/kg/h com o KDIGO
   pelo débito, o ClCr de Cockcroft-Gault e, em VM, o peso predito com o VC de 6 a 8 ml/kg. Sem peso com fonte, nada
-  por kg: a linha sai só com a vazão. Em Terapias a bomba vai sem dose ("CV: Noradrenalina em BIC."): a dose da
-  bomba é a do bloco, feita pelo motor. Contrato: `gerador/schema-plantao.md`, seções "Peso" e "Bombas".
+  por kg: a linha sai só com a vazão. No campo `terapias` do JSON (não impresso na evolução desde 21/11/2026) a
+  bomba vai sem dose ("CV: Noradrenalina em BIC."): a dose da bomba é a do bloco, feita pelo motor. Contrato: `gerador/schema-plantao.md`, seções "Peso" e "Bombas".
 
 ## 3. Plano terapêutico é a ALMA — não seja raso
 
@@ -117,6 +111,8 @@ Padrão-ouro (mão do próprio Dr.):
 
 Verbo de comando (Solicito/Mantida/Correção/Aguarda), contingência (Se X → Y), meta numérica quando cabível, profilaxias
 sempre (TEV/LAMG/cabeceira). Cada problema da Impressão tem sua conduta. Raso = reprovado.
+Concisão e assertividade (21/11/2026, "sou oficial militar"): ordens curtas, sem justificativa (o porquê está na
+Impressão), sem "encher linguiça" e sem "Mantenho cuidados intensivos". Profilaxias por último.
 
 ## 4. Diurese/BH
 
@@ -132,7 +128,7 @@ sempre (TEV/LAMG/cabeceira). Cada problema da Impressão tem sua conduta. Raso =
 - [ ] `" - "` nos vitais (SpO2 incluso). [ ] Sup O2 no lugar certo, nunca na diurese.
 - [ ] Laboratório seção própria, séries `=>` onde há; eletrólitos sem série. [ ] Diurese somada célula-a-célula.
 - [ ] Zero explicação no bloco (obs no rodapé). [ ] Impressão sem setinhas.
-- [ ] Plano rico e acionável. [ ] Campo sem fonte omitido. [ ] 7 seções na ordem (cabeçalho + 7).
+- [ ] Plano acionável e curto. [ ] Campo sem fonte omitido. [ ] 6 seções na ordem (cabeçalho + 6).
 - [ ] Janela 24 h (07 h a 05 h) salvo pedido explícito. [ ] Ficha-cola: 1 folha por leito, com todos os vitais e o balanço.
 - [ ] Peso com fonte e data, se houver. [ ] Bombas em `infusoes_continuas` com a diluição da prescrição; nenhuma
   dose de bomba calculada de cabeça.
