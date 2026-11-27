@@ -149,12 +149,14 @@ def preparar(entrada, saida):
     def leito(n):
         return manifest["leitos"].setdefault(n, {"evolucao": False, "labs": False})
 
+    evolucoes, origem_evolucao = {}, {}  # leito -> dados / nome do arquivo de onde veio
+
     for arq in sorted(p for p in entrada.iterdir() if p.is_file() and not p.name.startswith(".")):
         tipo = classificar(arq) if tem_poppler or arq.suffix.lower() != ".pdf" else "outro"
         item = {"arquivo": arq.name, "tipo": tipo, "saidas": []}
         destino = saida / tipo / arq.stem
         if arq.suffix.lower() == ".pdf" and tem_poppler:
-            n, w, h = paginas(arq)
+            n, _, _ = paginas(arq)
             item["paginas"] = n
             if tipo == "controles":
                 if n % 2:
@@ -163,14 +165,14 @@ def preparar(entrada, saida):
                 for i in range(0, n, 2):
                     manifest["pares_controles"].append({"arquivo": arq.name, "paginas": [i + 1, i + 2][: n - i],
                                                         "leito": "?"})
-                for pag in range(1, n + 1):
-                    pngs = folha_de_controle(arq, pag, destino / f"p{pag:02d}", w, h)
+                for pag in range(1, n + 1):  # tamanho de cada página, com a rotação (scan deitado, folha paisagem)
+                    pngs = folha_de_controle(arq, pag, destino / f"p{pag:02d}", *tamanho_da_pagina(arq, pag))
                     item["saidas"] += [str(p.relative_to(saida)) for p in pngs]
             elif tipo == "prescricao":
                 item["saidas"] = [str(p.relative_to(saida)) for p in rasterizar(arq, destino, 200)]
             elif tipo == "labs":
                 destino.parent.mkdir(parents=True, exist_ok=True)
-                txt = destino.with_suffix(".txt")
+                txt = destino.parent / (destino.name + ".txt")  # o nome inteiro: with_suffix cortava no último ponto
                 txt.write_text(_rodar(["pdftotext", "-layout", str(arq), "-"]), encoding="utf-8")
                 item["saidas"] = [str(txt.relative_to(saida))]
                 leitos_lab = sorted({m.zfill(2) for m in re.findall(r"(?i)leito\s*:?\s*(\d{1,3})",
@@ -184,8 +186,13 @@ def preparar(entrada, saida):
             item["leitos"] = sorted(lidos)
             for n_l in lidos:
                 leito(n_l)["evolucao"] = True
+                if n_l in origem_evolucao:
+                    avisos.append(f"L{n_l}: está em {origem_evolucao[n_l]} e em {arq.name}; no evolucao_anterior.json "
+                                  f"ficou o de {arq.name}")
+                origem_evolucao[n_l] = arq.name
+            evolucoes.update(lidos)  # um arquivo por leito: todos ficam (antes, cada arquivo apagava o anterior)
             js = (saida / "evolucao_anterior.json")
-            js.write_text(json.dumps(lidos, ensure_ascii=False, indent=2), encoding="utf-8")
+            js.write_text(json.dumps(evolucoes, ensure_ascii=False, indent=2), encoding="utf-8")
             item["saidas"] = [js.name]
         manifest["arquivos"].append(item)
 

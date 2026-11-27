@@ -239,7 +239,7 @@ def main():
     print(f"Rascunho do chat: {msg}")
     if nao_coube:
         print("\nERRO: leito(s) " + ", ".join(nao_coube) + " não couberam em 1 folha nem em 9 pt sem anotações. "
-              "Encurte a prescrição desses leitos e gere de novo.", file=sys.stderr)
+              "A prescrição não perde item (22/11/2026): encurte o texto das pendências e dos exames desses leitos e gere de novo.", file=sys.stderr)
         sys.exit(3)
     if erros:
         sys.exit(4)

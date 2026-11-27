@@ -21,6 +21,14 @@
 | 11/11/2026 | Ficha-cola, cabeçalho: `HD:` no lugar de Dx para hipóteses (JSON `hd` no leito e opcional `ficha.hd`; `diagnostico` e `ficha.dx` aposentados). Idade/Sexo legíveis; `Peso`/`Altura` no cabeçalho. Balanço da ficha sem Ganhos. `vitais.Dx` = glicemia. |
 | 07/11/2026 | Ficha-cola, opção A ("faixas cinza"), escolhida entre 3 no canvas: título em faixa cinza, linha sim/linha não em cinza, alergia e alertas em caixa; o cinza é só de fundo e o texto continua preto. Embaixo, EXAME FÍSICO em 6 quadros por sistema no lugar da grade CONTROLES DO PLANTÃO, sem a faixa de bundle (FAST HUGS BID): ele mandou tirar. Folha cheia: o exame fica compacto antes de a fonte descer. |
 | 01/11/2026 | Peso no plantão (item 2 das melhorias): peso só com fonte e data; o motor calcula a dose das bombas pela diluição da prescrição (tabela e contas do app calculadoras-uti), o débito em ml/kg/h com KDIGO pelo débito, o ClCr (Cockcroft-Gault) e, em VM, o peso predito com o VC de 6 a 8 ml/kg. Nada por kg de cabeça. |
+| 21/11/2026 | ACM = "a critério médico" = a princípio suspenso: bloco próprio; não conta como droga em uso (Clexane + Xarelto ACM não são 2 anticoagulantes). |
+| 21/11/2026 | PROFILAXIA = TEV + LAMG: o pantoprazol vai em PROFILAXIA, não em TGI. |
+| 21/11/2026 | Evolução sem "Terapias vigentes" (a ficha-cola traz a prescrição); texto conciso e assertivo: eventos só com fatos, leitura na Impressão, plano com ordens curtas. |
+| 21/11/2026 | Outputs do plantão no OneDrive, em `000_PLANTÂO_AO_VIVO/<plantão>/outputs` (uma pasta de outputs só); arquivo refeito com sufixo `-v2`, `-v3`. |
+| 22/11/2026 | Ficha-cola com TODOS os itens da prescrição, um por linha (pele, tópicos, sintomáticos também): acabou a regra de 11/10/2026 que os tirava. ACM na coluna 3. |
+| 22/11/2026 | Laboratório da ficha-cola em série de 72 h (`gerador/labs_72h.py`). |
+| 22/11/2026 | Pendências da ficha tiradas das evoluções anteriores dele (o plano), mais as condutas que ele ditar no plantão. |
+| 22/11/2026 | Sincronização com o OneDrive pelo rclone (`sync/plantao_sync.py`), rodada pelo Claude no começo do plantão e depois da entrega. Sem timer: o de 2 min saiu no mesmo dia, a pedido dele. `000_PLANTÂO_AO_VIVO/` só com o plantão vigente, os anteriores em `Plantao-ao-vivo-historico/` (ideia dele). |
 | 12/10/2026 | Ficha-cola: modelo novo aprovado (`gerador/ficha_cola.py`) — hipóteses no cabeçalho (hoje rótulo **HD:** e JSON `hd`; na época imprimia como Dx), prescrição em 2 blocos (infusões/terapias + por sistemas), controles em grade, PDF junto. Profilaxia só TEV/LAMG. Folha que estoura no Word = erro grave. |
 | 27/11/2026 | No GitHub não roda processamento: sai a esteira (`plantao.yml`); o CI (`testes.yml`) fica só com os testes de lógica, sem LibreOffice e sem gerar o exemplo. Os testes que geram PDF rodam no computador. |
 

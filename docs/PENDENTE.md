@@ -2,40 +2,46 @@
 
 O que ficou em aberto entre sessões. Quem continuar o trabalho lê isto primeiro e risca o que fechar.
 
+Estado em 22/11/2026: branch `feat/plantao-22-11-correcoes` (correções dos plantões de 21 e 22/11 e a sincronização
+com o OneDrive) em PR, à espera do "prosseguir" para o merge. Ver a seção 9.
+
 Estado em 11/11/2026: contrato JSON `hd` (fim de `diagnostico` / `ficha.dx`) na `main` — PR [#14](https://github.com/doutortenente/plantao-ao-vivo/pull/14).
 
 Estado em 21/10/2026: o PR [#2](https://github.com/doutortenente/plantao-ao-vivo/pull/2) entrou na `main`
 (commit `4db762b`). As etapas 1 a 20 do plano de 19/10 estão feitas, e as lentes de segurança e de esteira da
 revisão final estão corrigidas, com teste. O projeto do claude.ai já lê esta versão.
 
+Estado em 11/11/2026: §2 fechada (as 9 suspeitas confirmadas e consertadas, com teste) e o CI vermelho da §6
+consertado aqui, à espera da confirmação no GitHub. Suíte: 307 testes (1 pulado sem node/playwright).
+
 ## 1. ~~Merge na `main`~~
 
 ~~Só com o "prosseguir" do Dr. Nicolas (decisão de 19/10/2026).~~ Feito em 21/10/2026, com o "prosseguir" dele e o
 CI verde. Os achados da seção 2 ficam para um PR seguinte.
 
-## 2. Achados da revisão final ainda não conferidos (lente do gerador)
+## 2. ~~Achados da revisão final ainda não conferidos (lente do gerador)~~
 
-A revisão parou por falta de cota antes da etapa de verificação. Por isso cada item abaixo é uma suspeita: primeiro
-reproduzir, depois corrigir e escrever o teste. Os dois de severidade alta já foram corrigidos (alerta de rodada não
-entregue, seta "->" lida como ">" no laboratório anterior).
+A revisão parou por falta de cota antes da etapa de verificação; ficaram 9 suspeitas. Conferidas em 11/11/2026: as 9
+se confirmaram. Cada uma ganhou um teste que falhou antes do conserto e passa depois.
 
-- [ ] `labs.py` ~163, média: quando o resultado é texto ("hemolisado", "pendente", "não reagente"), o primeiro
-  número depois do nome pode ser o da faixa de referência, e ele vira o resultado sem aviso.
-- [ ] `labs.py` ~131, média: decimal com ponto ("1.7") pode ser truncado em 1, sem aviso.
-- [ ] `labs.py` ~200, baixa: `montar()` cola a unidade fixa sem olhar a do laudo, e o fator pode sair errado (10× ou
-  1000×).
-- [ ] `preparar.py` ~173, média: `with_suffix(".txt")` corta o nome no último ponto. Dois laudos de nome parecido
-  podem cair no mesmo `.txt`, e o laudo de um leito acaba apontando para o texto de outro.
-- [ ] `preparar.py` ~187, média: cada evolução anterior grava por cima do mesmo `evolucao_anterior.json`, e só
-  sobra a última.
-- [ ] `preparar.py` ~167, média: a folha de controle é recortada com o tamanho da página 1, sem a rotação. Uma
-  página girada ou em paisagem perde parte da largura nos recortes de 300 dpi.
-- [ ] `ficha_cola.py` ~198, média: `ficha.janela_controles` e `ficha.janela_balanco` passam por cima da janela que
-  o motor conferiu. A ficha pode sair "24 h" quando o motor rebaixou para "19 - 05 h".
-- [ ] `evolucao_anterior.py` ~52, baixa: o `.txt` é lido só como UTF-8. Um arquivo salvo em Windows-1252 derruba o
-  `preparar.py`.
-- [ ] `gerar_admissao.py` ~121, baixa: a admissão grava por cima de um arquivo com o mesmo nome, sem guardar a versão
-  anterior em `historico/`.
+- [x] `labs.py`, média: resultado em texto virava o número da referência ("Potássio  HEMOLISADO  3,5 a 5,1" dava
+  K 3,5; "Creatinina: Pendente (0,6 a 1,2)" dava CR 0,6). Agora: sem valor e aviso "ler no PDF".
+- [x] `labs.py`, média: "1.7" virava 1 (e "7.31" virava 7). Agora decimal com ponto de 1 ou 2 casas vira vírgula;
+  milhar ("150.000") continua milhar. Vale também para o laboratório da evolução anterior.
+- [x] `labs.py`, baixa: unidade em outra escala saía com a unidade fixa ("16,2 x10³/µL" daria "LEUCO: 16,2 /mm3";
+  "108 g/L" daria "HB: 108 g/dl"). Agora: sem valor e aviso com a unidade do laudo.
+- [x] `preparar.py`, média: nome com ponto ("labs 11.11.26 leito 05.pdf") era cortado no último ponto; os laudos dos
+  leitos 05 e 06 caíam no mesmo `.txt` e o do 05 apontava para o texto do 06. Agora o `.txt` leva o nome inteiro.
+- [x] `preparar.py`, média: com um arquivo de evolução por leito, só o último ficava no `evolucao_anterior.json`.
+  Agora ficam todos; leito repetido em dois arquivos vira aviso dizendo qual ficou.
+- [x] `preparar.py`, média: página girada (/Rotate 90) era recortada com o tamanho da página 1: 2479 px de largura
+  numa página de 3508 (perdia 29 %). Agora cada página usa o próprio tamanho, com a rotação.
+- [x] `ficha_cola.py`, média: com só a noite nas séries, o motor rebaixava para "19 - 05 h" mas a ficha imprimia o
+  "07 - 05 h" do bloco `ficha`. Agora, quando o motor rebaixa, vale a janela dele.
+- [x] `evolucao_anterior.py`, baixa: `.txt` salvo no Windows (ANSI) derrubava a leitura; e o BOM do Bloco de Notas
+  em UTF-8 escondia o primeiro leito ("﻿LEITO 05"). Agora lê os dois.
+- [x] `gerar_admissao.py`, baixa: gerar de novo apagava a admissão anterior. Agora Word e PDF anteriores vão para
+  `historico/`.
 
 ## 3. Lente da página de extração
 
@@ -77,8 +83,14 @@ exemplo e passa.
   de reserva. Simulado aqui com a DejaVu Sans no lugar da FreeSerif (8,1 pt contra 6,8 pt de largura a 9 pt), a
   linha "☐ AA ☐ CN ☐ VNI ☐ CNAF ☐ TOT/TQT" quebra em 2. A fonte de reserva do runner não foi conferida.
   Correção: trocar o ☐ do exame por □ (U+25A1, que a Times e a Liberation Serif têm, com a mesma largura em todo
-  computador), deixar folga de largura nas linhas e conferir onde o plantão roda. Desde 27/11/2026 o GitHub não
-  gera Word nem PDF (CI só com testes de lógica) e a esteira `plantao.yml` saiu do repo.
+  computador), deixar folga de largura nas linhas e conferir onde o plantão roda.
+  **11/11/2026: consertado aqui, falta o CI confirmar.** Medido: o ☐ não está na Liberation Serif e saía em
+  FreeSerif (aqui) ou DejaVu Sans (runner simulado sem a família Free*, onde a linha do RESPIRATÓRIO quebrava). Troca
+  feita para □ (5,4 pt, da própria fonte) no exame e nas PENDÊNCIAS; o PDF não usa mais fonte reserva e a linha não
+  quebra nas duas máquinas. Teste novo `GlifosDaFonte` (em `test_ficha_exame.py`) reprova qualquer caractere da
+  ficha que a fonte do corpo não tenha. A folga extra nas linhas não foi preciso.
+  **27/11/2026:** o GitHub não gera mais Word nem PDF (CI só com testes de lógica) e a esteira `plantao.yml` saiu
+  do repo; a conferência de 1 folha por leito fica no computador onde o plantão roda.
 - [ ] Imprimir 1 folha na impressora do plantão e olhar os cinzas (`PAPEL_CINZA_FAIXA` D0D0D0, `_SUB` E0E0E0,
   `_ZEBRA` EFEFEF em `gerador/estilo.py`). Se a zebra sumir no papel, escurecer ali.
 - [ ] Conferir num plantão real cheio: com o exame, a faixa de baixo ficou ~1 cm mais alta. No teste com um leito
@@ -93,3 +105,38 @@ exemplo e passa.
 - O JSON da página `extracao-web` não monta o bloco `ficha`: quem monta é o Claude no chat, a partir de
   `prescricao_lida`.
 - O teste da página precisa de node e playwright e é pulado no CI.
+
+## 8. Exames pelo n8n (12/11/2026, branch `feat/exames-n8n`)
+
+Feito: o fluxo "Exames - Banco de Resultados" (detalhes em `n8n/exames/README.md`).
+- Está publicado; aceita chamada do PC e de fora.
+- Guarda tudo nas tabelas do n8n e lê só laudo novo.
+- O Hermes chama pela skill `skills/exames-lab/SKILL.md`.
+- O leitor foi calibrado em 227 laudos reais. O plano do resto está em `docs/PLANO-N8N.md`.
+
+- [ ] Ligar o fluxo no passo a passo do plantão (`skills/plantao`):
+  - o Hermes chama o fluxo com os leitos do JSON e cola as linhas de `laboratorio`;
+  - o `labs.py` continua para o PDF que chegar em `entrada/`, e os itens dele na seção 2 continuam valendo.
+- [ ] Antibiograma por disco-difusão: a tabela S/I/R vem em colunas, e o texto do PDF perde a coluna. Hoje sai
+  "ler no PDF". Para ler sozinho seria preciso usar a posição de cada palavra na página.
+- [ ] Há pedidos de semanas atrás ainda marcados como pendentes no site: perguntar a ele se o site marca exame
+  cancelado como pendente. Hoje, pendência com mais de 7 dias vira só contagem nos avisos.
+- [ ] `desde` = admissão na UTI (`admissao_uti`). Exame do PS de antes da UTI fica de fora, a menos que o pedido mande
+  um `desde` mais cedo.
+- [ ] Apagar, com o OK dele (são dados de paciente):
+  - as execuções de teste do fluxo no n8n (17 a 25);
+  - os PDFs e textos de teste na pasta temporária da sessão.
+
+## 9. Plantões de 21 e 22/11/2026 (branch `feat/plantao-22-11-correcoes`)
+
+Feito: prescrição inteira na ficha, ACM na coluna 3, LAMG em PROFILAXIA, variantes do ajuste, laboratório de 72 h
+(`gerador/labs_72h.py`), evolução sem "Terapias vigentes", checagens com ACM e a sincronização com o OneDrive
+(`sync/`, script instalado no Tijolão em 22/11; sem timer, roda quando o Claude chama).
+
+- [x] Merge na `main`: ordem dele em 22/11/2026.
+- [ ] O clone do PC (`~/src/plantao-ao-vivo`) está em `7bc895e` (15/11), com mudanças locais não versionadas em
+  `CLAUDE.md`, `docs/BRIEFING.md` e `docs/instrucoes-projeto.md`. Perguntar a ele o que fica antes de atualizar.
+- [ ] `labs_72h.py` é BETA como o `labs.py`: conferir contra o PDF nos próximos plantões. Leitura de cálcio total e
+  albumina entrou no `labs.py` (siglas CA e ALB) só para a série da ficha.
+- [ ] A página `extracao-web` e a esteira não conhecem o ACM na coluna 3 nem a série de 72 h.
+- [ ] Ver no papel: o "denso" (menos ar entre as linhas) ainda é legível para ele?

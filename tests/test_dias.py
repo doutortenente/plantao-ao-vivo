@@ -67,7 +67,8 @@ class RevisaoDe19Out(unittest.TestCase):
         dados = exemplo(lambda l: l.__setitem__("terapias", "CV: Carvedilol.\nATB: Meronem (D?, I: 30/12)."))
         prep, _ = m.preparar(dados)
         self.assertEqual(prep["leitos"][0]["terapias"], ["CV: Carvedilol.", "ATB: Meronem (D2, I: 30/12)."])
-        self.assertIn("Terapias vigentes:\nCV: Carvedilol.\nATB: Meronem (D2, I: 30/12).", m.build(dados)[0])
+        # 21/11/2026: a evolução sai sem "Terapias vigentes" (a ficha-cola traz a prescrição)
+        self.assertNotIn("Terapias vigentes", m.build(dados)[0])
 
     def test_atb_suspenso_nao_e_recontado(self):
         def mudar(l):

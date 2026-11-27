@@ -260,3 +260,37 @@ class RevisaoDe21Out(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AcmEAPrincipioSuspenso(unittest.TestCase):
+    """21/11/2026: ACM = a critério médico = a princípio suspenso. Clexane prescrito + Xarelto ACM não são 2
+    anticoagulantes; anticoagulante ACM não é profilaxia de TEV; mas alergia continua valendo (pode ser dado)."""
+
+    def com(self, mudar):
+        return "\n".join(C.checar(leito(mudar)))
+
+    def test_anticoagulante_acm_nao_duplica(self):
+        def mudar(l):
+            l["ficha"]["sistemas"].append(["PROFILAXIA", ["Clexane (enoxaparina) 40 mg SC 1x/dia"]])
+            l["ficha"]["sistemas"].append(["ACM", ["Xarelto (rivaroxabana) 20 mg VO"]])
+        self.assertNotIn("dois anticoagulante", self.com(mudar))
+
+    def test_acm_escrito_no_item_tambem_vale(self):
+        def mudar(l):
+            l["ficha"]["sistemas"].append(["PROFILAXIA", ["Clexane (enoxaparina) 40 mg SC 1x/dia"]])
+            l["ficha"]["sistemas"].append(["CV", ["Xarelto (rivaroxabana) 20 mg VO ACM"]])
+        self.assertNotIn("dois anticoagulante", self.com(mudar))
+
+    def test_anticoagulante_so_acm_nao_e_profilaxia(self):
+        def mudar(l):
+            l["ficha"]["sistemas"] = [x for x in l["ficha"]["sistemas"] if x[0].upper() != "PROFILAXIA"]
+            l["ficha"]["sistemas"].append(["ACM", ["Clexane (enoxaparina) 40 mg SC"]])
+            l["terapias"] = [t for t in l["terapias"] if "noxaparina" not in t.lower() and "clexane" not in t.lower()]
+            l["conduta"] = [c for c in l["conduta"] if "TEV" not in c]
+        self.assertIn("sem profilaxia de TEV", self.com(mudar))
+
+    def test_alergia_vale_para_item_acm(self):
+        def mudar(l):
+            l["alergia"] = "Dipirona"
+            l["ficha"]["sistemas"].append(["ACM", ["Novalgina (dipirona) 1 g EV"]])
+        self.assertIn("alergia a Dipirona e dipirona prescrito", self.com(mudar))

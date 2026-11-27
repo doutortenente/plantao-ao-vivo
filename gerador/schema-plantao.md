@@ -153,11 +153,17 @@ Todo número de `lab` tem de estar em `laboratorio`, e o ATB da ficha tem de bat
                                                           // `infusoes_continuas`; o VC alvo entra na linha VM
   "sistemas": [["NEURO", ["..."]], ["CV", ["..."]], ["RESP", ["..."]], ["TGI", ["..."]],
                ["RENAL", ["..."]], ["ENDÓCRINO", ["..."]], ["ANALGESIA", ["..."]],
-               ["PROFILAXIA", ["só TEV/LAMG — nunca analgésico aqui"]], ["SN", ["..."]], ["SUSPENSOS", ["..."]]],
+               ["PROFILAXIA", ["só TEV/LAMG — nunca analgésico aqui"]], ["SN", ["..."]],
+               ["ACM", ["a critério médico = a princípio suspenso"]], ["SUSPENSOS", ["..."]]],
+               // 22/11/2026: TODOS os itens, um por linha (pele, tópicos, sintomáticos também). ACM e SUSPENSOS
+               // saem na coluna 3; IBP escrito em outro sistema vai sozinho para PROFILAXIA.
   "vigiar": ["3 a 7 pendências, 1 linha cada, ação concreta"],
   "exames": ["exame relevante em 1 linha"],
-  "lab_titulo": "LABORATÓRIO 10/10 -> 11/10",
-  "lab": ["Hb 7,3 | Leuco 16.800", "Ur 129 -> 100 | Cr 1,4", "Na 137 | **K 3,3**"]   // 1 grupo por linha
+  "lab_titulo": "LABORATÓRIO 09/10 => 10/10 => 11/10",   // 72 h: gerador/labs_72h.py --json monta os dois campos
+  "lab": ["Hb 7,8 => 7,3 | Plaq 98 => 110 mil", "Ur 140 => 129 => 100 | Cr 1,6 => 1,4", "**K 3,9 => 3,3**"],
+  "lado_direito": ["SN", "ACM"],   // opcional: força o que vai para a coluna 3 (padrão: ACM e SUSPENSOS; o ajuste
+                                   // leva o SN quando a folha não comporta)
+  "denso": true                    // opcional: força menos ar entre as linhas (padrão: o ajuste decide)
 }
 ```
 

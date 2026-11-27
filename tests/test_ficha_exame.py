@@ -173,8 +173,14 @@ class AjusteComExameCompacto(unittest.TestCase):
 
     def test_nada_cabe_sai_compacto_em_9_pt(self):
         res, nao_coube = self.ajustar_com(lambda cfg: False)
-        self.assertEqual(res, {"99": (0, ficha_cola.N_INTER_COMPACTO, 9, True)})
+        self.assertEqual(res, {"99": (0, ficha_cola.N_INTER_COMPACTO, 9, True, ficha_cola.VARIANTES[-1])})
         self.assertEqual(nao_coube, ["99"])
+
+    def test_variante_so_quando_a_mais_arejada_nem_no_minimo_cabe(self):
+        # 22/11/2026: só cabe com o SN na coluna 3: o ajuste passa pelas variantes até achar
+        res, nao_coube = self.ajustar_com(lambda cfg: len(cfg) > 4 and cfg[4] == {"sn_lado": True})
+        self.assertEqual(res["99"][4], {"sn_lado": True})
+        self.assertEqual(nao_coube, [])
 
 
 @unittest.skipUnless(TEM_PDF, "sem LibreOffice/pdftotext")
@@ -196,6 +202,35 @@ class FaixaNumaLinhaSo(unittest.TestCase):
             pdf = office.para_pdf(cola)
             txt = subprocess.run(["pdftotext", "-layout", str(pdf), "-"], capture_output=True, text=True).stdout
         self.assertIn("INTERCORRÊNCIAS, CONDUTAS E PASSAGEM", txt)
+
+
+def glifos_do_corpo():
+    """Caracteres que a Liberation Serif desenha (a Times do CI e do LibreOffice daqui, mesma métrica), pelo
+    fontconfig. None se ela não estiver instalada."""
+    if not shutil.which("fc-match"):
+        return None
+    saida = subprocess.run(["fc-match", "-f", "%{family}|%{charset}", "Liberation Serif"],
+                           capture_output=True, text=True).stdout
+    familia, _, faixas = saida.partition("|")
+    if "Liberation Serif" not in familia.split(","):
+        return None
+    glifos = set()
+    for faixa in faixas.split():
+        ini, _, fim = faixa.partition("-")
+        glifos.update(range(int(ini, 16), int(fim or ini, 16) + 1))
+    return glifos
+
+
+class GlifosDaFonte(unittest.TestCase):
+    def test_ficha_so_usa_caracteres_que_a_fonte_do_corpo_tem(self):
+        # Caractere que a fonte do corpo não tem sai numa fonte de reserva, e cada computador usa a sua: com o ☐ do
+        # exame, FreeSerif aqui e DejaVu Sans no runner novo do GitHub (07/11/2026), mais larga. Lá a linha
+        # "☐ AA ☐ CN ☐ VNI ☐ CNAF ☐ TOT/TQT" quebrava em 2 e a ficha do exemplo passava de 1 folha.
+        glifos = glifos_do_corpo()
+        if glifos is None:
+            self.skipTest("sem Liberation Serif/fontconfig")
+        fora = sorted({c for c in texto(ficha()) if not c.isspace() and ord(c) not in glifos})
+        self.assertEqual(fora, [], "fora da fonte do corpo: " + "  ".join(f"{c} U+{ord(c):04X}" for c in fora))
 
 
 if __name__ == "__main__":

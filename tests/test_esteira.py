@@ -269,10 +269,11 @@ class Montar(unittest.TestCase):
         _, l, _ = self.montado(mudar)
         self.assertEqual((l["hd"], l["dispositivos"]), ("?", "?"))
 
-    def test_colirio_sai_da_ficha(self):
+    def test_colirio_vai_para_a_ficha(self):  # 22/11/2026: a ficha leva a prescrição inteira
         _, l, _ = self.montado()
-        self.assertNotIn("Lacrima", json.dumps(l["ficha"], ensure_ascii=False))
-        self.assertTrue(any("fora da ficha-cola: Lacrima" in a for a in l["avisos"]))
+        outros = dict((r, i) for r, i in l["ficha"]["sistemas"]).get("OUTROS", [])
+        self.assertTrue(any("Lacrima" in i for i in outros), l["ficha"]["sistemas"])
+        self.assertFalse(any("fora da ficha-cola" in a for a in l["avisos"]))
 
     def test_pendencias_so_as_ordens_da_prescricao(self):
         _, l, _ = self.montado()

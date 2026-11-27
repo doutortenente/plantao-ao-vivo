@@ -61,7 +61,10 @@ def linhas_do_arquivo(caminho):
         from docx import Document
         doc = Document(str(caminho))
         return [p.text for p in doc.paragraphs]
-    return caminho.read_text(encoding="utf-8").splitlines()
+    try:
+        return caminho.read_text(encoding="utf-8-sig").splitlines()  # -sig: tira o BOM do Bloco de Notas
+    except UnicodeDecodeError:  # .txt salvo no Windows como ANSI
+        return caminho.read_text(encoding="cp1252").splitlines()
 
 
 def ler(linhas):

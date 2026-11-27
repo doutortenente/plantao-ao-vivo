@@ -66,6 +66,9 @@ skills/
   hemodinamica-calculada/       calculadora hemodinâmica por eco (scripts/calc_hemo.py)
   admissao-uti/                 nota de admissão
   analise-ecott/                leitura de ecocardiograma
+  exames-lab/                   Hermes chama o fluxo n8n de exames (labs da internação, presos à data da coleta)
+n8n/
+  exames/                       fluxo "Exames - Banco de Resultados": leitor do laudo, resposta, fluxo exportado
 gerador/
   gerar_docx.py                 gera evolução + ficha-cola (chama validar, conferir e entrega)
   ficha_cola.py                 a ficha-cola (modelo de 12/10/2026) e o ajuste em 1 folha
@@ -73,6 +76,7 @@ gerador/
   validar.py / conferir.py      antes de gerar / depois de gerar
   entrega.py                    histórico, diff por leito e rascunho do chat (mensagem.md)
   preparar.py                   pasta de entrada: inventário, recortes, labs em texto
+  labs_72h.py                   laboratório seriado de 72 h para a ficha-cola (BETA)
   evolucao_anterior.py          exame físico, plano e labs da evolução de ontem
   gerar_admissao.py             nota de admissão em A4
   office.py                     LibreOffice com perfil próprio por processo
@@ -81,6 +85,7 @@ gerador/
   requirements.txt
 extracao-web/                   página-artefato que lê os scans no navegador e exporta o JSON (ver README dela)
 esteira/                        esteira Airtable → GitHub Actions: leitura com a API do Claude (ver README dela)
+sync/                           OneDrive ↔ Tijolão pelo rclone, rodado pelo Claude sob demanda (ver README dela)
 .github/workflows/              testes.yml (a cada push e PR) e plantao.yml (esteira, disparo manual)
 tests/                          motor, checagens, dias, janela, validar, conferir, gerador, esteira, página, doutrina…
 ```

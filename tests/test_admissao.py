@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Nota de admissão em A4 (19/10/2026). Rodar: python3 -m unittest discover -s tests"""
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -51,6 +52,15 @@ class Admissao(unittest.TestCase):
             erros, n = GA.conferir_admissao(Path(tmp) / "a.docx")
         self.assertEqual(erros, [])
         self.assertEqual(n, 1)
+
+    def test_gerar_de_novo_guarda_a_versao_anterior(self):  # PENDENTE §2, conferido em 11/11/2026
+        with tempfile.TemporaryDirectory() as tmp:
+            for _ in range(2):
+                subprocess.run([sys.executable, str(RAIZ / "gerador" / "gerar_admissao.py"), str(NOTA), tmp],
+                               capture_output=True, text=True, timeout=300)
+            guardados = list(Path(tmp).glob("historico/*/01-01-26-uti2-admissao-leito98.docx"))
+            self.assertTrue((Path(tmp) / "01-01-26-uti2-admissao-leito98.docx").exists())
+        self.assertEqual(len(guardados), 1)
 
 
 if __name__ == "__main__":
