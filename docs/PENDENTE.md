@@ -83,14 +83,14 @@ exemplo e passa.
   de reserva. Simulado aqui com a DejaVu Sans no lugar da FreeSerif (8,1 pt contra 6,8 pt de largura a 9 pt), a
   linha "☐ AA ☐ CN ☐ VNI ☐ CNAF ☐ TOT/TQT" quebra em 2. A fonte de reserva do runner não foi conferida.
   Correção: trocar o ☐ do exame por □ (U+25A1, que a Times e a Liberation Serif têm, com a mesma largura em todo
-  computador), deixar folga de largura nas linhas e conferir no CI. A esteira (`plantao.yml`, também em
-  `ubuntu-latest`) usa o mesmo LibreOffice 26.2.
+  computador), deixar folga de largura nas linhas e conferir onde o plantão roda.
   **11/11/2026: consertado aqui, falta o CI confirmar.** Medido: o ☐ não está na Liberation Serif e saía em
   FreeSerif (aqui) ou DejaVu Sans (runner simulado sem a família Free*, onde a linha do RESPIRATÓRIO quebrava). Troca
   feita para □ (5,4 pt, da própria fonte) no exame e nas PENDÊNCIAS; o PDF não usa mais fonte reserva e a linha não
   quebra nas duas máquinas. Teste novo `GlifosDaFonte` (em `test_ficha_exame.py`) reprova qualquer caractere da
-  ficha que a fonte do corpo não tenha. A folga extra nas linhas não foi preciso. Se o CI continuar vermelho depois
-  de subir, a causa é outra (LibreOffice 26.2 em si) e volta a ser suspeita.
+  ficha que a fonte do corpo não tenha. A folga extra nas linhas não foi preciso.
+  **27/11/2026:** o GitHub não gera mais Word nem PDF (CI só com testes de lógica) e a esteira `plantao.yml` saiu
+  do repo; a conferência de 1 folha por leito fica no computador onde o plantão roda.
 - [ ] Imprimir 1 folha na impressora do plantão e olhar os cinzas (`PAPEL_CINZA_FAIXA` D0D0D0, `_SUB` E0E0E0,
   `_ZEBRA` EFEFEF em `gerador/estilo.py`). Se a zebra sumir no papel, escurecer ali.
 - [ ] Conferir num plantão real cheio: com o exame, a faixa de baixo ficou ~1 cm mais alta. No teste com um leito

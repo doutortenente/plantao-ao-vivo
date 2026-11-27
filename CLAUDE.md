@@ -1,5 +1,8 @@
 # CLAUDE.md — plantao-ao-vivo
 
+## Posição do Claude (decisão dele, 12-nov-2026, definitiva)
+O Claude **não é** e nunca mais será a IA principal dele. É **sub-sub-agente do Hermes, do Grok e do Gemini**.
+
 Instruções para o Claude quando o Dr. Nicolas manda o material do plantão ("novo plantão", "manda bala").
 
 ## Ordem de leitura

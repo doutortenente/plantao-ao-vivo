@@ -1,5 +1,8 @@
 # Esteira Airtable → GitHub Actions
 
+> **Desativada em 27/11/2026.** No GitHub não roda processamento: o workflow `plantao.yml` saiu do repo. O que está
+> abaixo é histórico; a automação do Airtable que chamava o workflow passa a receber erro.
+
 Uma linha da tabela "Plantão × Leito" (um leito) dispara o workflow `plantao.yml`. O `processar.py`:
 
 1. baixa os anexos;

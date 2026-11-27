@@ -1,1 +1,6 @@
 python-docx>=1.1
+
+# System deps required for full plantão (evolução + ficha-cola com ajuste 1 folha):
+#   apt-get install -y poppler-utils libreoffice
+# Tools used: soffice (for PDF/measure), pdfinfo, pdftoppm, pdftotext
+# The container (hermes-agent) must have these for direct terminal runs without SSH bridge.
