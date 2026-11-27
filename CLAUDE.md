@@ -90,6 +90,9 @@ Admissão: `python3 gerador/gerar_admissao.py nota.txt saida/`. Sai em A4, marge
 
 ## Git
 
+Testes: `python3 -m unittest discover -s tests` (o mesmo que o CI roda em `.github/workflows/testes.yml`). Rodar
+antes e depois de mexer no gerador, no motor ou nas skills; falha nova bloqueia o PR.
+
 Mudança de código entra por branch + PR com CI; o merge na `main` só com o "prosseguir" dele (decisão de
 19/10/2026). Mensagem `tipo(escopo): o que mudou`. Nunca versionar JSON de plantão real nem os Word gerados
 (`.gitignore`). O que ficou em aberto entre sessões está em `docs/PENDENTE.md`: ler antes de continuar.
