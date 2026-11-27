@@ -8,11 +8,10 @@
 
 ## 0. As 3 leis mais quebradas
 
-1. **MODO EXTRAÇÃO PURA — zero explicação dentro do bloco clínico.** Nada de
-   "(recalculado…)", "(soma das células…)", "(revisar)", "(em queda)" no meio. Toda observação/conferência/divergência
-   vai FORA, num rodapé ("Flags táticos"). O bloco que ele cola no prontuário é limpo.
-2. **Diurese e BH: some as células, NUNCA o total escrito à mão.** A última célula não é a diurese total. Motor:
-   `skills/sasi-ingest-export/scripts/build_passagem.py`.
+1. **MODO EXTRAÇÃO PURA — zero explicação dentro do bloco clínico.** Nada de "(recalculado…)", "(soma das células…)", "(revisar)", "(em queda)" no meio. Toda observação/conferência/divergência vai FORA, num rodapé ("Flags táticos"). O bloco que ele cola no prontuário é limpo.
+
+2. **Diurese e BH: some as células, NUNCA o total escrito à mão.** A última célula não é a diurese total. Motor: `skills/sasi-ingest-export/scripts/build_passagem.py`.
+
 3. **Laboratório é SEÇÃO PRÓPRIA, com séries (`=>`).** Nunca embutir lab no exame físico.
 
 ## 1. Estrutura por leito (ordem fixa)
@@ -23,18 +22,13 @@ LEITO XX — Nome Completo — Dn UTI — DD/MM/AAAA TURNO
 ## Sinais vitais + balanço [24 h]:
 PAS: max - min mmHg [flag] | PAD: max - min mmHg [flag] | PAM: max - min mmHg [flag] | FC: max - min bpm [flag] | FR: max - min rpm [flag] | SpO2: max - min % (suporte se AA/cateter) | TAX: max - min ºC [flag] | Dx: v1 / v2 / v3 mg/dl [flag] | Dieta: ... | Evacuação: ... | Diurese: ... ml | BH: ± ... ml
 
-(02/11/2026: o bloco inteiro numa linha só, itens separados por " | ", nesta ordem. Quando houver, entram no
-lugar deles, na mesma linha: "Sup O2: ..." logo depois do Dx (SÓ se VM; nunca se AA/cateter); "Peso: ... kg
-(fonte, dd/mm/aaaa) | Altura: ... cm | Peso predito: ... kg (VC 6 - 8 ml/kg: ... - ... ml)" antes da Dieta;
-"Débito urinário: ... ml/kg/h em N h [KDIGO n pelo débito]" depois da Diurese; outras perdas (dreno, SNG,
-resíduo); e as bombas, "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 => 2 ml/h (0,05 => 0,03 mcg/kg/min)", antes
-do BH. Peso, débito e bombas são do motor. Sem "Ingesta hídrica" no bloco evolução; a grade de balanço da
-ficha-cola também não traz Ganhos (11/11/2026).)
+Peso: ... kg | Altura: ... cm
+"Débito urinário: ... ml/kg/h em N h [KDIGO n pelo débito]" depois da Diurese; outras perdas (dreno, SNG, resíduo); e as bombas, "Noradrenalina: 16 mg/250 ml (64 mcg/ml), 3 => 2 ml/h (0,05 => 0,03 mcg/kg/min)", após o BH. Peso, débito e bombas são do motor. Sem "Ingesta hídrica" no bloco evolução; a grade de balanço da ficha-cola também não traz Ganhos (11/11/2026).)
 
 ## Laboratório:
 HB: v1 => v2 g/dl | HT: v1 => v2 % | PLAQ: v1 => v2 /mm3
 LEUCO: v1 => v2 /mm3 (seg/bast)
-UR: v1 => v2 mg/dl | CR: v1 => v2 mg/dl | NA: ... | K: ... | MG: ... | CAI: ... | P: ...   ← eletrólitos SEM série (só o atual)
+UR: v1 => v2 mg/dl | CR: v1 => v2 mg/dl | NA: .. | K: .. | MG: .. | CAI: .. | P: ..  ← eletrólitos SEM série (só o atual)
 Gaso: pH / HCO3 / SBE / Lactato (se houver)
 Outros: PCR / troponina / D-dímero / INR (se houver)
 CLCR (Cockcroft-Gault): ... ml/min    ← motor, com peso e a linha CR (não escrever à mão)
