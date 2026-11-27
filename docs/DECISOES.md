@@ -12,7 +12,7 @@
 | 11/10/2026 | Times New Roman 10, negrito mantido, visual limpo. |
 | 11/10/2026 | Repositório próprio `plantao-ao-vivo`, independente, sem symlinks. |
 | 11/10/2026 | Admissão com skill própria (`admissao-uti`), no padrão das evoluções reais dele: sem escore, sem rodapé, sem "Exame físico por sistemas"; entrega em Word Times New Roman 10. |
-| 12/10/2026 | O projeto do claude.ai sincroniza o `plantao-ao-vivo`; as instruções do projeto ficam versionadas em `docs/instrucoes-projeto.md` (v1.0; hoje v1.3, de 11/11/2026). |
+| 12/10/2026 | O projeto do claude.ai sincroniza o `plantao-ao-vivo`; as instruções do projeto ficam versionadas em `docs/instrucoes-projeto.md` (v1.0; hoje v1.4, de 27/11/2026). |
 | 19/10/2026 | Admissão em A4 (não Carta), margens 1,25 / 1,34 / 2,5 cm. Gerador em `gerador/gerar_admissao.py`. |
 | 19/10/2026 | ATB: dia de início = D0 (iniciou ontem: ontem D0, hoje D1). UTI: dia da admissão = D1. O motor calcula os dois (`preparar` em `build_passagem.py`). |
 | 19/10/2026 | Plantão roda no projeto do claude.ai (hooks do Claude Code não valem lá): as regras viram script, teste e CI. |
