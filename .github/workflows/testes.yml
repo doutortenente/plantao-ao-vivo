@@ -1,5 +1,6 @@
-# Testes a cada push e PR: motor, validação, conferência e o exemplo gerado de ponta a ponta.
-# Times New Roman não existe no runner: o LibreOffice usa a Liberation Serif (mesma métrica).
+# Testes de lógica a cada push e PR: motor, validação, checagens, labs.
+# No GitHub não roda processamento (27/11/2026): sem LibreOffice, sem gerar Word/PDF, sem exemplo de ponta a ponta.
+# Os testes que geram PDF se pulam sozinhos aqui (skipUnless soffice) e rodam no computador.
 name: testes
 
 on:
@@ -25,24 +26,7 @@ jobs:
           python-version: "3.12"
 
       - name: Dependências
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y -q --no-install-recommends libreoffice-writer poppler-utils fonts-liberation
-          pip install -r esteira/requirements.txt
+        run: pip install -r esteira/requirements.txt
 
       - name: Testes
         run: python -m unittest discover -s tests -v
-
-      - name: Exemplo de ponta a ponta (validar, gerar, conferir)
-        run: python gerador/gerar_docx.py gerador/exemplo/plantao-exemplo.json --saida saida-ci
-
-      - name: Páginas geradas
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: exemplo-gerado
-          path: |
-            saida-ci/*.pdf
-            saida-ci/paginas/
-            saida-ci/mensagem.md
-          if-no-files-found: ignore

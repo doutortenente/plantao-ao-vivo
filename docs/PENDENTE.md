@@ -77,8 +77,8 @@ exemplo e passa.
   de reserva. Simulado aqui com a DejaVu Sans no lugar da FreeSerif (8,1 pt contra 6,8 pt de largura a 9 pt), a
   linha "☐ AA ☐ CN ☐ VNI ☐ CNAF ☐ TOT/TQT" quebra em 2. A fonte de reserva do runner não foi conferida.
   Correção: trocar o ☐ do exame por □ (U+25A1, que a Times e a Liberation Serif têm, com a mesma largura em todo
-  computador), deixar folga de largura nas linhas e conferir no CI. A esteira (`plantao.yml`, também em
-  `ubuntu-latest`) usa o mesmo LibreOffice 26.2.
+  computador), deixar folga de largura nas linhas e conferir onde o plantão roda. Desde 27/11/2026 o GitHub não
+  gera Word nem PDF (CI só com testes de lógica) e a esteira `plantao.yml` saiu do repo.
 - [ ] Imprimir 1 folha na impressora do plantão e olhar os cinzas (`PAPEL_CINZA_FAIXA` D0D0D0, `_SUB` E0E0E0,
   `_ZEBRA` EFEFEF em `gerador/estilo.py`). Se a zebra sumir no papel, escurecer ali.
 - [ ] Conferir num plantão real cheio: com o exame, a faixa de baixo ficou ~1 cm mais alta. No teste com um leito

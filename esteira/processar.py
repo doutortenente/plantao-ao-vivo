@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-processar.py — trabalhador da esteira do plantão (roda no GitHub Actions, workflow plantao.yml).
+processar.py — trabalhador da esteira do plantão. Desativada em 27/11/2026: no GitHub não roda processamento
+(o workflow plantao.yml saiu do repo).
 
 Entrada (variáveis de ambiente):
   RECORD_ID             ID da linha na tabela "Plantão × Leito" do Airtable (uma linha = um leito).

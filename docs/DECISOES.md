@@ -22,6 +22,7 @@
 | 07/11/2026 | Ficha-cola, opção A ("faixas cinza"), escolhida entre 3 no canvas: título em faixa cinza, linha sim/linha não em cinza, alergia e alertas em caixa; o cinza é só de fundo e o texto continua preto. Embaixo, EXAME FÍSICO em 6 quadros por sistema no lugar da grade CONTROLES DO PLANTÃO, sem a faixa de bundle (FAST HUGS BID): ele mandou tirar. Folha cheia: o exame fica compacto antes de a fonte descer. |
 | 01/11/2026 | Peso no plantão (item 2 das melhorias): peso só com fonte e data; o motor calcula a dose das bombas pela diluição da prescrição (tabela e contas do app calculadoras-uti), o débito em ml/kg/h com KDIGO pelo débito, o ClCr (Cockcroft-Gault) e, em VM, o peso predito com o VC de 6 a 8 ml/kg. Nada por kg de cabeça. |
 | 12/10/2026 | Ficha-cola: modelo novo aprovado (`gerador/ficha_cola.py`) — hipóteses no cabeçalho (hoje rótulo **HD:** e JSON `hd`; na época imprimia como Dx), prescrição em 2 blocos (infusões/terapias + por sistemas), controles em grade, PDF junto. Profilaxia só TEV/LAMG. Folha que estoura no Word = erro grave. |
+| 27/11/2026 | No GitHub não roda processamento: sai a esteira (`plantao.yml`); o CI (`testes.yml`) fica só com os testes de lógica, sem LibreOffice e sem gerar o exemplo. Os testes que geram PDF rodam no computador. |
 
 ## Correções feitas ao montar este repositório (11/10/2026)
 
