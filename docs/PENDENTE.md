@@ -45,19 +45,12 @@ se confirmaram. Cada uma ganhou um teste que falhou antes do conserto e passa de
 
 ## 3. Lente da página de extração
 
-Não rodou até o fim. Ainda falta revisar `extracao-web/extracao-controles-labs-prescricao.html` contra o motor:
-mesma conta, mesmos limiares, nenhuma marca de dúvida no bloco. O teste `tests/test_pagina.py` cobre o caso do
-exemplo e passa.
+Encerrada em 27/11/2026: a página `extracao-web` e a esteira (Airtable) foram apagadas do repositório por ordem
+dele.
 
 ## 4. Com o Dr. Nicolas (uma vez só)
 
 - Mandar 1 PDF real de laboratório, para calibrar o `labs.py`, que é beta.
-- Para ligar a esteira (`esteira/README.md`):
-  - o segredo `ANTHROPIC_API_KEY` e a variável `AIRTABLE_CAMPO_SAIDA` no GitHub;
-  - o campo de anexo de saída e a opção **enviado** no Status da tabela, que hoje só tem aguardando, lendo, pronto
-    e falhou;
-  - a automação do Airtable.
-  No primeiro disparo, conferir se o upload acrescenta arquivos ou substitui os anteriores.
 - Apagar ou atualizar as skills da conta claude.ai com o mesmo nome das do repositório (`sasi-ingest-export`,
   `admissao-uti`), que competem com elas.
 - O `api/tokens.md` do design system se regenera ao abrir a página do artefato.
@@ -68,9 +61,6 @@ exemplo e passa.
   com o "manda bala" dele e o CI verde.
 - [x] Visual da ficha com peso: prévia real (leito 11, 31/10) enviada; ele mandou seguir em 01/11/2026, sem
   ajuste.
-- [ ] A esteira (Airtable) leva o peso da evolução anterior, mas não monta `infusoes_continuas` (a prescrição
-  lida não separa ampolas e diluente); a página `extracao-web` não lê nenhum dos dois. O Claude completa no chat;
-  sem eles, tudo sai como antes (sem nada por kg).
 - [ ] A nota de admissão (`gerar_admissao.py`) não escreve a linha "Peso:": o peso do 1º dia entra no JSON à mão.
 
 ## 6. Ficha-cola opção A (branch `claude/bold-thompson-sqdlc1`, 07/11/2026)
@@ -83,8 +73,7 @@ exemplo e passa.
   de reserva. Simulado aqui com a DejaVu Sans no lugar da FreeSerif (8,1 pt contra 6,8 pt de largura a 9 pt), a
   linha "☐ AA ☐ CN ☐ VNI ☐ CNAF ☐ TOT/TQT" quebra em 2. A fonte de reserva do runner não foi conferida.
   Correção: trocar o ☐ do exame por □ (U+25A1, que a Times e a Liberation Serif têm, com a mesma largura em todo
-  computador), deixar folga de largura nas linhas e conferir no CI. A esteira (`plantao.yml`, também em
-  `ubuntu-latest`) usa o mesmo LibreOffice 26.2.
+  computador), deixar folga de largura nas linhas e conferir no CI.
   **11/11/2026: consertado aqui, falta o CI confirmar.** Medido: o ☐ não está na Liberation Serif e saía em
   FreeSerif (aqui) ou DejaVu Sans (runner simulado sem a família Free*, onde a linha do RESPIRATÓRIO quebrava). Troca
   feita para □ (5,4 pt, da própria fonte) no exame e nas PENDÊNCIAS; o PDF não usa mais fonte reserva e a linha não
@@ -102,9 +91,7 @@ exemplo e passa.
 
 ## 7. Limites conhecidos (não são erro)
 
-- O JSON da página `extracao-web` não monta o bloco `ficha`: quem monta é o Claude no chat, a partir de
-  `prescricao_lida`.
-- O teste da página precisa de node e playwright e é pulado no CI.
+- Nenhum no momento (os dois que havia eram da página `extracao-web`, apagada em 27/11/2026).
 
 ## 8. Exames pelo n8n (12/11/2026, branch `feat/exames-n8n`)
 
@@ -138,5 +125,4 @@ Feito: prescrição inteira na ficha, ACM na coluna 3, LAMG em PROFILAXIA, varia
   `CLAUDE.md`, `docs/BRIEFING.md` e `docs/instrucoes-projeto.md`. Perguntar a ele o que fica antes de atualizar.
 - [ ] `labs_72h.py` é BETA como o `labs.py`: conferir contra o PDF nos próximos plantões. Leitura de cálcio total e
   albumina entrou no `labs.py` (siglas CA e ALB) só para a série da ficha.
-- [ ] A página `extracao-web` e a esteira não conhecem o ACM na coluna 3 nem a série de 72 h.
 - [ ] Ver no papel: o "denso" (menos ar entre as linhas) ainda é legível para ele?

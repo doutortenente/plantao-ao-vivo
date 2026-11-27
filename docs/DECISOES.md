@@ -150,6 +150,13 @@ administração ("=> 10-16-22-04"), que são ruído; o JSON pode trazê-los, que
 água fora da ficha ("água NNN ml" estava na lista do que não vai); saiu da lista, e TNE sem água na DIETA agora vira
 aviso.
 
+## Esteira e página de extração apagadas (27/11/2026)
+
+Por ordem dele, saíram do repositório a esteira Airtable → GitHub Actions (`esteira/`, `.github/workflows/plantao.yml`),
+a página `extracao-web/` e os testes das duas (`tests/test_esteira.py`, `tests/test_pagina.py`, `tests/pagina/`),
+mais o `recortes_para_leitura()` do `gerador/preparar.py`, que só a esteira usava. O plantão segue só pelo Claude no
+chat (skill `plantao`). O CI instala `gerador/requirements.txt` direto. Os arquivos ficam no histórico do git.
+
 ## Pendente (não resolvido aqui)
 
 Lista viva em `docs/PENDENTE.md`.

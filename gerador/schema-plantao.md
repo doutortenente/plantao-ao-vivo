@@ -88,7 +88,7 @@ escritos: ficam como estão e vão para o "Conferir".
 `peso` só entra em conta com `kg`, `fonte` (balança, EcoTT, admissão, cama-balança…) e `data` em dd/mm/aaaa; a
 altura é opcional. Sem fonte ou sem data é ERRO no validar; peso ilegível: `"kg": "?"` (aviso, nada por kg). Faixas
 do app de calculadoras: 30 a 250 kg, 120 a 230 cm. Peso com mais de 30 dias vira aviso. Sem `peso`, nada por kg é
-calculado e o bloco sai como antes. O `evolucao_anterior.py` (e a esteira) devolve o peso da linha "Peso:" da véspera,
+calculado e o bloco sai como antes. O `evolucao_anterior.py` devolve o peso da linha "Peso:" da véspera,
 com a fonte e a data de origem: não redigitar. Com ele, o motor (`peso.py`) escreve:
 
 - `Peso: 66 kg (EcoTT, 06/12/2025) | Altura: 153 cm` e, em VM, `| Peso predito: 46 kg (VC 6 - 8 ml/kg: 276 - 368 ml)`

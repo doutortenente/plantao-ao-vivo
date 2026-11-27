@@ -20,8 +20,7 @@ correções listadas em `docs/DECISOES.md`.
 
 1. `gerador/preparar.py` arruma a pasta de entrada: inventário, recortes das folhas, labs em texto e evolução
    anterior.
-2. O Claude lê o material (skill `skills/plantao/SKILL.md`, doutrina em `skills/controles-vitais-janela/`), ou a
-   página `extracao-web` exporta o JSON.
+2. O Claude lê o material (skill `skills/plantao/SKILL.md`, doutrina em `skills/controles-vitais-janela/`).
 3. O Claude monta um JSON no contrato `gerador/schema-plantao.md` com os números **crus** (células, séries).
    Hipóteses diagnósticas: campo `hd` no leito (`vitais.Dx` continua sendo glicemia).
 4. O motor `skills/sasi-ingest-export/scripts/build_passagem.py` faz toda a conta e cruza a prescrição
@@ -43,9 +42,6 @@ python3 gerador/gerar_docx.py plantao.json --saida saida/       # saída ≠ 0 =
 python3 gerador/gerar_admissao.py nota.txt saida/               # admissão (A4)
 python3 gerador/validar.py plantao.json                         # só validar
 ```
-
-Esteira (opcional): uma linha do Airtable dispara `.github/workflows/plantao.yml`, que lê os scans com a API do
-Claude e devolve a ficha-cola na linha (`esteira/README.md`). Folha e prescrição vão em PDF: foto não é lida.
 
 O que falta e os achados ainda não conferidos: `docs/PENDENTE.md`.
 
@@ -83,22 +79,18 @@ gerador/
   schema-plantao.md             contrato do JSON
   exemplo/plantao-exemplo.json  caso fictício para teste
   requirements.txt
-extracao-web/                   página-artefato que lê os scans no navegador e exporta o JSON (ver README dela)
-esteira/                        esteira Airtable → GitHub Actions: leitura com a API do Claude (ver README dela)
 sync/                           OneDrive ↔ Tijolão pelo rclone, rodado pelo Claude sob demanda (ver README dela)
-.github/workflows/              testes.yml (a cada push e PR) e plantao.yml (esteira, disparo manual)
-tests/                          motor, checagens, dias, janela, validar, conferir, gerador, esteira, página, doutrina…
+.github/workflows/              testes.yml (a cada push e PR)
+tests/                          motor, checagens, dias, janela, validar, conferir, gerador, doutrina…
 ```
 
 ## Requisitos
 
-- Python 3.10+ e `pip install -r gerador/requirements.txt` (python-docx). Para a esteira:
-  `pip install -r esteira/requirements.txt` (acrescenta o SDK `anthropic`).
+- Python 3.10+ e `pip install -r gerador/requirements.txt` (python-docx).
 - LibreOffice (`soffice`) e poppler-utils (`pdfinfo`, `pdftoppm`, `pdftotext`) para o ajuste da ficha-cola, a
   conferência e o preparo. Sem LibreOffice, `--sem-ajuste` gera os Word, mas a conferência dá erro: sem PDF não se
   contam as folhas.
-- Testes: `python3 -m unittest discover -s tests`. O teste da página `extracao-web` precisa de node e playwright;
-  sem eles, é pulado.
+- Testes: `python3 -m unittest discover -s tests`.
 
 ## Dados de paciente
 

@@ -29,12 +29,6 @@ description: >
 - Prescrições do dia (eletrônica impressa + anotação à mão).
 - Laudos de laboratório (PDF com texto).
 
-Atalhos (servem de base, não dispensam a leitura nem a conta do motor):
-- **JSON da página `extracao-web`:** se ele colar o "JSON do plantão", usar os vitais, as células, o laboratório e as
-  pendências (`avisos`). Montar o bloco `ficha` a partir de `prescricao_lida` e completar evolução e plano.
-- **JSON rascunho da esteira** (Airtable): já traz a ficha-cola gerada. Completar evolução, impressão e plano, e
-  gerar de novo.
-
 ## Passo a passo
 
 0. **Preparar.** Pôr o material em `entrada/` e rodar `python3 gerador/preparar.py entrada/ --saida saida/preparo`:
